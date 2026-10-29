@@ -84,7 +84,14 @@ describe('validate', () => {
     expect(checkConnection([{ source: 'sns', target: 'cw', data: monitor }], n('cw', 'cloudwatch'), n('sns', 'sns'))).toMatchObject({
       ok: true,
     });
-    // A monitor arrow in the path doesn't hide a real request loop.
+    // A data arrow may close a loop that runs through monitor and control arrows:
+    // Lambda reports to CloudWatch, CloudWatch rings SNS, then SNS wakes up Lambda.
+    const alarm = [
+      { source: 'fn', target: 'cw', data: monitor },
+      { source: 'cw', target: 'sns', data: control },
+    ];
+    expect(checkConnection(alarm, n('sns', 'sns'), n('fn', 'lambda'))).toMatchObject({ ok: true });
+    // A monitor arrow next to the path doesn't hide a real request loop.
     const loop = [
       { source: 'sns', target: 'fn', data: { kind: 'data' as const } },
       { source: 'fn', target: 'cw', data: monitor },
