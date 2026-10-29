@@ -7,7 +7,7 @@ import { useBand } from '../store';
 export function ServiceCard({ service, label, onClose }: { service: ServiceId; label?: string; onClose?: () => void }) {
   const band = useBand();
   const def = SERVICES[service];
-  const to = targetsOf(service).filter((t) => t !== 'cloudwatch' || band === 'architect');
+  const to = targetsOf(service, band === 'architect');
   const short = (id: ServiceId) => (band === 'architect' ? SERVICES[id].name.replace(/^(Amazon|AWS) /, '') : SERVICES[id].nickname);
   return (
     <section className={`service-card cat-${def.category}`} aria-label={`${def.nickname} info`}>

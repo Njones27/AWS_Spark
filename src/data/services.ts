@@ -118,7 +118,7 @@ const list: ServiceDef[] = [
       builder: 'Adds servers when it’s busy and removes them when it’s quiet.',
       architect: 'Auto Scaling groups launch and terminate instances from a launch template using scaling policies.',
     },
-    capacity: INF, forward: 'none', answers: false,
+    capacity: INF, forward: 'none', answers: false, badge: true,
   },
 
   // ── Storage ─────────────────────────────────────────────────
@@ -282,6 +282,236 @@ const list: ServiceDef[] = [
     },
     capacity: 500, forward: 'none', answers: true,
   },
+  {
+    id: 'agentcore', name: 'Amazon Bedrock AgentCore', nickname: 'Agent Workshop', category: 'ai',
+    job: 'runs AI agents that think and use tools',
+    blurb: {
+      explorer: 'A workshop where AI helpers think with an AI Brain and use tools to get jobs done.',
+      builder: 'Runs AI agents: programs that use an AI model to decide what to do, then use tools (like a Lambda helper) to do it.',
+      architect: 'Serverless runtime for AI agents, with memory, identity, a tool gateway (MCP), and observability. Works with any framework or model.',
+    },
+    capacity: 500, forward: 'broadcast', answers: false,
+  },
+  {
+    id: 'sagemaker', name: 'Amazon SageMaker AI', nickname: 'Model Lab', category: 'ai',
+    job: 'trains and runs custom AI models',
+    blurb: {
+      explorer: 'A lab where people teach a computer to spot patterns.',
+      builder: 'Build, train, and run your own machine-learning models, like one that guesses how much bread to bake tomorrow.',
+      architect: 'Managed ML platform: training jobs, hosted inference endpoints (InvokeEndpoint), and pipelines for custom models.',
+    },
+    capacity: 500, forward: 'none', answers: true,
+  },
+  {
+    id: 'lex', name: 'Amazon Lex', nickname: 'Chatbot', category: 'ai',
+    job: 'chats with people by text or voice',
+    blurb: {
+      explorer: 'A chatbot that answers questions in a chat window.',
+      builder: 'Builds chatbots that understand what people type or say, and can ask a Lambda helper to finish the job.',
+      architect: 'Conversational bots with intents, slots, and Lambda code hooks for fulfillment, over text or voice.',
+    },
+    capacity: 500, forward: 'broadcast', answers: true,
+  },
+  {
+    id: 'transcribe', name: 'Amazon Transcribe', nickname: 'Listening Ear', category: 'ai',
+    job: 'turns speech into text',
+    blurb: {
+      explorer: 'Listens to talking and writes down the words.',
+      builder: 'Turns recordings of speech into written text.',
+      architect: 'Automatic speech recognition for batch and streaming audio, with speaker labels and custom vocabularies.',
+    },
+    capacity: 500, forward: 'none', answers: true,
+  },
+  {
+    id: 'comprehend', name: 'Amazon Comprehend', nickname: 'Mood Reader', category: 'ai',
+    job: 'finds the meaning and mood in text',
+    blurb: {
+      explorer: 'Reads a message and tells if it sounds happy or sad.',
+      builder: 'Reads text and finds its mood (sentiment), key phrases, and the names of people and places.',
+      architect: 'NLP APIs for sentiment, entities, key phrases, language detection, and PII detection.',
+    },
+    capacity: 500, forward: 'none', answers: true,
+  },
+  {
+    id: 'textract', name: 'Amazon Textract', nickname: 'Page Reader', category: 'ai',
+    job: 'reads words and tables from documents',
+    blurb: {
+      explorer: 'Reads the words on a scanned page or a form.',
+      builder: 'Pulls text, tables, and form fields out of scanned documents and photos.',
+      architect: 'Document analysis: OCR plus structure (forms, tables, queries) from images and PDFs.',
+    },
+    capacity: 500, forward: 'none', answers: true,
+  },
+
+  // ── Security ────────────────────────────────────────────────
+  {
+    id: 'iam', name: 'AWS IAM', nickname: 'Key Keeper', category: 'security',
+    job: 'gives out permission badges',
+    blurb: {
+      explorer: 'Gives each helper a badge that says what it is allowed to do.',
+      builder: 'IAM decides who can do what. Give a worker a permission badge (a role) so it can use other AWS services.',
+      architect: 'Identity and Access Management: roles and least-privilege policies that let services and people call AWS APIs.',
+    },
+    capacity: INF, forward: 'none', answers: false, badge: true,
+  },
+  {
+    id: 'secrets', name: 'AWS Secrets Manager', nickname: 'Secret Safe', category: 'security',
+    job: 'keeps passwords safe',
+    blurb: {
+      explorer: 'A safe for passwords, so nobody has to write them down.',
+      builder: 'Keeps passwords and keys locked away and hands them to workers when they need them, so they never sit in the code.',
+      architect: 'Stores and automatically rotates database credentials, API keys, and other secrets. Workloads fetch them at runtime.',
+    },
+    capacity: INF, forward: 'none', answers: false, badge: true,
+  },
+  {
+    id: 'kms', name: 'AWS KMS', nickname: 'Lock Maker', category: 'security',
+    job: 'makes the keys that lock data',
+    blurb: {
+      explorer: 'Makes special locks so only allowed helpers can read the data.',
+      builder: 'Makes and guards the keys that scramble (encrypt) your data, so only allowed services can unscramble it.',
+      architect: 'Key Management Service: creates and controls the keys used for encryption at rest in S3, DynamoDB, RDS, SQS, and more.',
+    },
+    capacity: INF, forward: 'none', answers: false, badge: true,
+  },
+  {
+    id: 'shield', name: 'AWS Shield', nickname: 'Flood Wall', category: 'security',
+    job: 'protects against giant floods of traffic',
+    blurb: {
+      explorer: 'A strong wall that keeps giant floods of fake traffic away.',
+      builder: 'Protects the front doors from DDoS attacks: huge floods of fake traffic meant to knock a website offline.',
+      architect: 'Managed DDoS protection. Shield Standard is automatic; Shield Advanced adds detection, mitigation, and response.',
+    },
+    capacity: INF, forward: 'none', answers: false, badge: true,
+  },
+
+  // ── Management ──────────────────────────────────────────────
+  {
+    id: 'cloudtrail', name: 'AWS CloudTrail', nickname: 'Logbook', category: 'management',
+    job: 'writes down who did what',
+    blurb: {
+      explorer: 'A logbook that writes down every change anyone makes.',
+      builder: 'Records every action taken in your AWS account, so you can see who changed what, and when.',
+      architect: 'Audit trail of AWS API calls (management and data events), delivered to S3 and CloudWatch Logs.',
+    },
+    capacity: INF, forward: 'none', answers: true,
+  },
+
+  // ── Containers ──────────────────────────────────────────────
+  {
+    id: 'ecs', name: 'Amazon ECS', nickname: 'Container Crew', category: 'containers',
+    job: 'runs apps packed in containers',
+    blurb: {
+      explorer: 'Runs apps packed in boxes called containers, like lunchboxes with everything inside.',
+      builder: 'Runs your app in containers: neat packages that hold the code and everything it needs. A crew of them can help lots of visitors.',
+      architect: 'Container orchestration: services of tasks behind a load balancer, on Fargate or EC2, with service auto scaling.',
+    },
+    capacity: 100, forward: 'broadcast', answers: true,
+  },
+  {
+    id: 'eks', name: 'Amazon EKS', nickname: 'Container Captain', category: 'containers',
+    job: 'runs containers with Kubernetes',
+    blurb: {
+      explorer: 'A captain who keeps lots of containers working together.',
+      builder: 'Runs containers with Kubernetes, a popular open-source system for steering big fleets of containers.',
+      architect: 'Managed Kubernetes control plane. Pods run on EC2 nodes or on Fargate.',
+    },
+    capacity: 100, forward: 'broadcast', answers: true,
+  },
+  {
+    id: 'fargate', name: 'AWS Fargate', nickname: 'Engine Room', category: 'containers',
+    job: 'runs containers with no servers to look after',
+    blurb: {
+      explorer: 'Runs the containers, so nobody has to look after the computers.',
+      builder: 'A serverless engine for containers: you say how much power each one needs, and AWS runs it.',
+      architect: 'Serverless compute for ECS tasks and EKS pods, sized per task, with no EC2 instances to patch or scale.',
+    },
+    capacity: INF, forward: 'none', answers: false, badge: true,
+  },
+
+  // ── Web apps ────────────────────────────────────────────────
+  {
+    id: 'amplify', name: 'AWS Amplify', nickname: 'Website Kit', category: 'frontend',
+    job: 'hosts websites and web apps',
+    blurb: {
+      explorer: 'Puts a website online with just a few clicks.',
+      builder: 'Hosts web and mobile apps and connects them to sign-in, data, and APIs.',
+      architect: 'Full-stack hosting with CI/CD from Git and a managed CDN, plus backends defined in code (auth, data via AppSync, functions).',
+    },
+    capacity: 3000, forward: 'broadcast', answers: true,
+  },
+  {
+    id: 'appsync', name: 'AWS AppSync', nickname: 'Question Desk', category: 'frontend',
+    job: 'answers exactly the questions apps ask',
+    blurb: {
+      explorer: 'A desk where apps ask for just the data they want.',
+      builder: 'A front desk where apps ask for exactly the data they need in one request (GraphQL), with live updates.',
+      architect: 'Managed GraphQL and Events APIs, with resolvers for Lambda, DynamoDB, Aurora, OpenSearch, EventBridge, Bedrock, and HTTP.',
+    },
+    capacity: 1000, forward: 'split', answers: false,
+  },
+
+  // ── Data ────────────────────────────────────────────────────
+  {
+    id: 'aurora', name: 'Amazon Aurora', nickname: 'Turbo Cabinet', category: 'databases',
+    job: 'keeps data in fast, tidy tables',
+    blurb: {
+      explorer: 'A super-fast filing cabinet that keeps extra copies, so nothing gets lost.',
+      builder: 'A faster database with tables, built for the cloud. It keeps six copies of your data in three places.',
+      architect: 'MySQL- and PostgreSQL-compatible, with distributed storage (six copies across three AZs), read replicas, and Serverless v2.',
+    },
+    capacity: 150, forward: 'none', answers: true,
+  },
+  {
+    id: 'firehose', name: 'Amazon Data Firehose', nickname: 'Data Hose', category: 'analytics',
+    job: 'delivers streams of data to storage',
+    blurb: {
+      explorer: 'A hose that carries lots of data into storage.',
+      builder: 'Collects a nonstop stream of data and delivers it in batches to S3, Redshift, or OpenSearch.',
+      architect: 'Managed streaming delivery with buffering, transformation, and format conversion to S3, Redshift, OpenSearch, and more.',
+    },
+    capacity: 3000, forward: 'split', answers: false,
+  },
+  {
+    id: 'athena', name: 'Amazon Athena', nickname: 'Fact Finder', category: 'analytics',
+    job: 'answers questions about data stored in S3',
+    blurb: {
+      explorer: 'Asks questions about lots of files and finds the answers.',
+      builder: 'Ask questions of data stored in S3 using SQL, without setting up a database.',
+      architect: 'Serverless SQL over data in S3 (Parquet, CSV, Iceberg) using the Glue Data Catalog. You pay per data scanned.',
+    },
+    capacity: 500, forward: 'broadcast', answers: false,
+  },
+  {
+    id: 'glue', name: 'AWS Glue', nickname: 'Data Cleaner', category: 'analytics',
+    job: 'cleans and moves data',
+    blurb: {
+      explorer: 'Tidies up messy data and moves it where it belongs.',
+      builder: 'Cleans, reshapes, and moves data between places (ETL), and keeps a catalog of the data you have.',
+      architect: 'Serverless ETL with Spark jobs, crawlers, and the Data Catalog that Athena and Redshift Spectrum use.',
+    },
+    capacity: 1000, forward: 'broadcast', answers: false,
+  },
+  {
+    id: 'redshift', name: 'Amazon Redshift', nickname: 'Data Warehouse', category: 'analytics',
+    job: 'answers big questions about huge amounts of data',
+    blurb: {
+      explorer: 'A giant warehouse of data for answering big questions.',
+      builder: 'A data warehouse: it holds huge amounts of data so you can answer big questions, like “what sold best this year?”',
+      architect: 'Columnar, massively parallel data warehouse (provisioned or Serverless) for analytics SQL at petabyte scale.',
+    },
+    capacity: 300, forward: 'none', answers: true,
+  },
+  {
+    id: 'opensearch', name: 'Amazon OpenSearch Service', nickname: 'Search Engine', category: 'analytics',
+    job: 'finds things fast with search',
+    blurb: {
+      explorer: 'Finds the right thing fast when you type a search.',
+      builder: 'Powers search boxes and log dashboards. Type a word and it finds matches in a flash.',
+      architect: 'Managed OpenSearch for full-text search, log analytics, and vector search.',
+    },
+    capacity: 500, forward: 'none', answers: true,
+  },
 ];
 
 export const SERVICES: Record<ServiceId, ServiceDef> = Object.fromEntries(list.map((s) => [s.id, s])) as Record<
@@ -294,13 +524,15 @@ export const SERVICE_LIST = list;
 export const CATEGORIES: { id: Category; label: string; icon?: string }[] = [
   { id: 'town', label: 'Town' },
   { id: 'networking', label: 'Front doors & roads', icon: 'cat-networking' },
+  { id: 'frontend', label: 'Web apps', icon: 'cat-frontend' },
   { id: 'compute', label: 'Workers', icon: 'cat-compute' },
+  { id: 'containers', label: 'Containers', icon: 'cat-containers' },
   { id: 'storage', label: 'Storage', icon: 'cat-storage' },
   { id: 'databases', label: 'Databases', icon: 'cat-databases' },
   { id: 'integration', label: 'Messengers', icon: 'cat-integration' },
   { id: 'security', label: 'Security', icon: 'cat-security' },
   { id: 'management', label: 'Watching', icon: 'cat-management' },
-  { id: 'analytics', label: 'Data streams', icon: 'cat-analytics' },
+  { id: 'analytics', label: 'Data & analytics', icon: 'cat-analytics' },
   { id: 'ai', label: 'AI helpers', icon: 'cat-ai' },
 ];
 

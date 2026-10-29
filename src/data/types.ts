@@ -29,12 +29,36 @@ export type ServiceId =
   | 'rekognition'
   | 'polly'
   | 'translate'
-  | 'bedrock';
+  | 'bedrock'
+  | 'iam'
+  | 'secrets'
+  | 'kms'
+  | 'shield'
+  | 'cloudtrail'
+  | 'agentcore'
+  | 'sagemaker'
+  | 'lex'
+  | 'transcribe'
+  | 'comprehend'
+  | 'textract'
+  | 'ecs'
+  | 'eks'
+  | 'fargate'
+  | 'amplify'
+  | 'appsync'
+  | 'aurora'
+  | 'firehose'
+  | 'athena'
+  | 'glue'
+  | 'redshift'
+  | 'opensearch';
 
 export type Category =
   | 'town'
   | 'networking'
+  | 'frontend'
   | 'compute'
+  | 'containers'
   | 'storage'
   | 'databases'
   | 'integration'
@@ -64,6 +88,8 @@ export interface ServiceDef {
   cdnHitRate?: number;
   filtersBots?: boolean;
   cache?: boolean;
+  /** Doesn't carry requests: its control arrows pin its icon as a badge on the pieces they point at. */
+  badge?: boolean;
   /** Included in the Explorer (K–5) playground. */
   basic?: boolean;
 }

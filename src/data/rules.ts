@@ -67,9 +67,19 @@ const workerTargets: [ServiceId, string, string, string][] = [
   ['polly', 'asks', 'asks Polly to read text out loud', 'The SynthesizeSpeech API'],
   ['translate', 'asks', 'asks for a translation', 'The TranslateText API'],
   ['bedrock', 'asks', 'asks an AI model in Bedrock to write or answer', 'The InvokeModel and Converse APIs'],
+  ['aurora', 'saves to', 'looks things up in the Aurora turbo cabinet', 'SQL over the VPC, often through RDS Proxy'],
+  ['redshift', 'asks', 'asks the data warehouse a big question', 'SQL through the Redshift Data API'],
+  ['opensearch', 'searches', 'searches for matches in OpenSearch', 'Search and index requests to the domain endpoint'],
+  ['firehose', 'streams to', 'sends a stream of data into the data hose', 'PutRecordBatch to a Firehose stream'],
+  ['athena', 'asks', 'asks Athena a question about files in S3', 'StartQueryExecution with SQL'],
+  ['sagemaker', 'asks', 'asks a custom model in SageMaker for a prediction', 'InvokeEndpoint on a SageMaker AI endpoint'],
+  ['transcribe', 'asks', 'asks Transcribe to turn a recording into words', 'StartTranscriptionJob on audio in S3'],
+  ['comprehend', 'asks', 'asks Comprehend what mood a message has', 'DetectSentiment and DetectEntities'],
+  ['textract', 'asks', 'asks Textract to read a scanned page', 'AnalyzeDocument on an image or PDF'],
+  ['agentcore', 'asks an agent in', 'asks an AI agent to handle a tricky job', 'InvokeAgentRuntime on an AgentCore Runtime endpoint'],
 ];
-for (const worker of ['lambda', 'ec2'] as const) {
-  const who = worker === 'lambda' ? 'The Lambda helper' : 'The cloud computer';
+const WORKERS = { lambda: 'The Lambda helper', ec2: 'The cloud computer', ecs: 'The container crew', eks: 'The container captain' };
+for (const [worker, who] of Object.entries(WORKERS) as [ServiceId, string][]) {
   for (const [to, verb, simple, tech] of workerTargets) {
     TABLE.push([worker, to, verb, `${who} ${simple}.`, `${tech}.`]);
   }
@@ -100,19 +110,126 @@ TABLE.push(
   ['stepfunctions', 'sqs', 'sends tickets to', 'The checklist can put a ticket in a waiting line.', 'Optimized integration calls SQS SendMessage.'],
   ['stepfunctions', 'bedrock', 'asks', 'The checklist can ask an AI model for help.', 'Optimized integration calls Bedrock InvokeModel.'],
   ['kinesis', 'lambda', 'feeds', 'A Lambda helper reads things off the conveyor belt.', 'An event source mapping reads shards in batches.'],
+
+  // Containers
+  ['elb', 'ecs', 'shares visitors with', 'The load balancer spreads visitors across the container crew.', 'An ALB target group of ECS tasks.'],
+  ['elb', 'eks', 'shares visitors with', 'The load balancer spreads visitors across the containers.', 'The AWS Load Balancer Controller registers pods as ALB targets.'],
+  ['apigw', 'ecs', 'forwards to', 'The front desk can pass requests to the container crew.', 'HTTP integration through a VPC Link to a private load balancer in front of the service.'],
+  ['apigw', 'eks', 'forwards to', 'The front desk can pass requests to the container captain.', 'HTTP integration through a VPC Link to a private load balancer in front of the pods.'],
+  ['sqs', 'ecs', 'hands tickets to', 'Containers take the next ticket from the line when they’re ready.', 'Tasks long-poll ReceiveMessage. Service auto scaling can track queue depth.'],
+  ['sqs', 'eks', 'hands tickets to', 'Containers take the next ticket from the line when they’re ready.', 'Pods long-poll the queue. KEDA can scale them on queue depth.'],
+  ['eventbridge', 'ecs', 'starts a task on', 'The mail sorter can start a container job when news arrives.', 'A rule with an ECS RunTask target.'],
+  ['stepfunctions', 'ecs', 'runs a step on', 'A checklist step can run in a container.', 'Optimized integration: ecs:runTask (.sync).'],
+  ['stepfunctions', 'eks', 'runs a step on', 'A checklist step can run as a job on the container captain.', 'Optimized integration: eks:runJob.'],
+
+  // AI & agents
+  ['agentcore', 'bedrock', 'thinks with', 'The agent workshop asks the AI Brain to think through each job.', 'The agent calls a Bedrock model (InvokeModel / Converse) to reason and plan.'],
+  ['agentcore', 'sagemaker', 'thinks with', 'The agent workshop can think with a custom model from the Model Lab.', 'The agent calls a model hosted on a SageMaker AI endpoint.'],
+  ['agentcore', 'lambda', 'uses a tool on', 'An agent can ask a Lambda helper to do a job for it, like looking up an order.', 'AgentCore Gateway exposes the Lambda function to the agent as an MCP tool.'],
+  ['agentcore', 'cognito', 'checks name tags with', 'The agent workshop checks who is asking before it helps.', 'Inbound auth: AgentCore Identity validates Cognito-issued JWTs.', 'control'],
+  ['users', 'lex', 'chats with', 'People type their questions to the chatbot.', 'Clients call the Lex runtime (RecognizeText / RecognizeUtterance).'],
+  ['lex', 'lambda', 'asks for help from', 'The chatbot asks a Lambda helper to finish the job, like placing an order.', 'A Lambda code hook fulfills the intent.'],
+  ['apigw', 'sagemaker', 'asks', 'The front desk can ask a custom model directly.', 'AWS service integration calls InvokeEndpoint on the SageMaker runtime.'],
+  ['stepfunctions', 'sagemaker', 'trains a model in', 'A checklist step can train a new model in the Model Lab.', 'Optimized integration: sagemaker:createTrainingJob (.sync).'],
+
+  // Web apps
+  ['users', 'amplify', 'visits', 'People visit the website that the Website Kit put online.', 'Amplify Hosting serves the app over its managed CDN.'],
+  ['route53', 'amplify', 'points to', 'The address book points people to the Website Kit.', 'A custom domain on Amplify Hosting, managed in Route 53.'],
+  ['amplify', 'appsync', 'loads data from', 'The web app asks the Question Desk for the data it shows.', 'The frontend calls the AppSync GraphQL API (Amplify Data).'],
+  ['amplify', 'apigw', 'calls', 'The web app sends its requests to the front desk.', 'The frontend calls REST endpoints on API Gateway.'],
+  ['amplify', 'cognito', 'signs people in with', 'The web app uses the name tag desk so people can sign in.', 'Amplify Auth uses a Cognito user pool.', 'control'],
+  ['users', 'appsync', 'asks questions at', 'Apps ask the Question Desk for exactly the data they need.', 'Clients send GraphQL queries, mutations, and subscriptions to AppSync.'],
+  ['waf', 'appsync', 'lets good visitors into', 'The gate guard only lets real visitors through to the Question Desk.', 'A WAF web ACL associated with the AppSync API.'],
+  ['appsync', 'lambda', 'asks', 'The Question Desk can ask a Lambda helper to work out an answer.', 'A Lambda resolver.'],
+  ['appsync', 'dynamodb', 'reads and writes', 'The Question Desk can read and write data in DynamoDB directly.', 'A DynamoDB data source with JavaScript resolvers.'],
+  ['appsync', 'aurora', 'reads and writes', 'The Question Desk can look things up in the Aurora turbo cabinet.', 'An Aurora data source through the RDS Data API.'],
+  ['appsync', 'opensearch', 'searches', 'The Question Desk can search with OpenSearch.', 'An OpenSearch Service data source.'],
+  ['appsync', 'eventbridge', 'posts events to', 'The Question Desk can post news to the mail sorter.', 'An EventBridge data source (PutEvents).'],
+  ['appsync', 'bedrock', 'asks', 'The Question Desk can ask the AI Brain directly.', 'A Bedrock runtime data source (InvokeModel / Converse).'],
+  ['appsync', 'cognito', 'checks name tags with', 'The Question Desk checks your name tag with Cognito.', 'A Cognito user pool authorization mode.', 'control'],
+
+  // Data & analytics
+  ['kinesis', 'firehose', 'feeds', 'The conveyor belt can feed the data hose.', 'Firehose with a Kinesis Data Streams source.'],
+  ['apigw', 'firehose', 'streams into', 'The front desk can send data straight into the data hose.', 'Service integration calls Firehose PutRecord.'],
+  ['eventbridge', 'firehose', 'routes events to', 'The mail sorter can send news into the data hose.', 'A rule with a Firehose stream target.'],
+  ['firehose', 's3', 'delivers to', 'The data hose saves the stream as files in an S3 bucket.', 'S3 destination with buffering and optional Parquet conversion.'],
+  ['firehose', 'redshift', 'delivers to', 'The data hose delivers data to the data warehouse.', 'Redshift destination, staged through S3 and loaded with COPY.'],
+  ['firehose', 'opensearch', 'delivers to', 'The data hose delivers data to the search engine.', 'OpenSearch Service destination.'],
+  ['athena', 's3', 'reads data in', 'The fact finder reads the files in S3 to find answers.', 'Athena scans objects in S3 and writes query results back to S3.'],
+  ['athena', 'glue', 'checks the table list in', 'The fact finder checks the data catalog to learn what the files hold.', 'The Glue Data Catalog holds the table schemas that Athena queries.', 'control'],
+  ['stepfunctions', 'athena', 'runs a query on', 'A checklist step can ask the fact finder a question.', 'Optimized integration: athena:startQueryExecution (.sync).'],
+  ['stepfunctions', 'glue', 'starts a job on', 'A checklist step can start a data-cleaning job.', 'Optimized integration: glue:startJobRun (.sync).'],
+  ['eventbridge', 'glue', 'starts', 'The mail sorter can start a data-cleaning job when news arrives.', 'An EventBridge event triggers a Glue workflow.'],
+  ['glue', 's3', 'cleans and saves data to', 'The data cleaner tidies data and saves it in S3.', 'Glue ETL jobs write their output to S3, often as Parquet.'],
+  ['glue', 'redshift', 'loads data into', 'The data cleaner loads tidy data into the data warehouse.', 'Glue ETL jobs load data into Redshift tables.'],
+  ['cloudtrail', 's3', 'saves its logbook to', 'The logbook is saved as files in an S3 bucket.', 'A trail delivers log files to an S3 bucket.', 'monitor'],
 );
 
-// Every AWS service can report its health to CloudWatch.
+// Badge pieces don't carry requests: their control arrows pin a badge on the piece they point at.
+const BADGES: { from: ServiceId; to: ServiceId[]; verb: string; simple: (to: string) => string; tech: (to: string) => string }[] = [
+  {
+    from: 'iam',
+    to: ['lambda', 'ec2', 'ecs', 'eks', 'agentcore', 'stepfunctions', 'apigw', 'glue', 'firehose', 'sagemaker'],
+    verb: 'gives a permission badge to',
+    simple: (t) => `The Key Keeper gives the ${t} a permission badge that lists what it’s allowed to do.`,
+    tech: (t) => `An IAM role grants ${t} least-privilege permissions to call other AWS services.`,
+  },
+  {
+    from: 'secrets',
+    to: ['lambda', 'ec2', 'ecs', 'eks', 'glue'],
+    verb: 'hands passwords to',
+    simple: (t) => `The Secret Safe hands the ${t} its passwords, so they never have to be written in the code.`,
+    tech: (t) => `${t} reads credentials at runtime with GetSecretValue instead of hard-coding them.`,
+  },
+  {
+    from: 'kms',
+    to: ['s3', 'dynamodb', 'rds', 'aurora', 'sqs', 'sns', 'kinesis', 'redshift', 'opensearch'],
+    verb: 'locks data in',
+    simple: (t) => `The Lock Maker locks the data in the ${t}, so only allowed helpers can read it.`,
+    tech: (t) => `${t} encrypts data at rest with a customer managed KMS key.`,
+  },
+  {
+    from: 'shield',
+    to: ['cloudfront', 'elb', 'route53'],
+    verb: 'guards',
+    simple: (t) => `The Flood Wall guards the ${t} against giant floods of fake traffic.`,
+    tech: (t) => `Shield Advanced protection on ${t}, with DDoS detection and mitigation.`,
+  },
+  {
+    from: 'fargate',
+    to: ['ecs', 'eks'],
+    verb: 'runs the containers for',
+    simple: (t) => `The Engine Room runs the containers for the ${t}, so nobody has to look after servers.`,
+    tech: (t) => `The Fargate launch type runs ${t} workloads without managing EC2 instances.`,
+  },
+];
+for (const b of BADGES) {
+  for (const to of b.to) TABLE.push([b.from, to, b.verb, b.simple(SERVICES[to].nickname), b.tech(SERVICES[to].name), 'control']);
+}
+
+// Every AWS service reports its health to CloudWatch, and CloudTrail records every change to it.
 for (const s of Object.values(SERVICES)) {
-  if (s.category === 'town' || s.id === 'cloudwatch') continue;
-  TABLE.push([
-    s.id,
-    'cloudwatch',
-    'reports to',
-    `${s.nickname} sends its health numbers to the CloudWatch watchtower.`,
-    `${s.name} publishes metrics and logs to CloudWatch.`,
-    'monitor',
-  ]);
+  if (s.category === 'town') continue;
+  if (s.id !== 'cloudwatch') {
+    TABLE.push([
+      s.id,
+      'cloudwatch',
+      'reports to',
+      `${s.nickname} sends its health numbers to the CloudWatch watchtower.`,
+      `${s.name} publishes metrics and logs to CloudWatch.`,
+      'monitor',
+    ]);
+  }
+  if (s.id !== 'cloudtrail') {
+    TABLE.push([
+      s.id,
+      'cloudtrail',
+      'is recorded in',
+      `Every change to the ${s.nickname} is written down in the CloudTrail logbook.`,
+      `API calls to ${s.name} are logged by CloudTrail.`,
+      'monitor',
+    ]);
+  }
 }
 
 export const RULES: Rule[] = TABLE.map(([from, to, verb, simple, tech, kind = 'data']) => ({ from, to, verb, simple, tech, kind }));
@@ -123,8 +240,9 @@ export function findRule(from: ServiceId, to: ServiceId): Rule | undefined {
   return index.get(`${from}>${to}`);
 }
 
-export function targetsOf(from: ServiceId): ServiceId[] {
-  return RULES.filter((r) => r.from === from).map((r) => r.to);
+/** Where `from` can send arrows. Monitor arrows (to CloudWatch and CloudTrail) are optional extras. */
+export function targetsOf(from: ServiceId, includeMonitor = true): ServiceId[] {
+  return RULES.filter((r) => r.from === from && (includeMonitor || r.kind !== 'monitor')).map((r) => r.to);
 }
 
 export function sourcesOf(to: ServiceId): ServiceId[] {
@@ -147,8 +265,8 @@ const MISTAKES: { from?: ServiceId[]; to?: ServiceId[]; simple: string; tech: st
   },
   {
     from: ['users'],
-    simple: 'Townsfolk start their trip at a front door: the address book (Route 53), a copy shop (CloudFront), the front desk (API Gateway), a load balancer, or the gate guard.',
-    tech: 'Clients enter through public endpoints: DNS, CloudFront, API Gateway, a load balancer, or an S3 or EC2 endpoint.',
+    simple: 'Townsfolk start their trip at a front door: the address book (Route 53), a copy shop (CloudFront), the front desk (API Gateway), a load balancer, the gate guard, or an app like the Website Kit, the Question Desk, or the Chatbot.',
+    tech: 'Clients enter through public endpoints: DNS, CloudFront, API Gateway, AppSync, Amplify, Lex, a load balancer, or an S3 or EC2 endpoint.',
   },
   {
     to: ['users'],
@@ -161,7 +279,15 @@ const MISTAKES: { from?: ServiceId[]; to?: ServiceId[]; simple: string; tech: st
     tech: 'DNS records resolve to endpoints such as CloudFront, ALB, API Gateway, S3 website, or IPs, not to functions or databases.',
   },
   {
-    from: ['rds', 'elasticache', 'glacier', 'rekognition', 'polly', 'translate', 'bedrock', 'phone', 'cognito'],
+    from: ['iam', 'secrets', 'kms', 'shield', 'fargate', 'autoscaling'],
+    simple: 'This piece doesn’t carry requests. It pins a badge on the piece it points at, so connect it to a piece that needs it.',
+    tech: 'This service attaches to other resources (roles, secrets, keys, protections, capacity) instead of handling requests.',
+  },
+  {
+    from: [
+      'rds', 'aurora', 'elasticache', 'glacier', 'redshift', 'opensearch', 'rekognition', 'polly', 'translate', 'bedrock',
+      'sagemaker', 'transcribe', 'comprehend', 'textract', 'phone', 'cognito', 'cloudtrail',
+    ],
     simple: 'This piece is an end stop. It answers questions, but it doesn’t send requests onward.',
     tech: 'This service is called by others and returns a response. It doesn’t invoke downstream targets.',
   },
@@ -174,7 +300,7 @@ export interface Rejection {
 }
 
 export function explainRejection(from: ServiceId, to: ServiceId): Rejection {
-  const suggestions = targetsOf(from).filter((t) => t !== 'cloudwatch').slice(0, 4);
+  const suggestions = targetsOf(from, false).slice(0, 4);
   const hit = MISTAKES.find((m) => (!m.from || m.from.includes(from)) && (!m.to || m.to.includes(to)));
   if (hit) return { simple: hit.simple, tech: hit.tech, suggestions };
 

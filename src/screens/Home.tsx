@@ -2,7 +2,7 @@ import { TownScene } from '../components/art/Scenery';
 import { Sparky } from '../components/art/Sparky';
 import { BandPicker, BandSwitch } from '../components/Chrome';
 import { CHAPTER, LEVELS } from '../data/levels';
-import { iconUrl } from '../data/services';
+import { iconUrl, SERVICE_LIST } from '../data/services';
 import { href } from '../router';
 import { useApp } from '../store';
 
@@ -49,7 +49,7 @@ export function Home() {
             </span>
             <span className="mode-text">
               <strong>Playground</strong>
-              <span>Build anything with 26 pieces. Only connections that make sense will snap together!</span>
+              <span>Build anything with {SERVICE_LIST.length} pieces. Only connections that make sense will snap together!</span>
             </span>
             <span className="mode-go" aria-hidden="true">›</span>
           </a>

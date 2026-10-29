@@ -13,9 +13,10 @@ import {
   type OnEdgesChange,
   type OnNodesChange,
 } from '@xyflow/react';
-import { useCallback, useRef, useState, type Dispatch, type ReactNode, type SetStateAction } from 'react';
+import { useCallback, useMemo, useRef, useState, type Dispatch, type ReactNode, type SetStateAction } from 'react';
 import { iconUrl, SERVICES } from '../../data/services';
 import type { ServiceId } from '../../data/types';
+import { badgesFor } from '../../engine/badges';
 import { checkConnection } from '../../engine/validate';
 import { useBand } from '../../store';
 import { CloudZone, TownZone } from '../art/Scenery';
@@ -25,6 +26,7 @@ import {
   isPiece,
   makeEdge,
   SimContext,
+  toSim,
   UiContext,
   type AppEdge,
   type AppNode,
@@ -71,6 +73,11 @@ export function BuilderCanvas({ nodes, edges, onNodesChange, onEdgesChange, setE
   const lastConnected = useRef<string | null>(null);
   const dragging = useConnection((c) => c.inProgress);
   const clicking = useStore((s) => !!s.connectionClickStartHandle);
+  const badges = useMemo(() => {
+    const g = toSim(nodes, edges);
+    return badgesFor(g.nodes, g.edges);
+  }, [nodes, edges]);
+  const ui = useMemo(() => ({ wiggleId, badges }), [wiggleId, badges]);
 
   const pieceOf = useCallback(
     (id: string) => {
@@ -190,7 +197,7 @@ export function BuilderCanvas({ nodes, edges, onNodesChange, onEdgesChange, setE
 
   return (
     <SimContext.Provider value={sim}>
-      <UiContext.Provider value={{ wiggleId }}>
+      <UiContext.Provider value={ui}>
         <div ref={wrap} className={`canvas ${dragging || clicking ? 'is-connecting' : ''} ${sim.running ? 'is-running' : ''}`}>
           <ReactFlow<AppNode, AppEdge>
             nodes={nodes}
