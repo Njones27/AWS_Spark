@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest';
 import { LEVELS } from '../data/levels';
 import { RULES, explainRejection, findRule } from '../data/rules';
 import { SERVICE_LIST } from '../data/services';
+import type { ServiceId } from '../data/types';
 import { levelSolved, levelStart } from './levelGraph';
 import { simulate } from './simulate';
 import { checkConnection, wouldCreateCycle } from './validate';
@@ -69,6 +70,27 @@ describe('validate', () => {
     expect(checkConnection(edges, n('c', 'sqs'), n('a', 'lambda'))).toMatchObject({ ok: false, kind: 'cycle' });
     expect(checkConnection(edges, n('a', 'apigw'), n('x', 'lambda'))).toMatchObject({ ok: true });
   });
+  it('lets control and monitor arrows close a loop, but still refuses a data loop', () => {
+    const n = (id: string, service: ServiceId) => ({ id, service });
+    const monitor = { kind: 'monitor' as const };
+    const control = { kind: 'control' as const };
+    // EC2 reports to CloudWatch, CloudWatch tells Auto Scaling, Auto Scaling makes copies of EC2.
+    const scaling = [
+      { source: 'ec2', target: 'cw', data: monitor },
+      { source: 'asg', target: 'ec2', data: control },
+    ];
+    expect(checkConnection(scaling, n('cw', 'cloudwatch'), n('asg', 'autoscaling'))).toMatchObject({ ok: true });
+    // SNS reports to CloudWatch, and a CloudWatch alarm rings SNS.
+    expect(checkConnection([{ source: 'sns', target: 'cw', data: monitor }], n('cw', 'cloudwatch'), n('sns', 'sns'))).toMatchObject({
+      ok: true,
+    });
+    // A monitor arrow in the path doesn't hide a real request loop.
+    const loop = [
+      { source: 'sns', target: 'fn', data: { kind: 'data' as const } },
+      { source: 'fn', target: 'cw', data: monitor },
+    ];
+    expect(checkConnection(loop, n('fn', 'lambda'), n('sns', 'sns'))).toMatchObject({ ok: false, kind: 'cycle' });
+  });
 });
 
 describe('simulate', () => {
@@ -115,6 +137,50 @@ describe('simulate', () => {
     const solved = levelSolved(byId('l7'));
     const res = simulate(solved.nodes, solved.edges);
     expect(res.nodes.rds.load).toBeCloseTo(40);
+  });
+
+  it('cache hits never meet an overloaded origin, so only the dropped requests fail', () => {
+    // 500 visitors → CloudFront → one EC2 (50): 100 reach EC2 and 50 are dropped, so 450 of 500 finish.
+    const cdn = simulate(
+      [
+        { id: 'u', service: 'users', source: { demand: 500, needs: ['ec2'] } },
+        { id: 'cf', service: 'cloudfront' },
+        { id: 'e', service: 'ec2' },
+      ],
+      [
+        { id: '1', source: 'u', target: 'cf' },
+        { id: '2', source: 'cf', target: 'e' },
+      ],
+    );
+    expect(cdn.nodes.e.dropped).toBeCloseTo(50);
+    expect(cdn.sources.u.ok).toBeCloseTo(450);
+    expect(cdn.sources.u.failures).toEqual([{ reason: { kind: 'overload', node: 'e' }, amount: expect.closeTo(50) }]);
+
+    // L7 with 400 checkers: the cache leaves RDS 80 reads for 60 slots, so 20 are dropped.
+    const level = byId('l7');
+    const solved = levelSolved(level);
+    const busy = simulate(
+      solved.nodes.map((n) => (n.id === 'checkers' ? { ...n, source: { ...n.source!, demand: 400 } } : n)),
+      solved.edges,
+    );
+    expect(busy.nodes.rds.dropped).toBeCloseTo(20);
+    expect(busy.sources.checkers.ok).toBeCloseTo(380);
+  });
+
+  it('a cache-hit share still fails when the origin is a dead end', () => {
+    const res = simulate(
+      [
+        { id: 'u', service: 'users', source: { demand: 10 } },
+        { id: 'cf', service: 'cloudfront' },
+        { id: 'a', service: 'apigw' },
+      ],
+      [
+        { id: '1', source: 'u', target: 'cf' },
+        { id: '2', source: 'cf', target: 'a' },
+      ],
+    );
+    expect(res.sources.u.ok).toBe(0);
+    expect(res.sources.u.failures[0].reason).toEqual({ kind: 'deadEnd', node: 'a' });
   });
 
   it('l8: the queue makes orders wait instead of being dropped', () => {

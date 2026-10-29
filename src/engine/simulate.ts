@@ -124,6 +124,8 @@ export function simulate(nodes: SimNode[], edges: SimEdge[], scale = 1): SimResu
   const nodeRes: Record<string, NodeResult> = {};
   const edgeRes: Record<string, EdgeResult> = {};
   const dropRatio = new Map<string, number>();
+  /** Share of each edge's requests answered from a cached copy, so they never travel it. */
+  const hitRate = new Map<string, number>();
 
   for (const id of order) {
     const n = byId.get(id)!;
@@ -152,18 +154,15 @@ export function simulate(nodes: SimNode[], edges: SimEdge[], scale = 1): SimResu
     const waiting = queued > room ? queued - room : 0;
     dropRatio.set(id, drop);
 
-    let oh = h * (1 - drop) + qh * passQueued;
-    let ob = b * (1 - drop) + qb * passQueued;
-    if (def.cdnHitRate) {
-      oh *= 1 - def.cdnHitRate;
-      ob *= 1 - def.cdnHitRate;
-    }
+    const oh = h * (1 - drop) + qh * passQueued;
+    const ob = b * (1 - drop) + qb * passQueued;
 
     const children = outs.get(id) ?? [];
     const hasCache = def.forward === 'broadcast' && children.some((e) => SERVICES[byId.get(e.target)!.service].cache);
     for (const e of children) {
-      let share = def.forward === 'split' ? 1 / children.length : 1;
-      if (hasCache && CACHEABLE.includes(byId.get(e.target)!.service)) share *= 1 - CACHE_HIT;
+      const hit = def.cdnHitRate ?? (hasCache && CACHEABLE.includes(byId.get(e.target)!.service) ? CACHE_HIT : 0);
+      hitRate.set(e.id, hit);
+      const share = (def.forward === 'split' ? 1 / children.length : 1) * (1 - hit);
       edgeRes[e.id] = { flow: oh * share, bots: ob * share };
       add(e.target, oh * share, ob * share, !!def.queue);
     }
@@ -178,8 +177,10 @@ export function simulate(nodes: SimNode[], edges: SimEdge[], scale = 1): SimResu
   const memo = new Map<string, Outcome[]>();
   const visiting = new Set<string>();
 
-  const evalNode = (id: string, viaQueue: boolean): Outcome[] => {
-    const key = `${id}|${viaQueue}`;
+  // `cached`: the request is answered from a cached copy, so nothing from here on is asked and overloads don't
+  // apply. Dead ends still do, because there would be nothing to copy.
+  const evalNode = (id: string, viaQueue: boolean, cached: boolean): Outcome[] => {
+    const key = `${id}|${viaQueue}|${cached}`;
     const hit = memo.get(key);
     if (hit) return hit;
     const n = byId.get(id)!;
@@ -188,19 +189,25 @@ export function simulate(nodes: SimNode[], edges: SimEdge[], scale = 1): SimResu
     if (visiting.has(id)) return [{ p: 1, reached: new Set(base), fail: { kind: 'deadEnd', node: id } }];
     visiting.add(id);
 
+    // Requests sent along an edge: cache hits are served from a copy, the misses really travel it.
+    const along = (e: SimEdge): Outcome[] => {
+      const live = evalNode(e.target, !!def.queue, cached);
+      const hit = cached ? 0 : (hitRate.get(e.id) ?? 0);
+      if (!hit) return live;
+      return mergeOutcomes([...weigh(live, 1 - hit), ...weigh(evalNode(e.target, !!def.queue, true), hit)]);
+    };
+
     const children = outs.get(id) ?? [];
     let rest: Outcome[];
     if (!children.length) {
       rest = [{ p: 1, reached: new Set(), fail: def.answers ? undefined : { kind: 'deadEnd', node: id } }];
     } else if (def.forward === 'split') {
-      rest = children.flatMap((e) =>
-        evalNode(e.target, !!def.queue).map((o) => ({ ...o, p: o.p / children.length })),
-      );
+      rest = children.flatMap((e) => weigh(along(e), 1 / children.length));
     } else {
-      rest = children.map((e) => evalNode(e.target, !!def.queue)).reduce(product);
+      rest = children.map(along).reduce(product);
     }
 
-    const drop = viaQueue ? 0 : (dropRatio.get(id) ?? 0);
+    const drop = viaQueue || cached ? 0 : (dropRatio.get(id) ?? 0);
     const out: Outcome[] = rest.map((o) => ({ ...o, p: o.p * (1 - drop), reached: new Set([...o.reached, ...base]) }));
     if (drop > 0) out.push({ p: drop, reached: new Set(), fail: { kind: 'overload', node: id } });
 
@@ -224,7 +231,7 @@ export function simulate(nodes: SimNode[], edges: SimEdge[], scale = 1): SimResu
     if (!children.length) {
       fail({ kind: 'notConnected' }, demand);
     } else {
-      const outcomes = children.flatMap((e) => evalNode(e.target, false).map((o) => ({ ...o, p: o.p / children.length })));
+      const outcomes = children.flatMap((e) => weigh(evalNode(e.target, false, false), 1 / children.length));
       for (const o of outcomes) {
         if (o.fail) {
           fail(o.fail, o.p * demand);
@@ -242,6 +249,10 @@ export function simulate(nodes: SimNode[], edges: SimEdge[], scale = 1): SimResu
   const list = Object.values(sources);
   const success = list.length > 0 && list.every((s) => s.demand > 0 && s.ok >= s.demand * 0.999);
   return { nodes: nodeRes, edges: edgeRes, sources, success };
+}
+
+function weigh(list: Outcome[], k: number): Outcome[] {
+  return list.map((o) => ({ ...o, p: o.p * k }));
 }
 
 function product(a: Outcome[], b: Outcome[]): Outcome[] {

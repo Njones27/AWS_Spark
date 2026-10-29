@@ -1360,6 +1360,10 @@ img {
   background: var(--card);
   transition: transform 0.15s var(--ease-bounce), border-color 0.15s;
 }
+/* The Playground catalog scrolls: a vertical swipe scrolls it, a sideways drag pulls a piece onto the map. */
+.catalog .dock-item {
+  touch-action: pan-y;
+}
 .dock-item:hover:not(:disabled) {
   transform: translateY(-3px);
   border-color: var(--flow);
