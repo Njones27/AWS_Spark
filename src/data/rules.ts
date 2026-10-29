@@ -142,7 +142,7 @@ const MISTAKES: { from?: ServiceId[]; to?: ServiceId[]; simple: string; tech: st
   {
     from: ['users'],
     to: ['lambda'],
-    simple: 'People can’t poke a helper robot directly here. Put a front desk (API Gateway) in front of it.',
+    simple: 'People can’t reach a helper robot directly here. Put a front desk (API Gateway) in front of it.',
     tech: 'In this game, Lambda is reached through API Gateway or a load balancer. Function URLs exist, but they skip throttling and auth features.',
   },
   {

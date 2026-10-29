@@ -139,7 +139,7 @@ function LevelInner({ level }: { level: Level }) {
   let sparkyText = bt(level.goal, band);
   if (phase === 'running') {
     sparkyMood = 'think';
-    sparkyText = band === 'explorer' ? 'Here they come! Watch the dots…' : 'Here comes the traffic. Watch the meters!';
+    sparkyText = band === 'explorer' ? 'Here come the visitors! Watch the dots…' : 'Here comes the traffic. Watch the meters!';
   } else if (phase === 'fail' && problem) {
     sparkyMood = 'worried';
     sparkyText = problem.text;

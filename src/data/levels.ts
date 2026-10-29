@@ -67,7 +67,7 @@ export const LEVELS: Level[] = [
     teaches: ['s3'],
     intro: [
       { who: 'sparky', mood: 'cheer', text: 'Hi, I’m Sparky! Welcome to Maple Hollow. Baker Rosa runs Crumb & Co., the best bakery in town.' },
-      { who: 'rosa', text: 'I want everyone to see my cinnamon buns online! But where do I keep my website’s pictures and pages?' },
+      { who: 'rosa', text: 'I want the whole town to find my bakery online! But where do I keep my website’s pictures and pages?' },
       {
         who: 'sparky',
         mood: 'happy',
@@ -150,7 +150,7 @@ export const LEVELS: Level[] = [
     concept: 'CDN',
     teaches: ['cloudfront'],
     intro: [
-      { who: 'rosa', text: 'Great news! My cousin’s village across the sea wants to order buns too…' },
+      { who: 'rosa', text: 'Great news! My cousin’s village across the sea wants to order bread too…' },
       { who: 'rosa', text: '…but they say the website is sooo slow for them.' },
       {
         who: 'sparky',
@@ -204,7 +204,7 @@ export const LEVELS: Level[] = [
     concept: 'Serverless',
     teaches: ['apigw', 'lambda', 'dynamodb'],
     intro: [
-      { who: 'rosa', text: 'Customers want to ORDER buns online, not just look at pictures!' },
+      { who: 'rosa', text: 'Customers want to ORDER bread online, not just read the menu!' },
       {
         who: 'sparky',
         mood: 'happy',
@@ -294,7 +294,7 @@ export const LEVELS: Level[] = [
       text: {
         explorer: 'The Megaphone says it once, and everybody hears it.',
         builder: 'With SNS, the helper says it once and SNS delivers it to every subscriber. That’s called fan-out.',
-        architect: 'Pub/sub decouples publishers from subscribers. You can add email, SQS, or Lambda subscribers without touching the publisher.',
+        architect: 'Pub/sub decouples publishers from subscribers. You can add email, SQS, or Lambda subscribers without changing the publisher.',
       },
     },
     solution: {
@@ -314,7 +314,7 @@ export const LEVELS: Level[] = [
         who: 'sparky',
         mood: 'worried',
         text: {
-          explorer: 'Uh-oh. 150 people are coming, but one Cloud Computer can only help 50 at a time. Press Run to see what happens!',
+          explorer: 'Uh-oh. 150 people are on the way, but one Cloud Computer can only help 50 at a time. Press Run to see what happens!',
           builder: 'One EC2 server can handle about 50 visitors at a time, and 150 are on the way. Press Run and watch its meter!',
           architect: 'One EC2 instance tops out around 50 req/s for this app, and expected load is 150 req/s. Press Run, then scale out.',
         },
