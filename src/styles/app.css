@@ -1627,6 +1627,12 @@ img {
   flex-wrap: wrap;
   gap: 5px;
 }
+.chip-more {
+  padding: 3px 10px;
+  background: none;
+  border: 1px dashed var(--ink-soft);
+  color: var(--ink-soft);
+}
 
 /* ── style guide ─────────────────────────────────────────── */
 .styleguide {

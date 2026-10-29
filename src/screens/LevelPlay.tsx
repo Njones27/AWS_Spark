@@ -88,6 +88,11 @@ function LevelInner({ level }: { level: Level }) {
   const drop = useDropPiece(d.setNodes, zones.cloud, stop);
 
   const pieces = d.nodes.filter(isPiece);
+  // Pieces on hand: the tray, plus everything already on the map.
+  const available = useMemo(
+    () => [...new Set([...level.palette.map((p) => p.service), ...d.nodes.filter(isPiece).map((n) => n.data.service)])],
+    [level, d.nodes],
+  );
   const dock: DockItemSpec[] = level.palette.map((p) => ({
     service: p.service,
     left: p.count - pieces.filter((n) => !n.data.locked && n.data.service === p.service).length,
@@ -230,7 +235,12 @@ function LevelInner({ level }: { level: Level }) {
           </section>
 
           {selectedNode && (
-            <ServiceCard service={selectedNode.data.service} label={selectedNode.data.label} onClose={() => setSelected(null)} />
+            <ServiceCard
+              service={selectedNode.data.service}
+              label={selectedNode.data.label}
+              available={available}
+              onClose={() => setSelected(null)}
+            />
           )}
         </aside>
 
@@ -243,6 +253,7 @@ function LevelInner({ level }: { level: Level }) {
           sim={{ result: sim, running: phase === 'running' || phase === 'win' || phase === 'fail' }}
           onStructureChange={stop}
           onSelect={setSelected}
+          available={available}
         >
           <div className="canvas-dock">
             <PieceDock items={dock} onDrop={(service, at) => drop(service, at)} />

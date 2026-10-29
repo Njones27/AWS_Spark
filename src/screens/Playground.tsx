@@ -77,6 +77,12 @@ function PlaygroundInner() {
   const sim = useMemo(() => (running ? simulate(structure.nodes, structure.edges, 1) : null), [running, structure]);
 
   const pieces = d.nodes.filter(isPiece);
+  const catalog = useMemo(() => SERVICE_LIST.filter((s) => band !== 'explorer' || s.basic), [band]);
+  // Pieces on hand: this band's catalog, plus anything already on the map.
+  const available = useMemo(
+    () => [...new Set([...catalog.map((s) => s.id), ...d.nodes.filter(isPiece).map((n) => n.data.service)])],
+    [catalog, d.nodes],
+  );
   const selectedNode = pieces.find((n) => n.id === selected);
   const nameOf = (nid: string) => {
     const n = pieces.find((x) => x.id === nid);
@@ -88,11 +94,7 @@ function PlaygroundInner() {
   const problem = sim ? topProblem(sim, nameOf, band) : null;
 
   const q = query.trim().toLowerCase();
-  const visible = SERVICE_LIST.filter(
-    (s) =>
-      (band !== 'explorer' || s.basic) &&
-      (!q || [s.name, s.nickname, s.job].some((t) => t.toLowerCase().includes(q))),
-  );
+  const visible = catalog.filter((s) => !q || [s.name, s.nickname, s.job].some((t) => t.toLowerCase().includes(q)));
 
   const setSource = (id: string, patch: Partial<SourceSpec>) =>
     d.setNodes((ns) =>
@@ -151,6 +153,7 @@ function PlaygroundInner() {
           setEdges={d.setEdges}
           sim={{ result: sim, running }}
           onSelect={setSelected}
+          available={available}
         >
           <div className="canvas-dock canvas-dock-right">
             {running && totals && (
@@ -172,7 +175,12 @@ function PlaygroundInner() {
 
         {selectedNode && (
           <aside className="inspector">
-            <ServiceCard service={selectedNode.data.service} label={selectedNode.data.label} onClose={() => setSelected(null)} />
+            <ServiceCard
+              service={selectedNode.data.service}
+              label={selectedNode.data.label}
+              available={available}
+              onClose={() => setSelected(null)}
+            />
             {selectedNode.data.source && (
               <section className="source-controls">
                 <label>

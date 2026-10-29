@@ -61,10 +61,23 @@ interface Props {
   /** Called when arrows or pieces are added or removed (not when pieces are moved). */
   onStructureChange?: () => void;
   onSelect?: (id: string | null) => void;
+  /** The pieces that can be placed here (the tray plus the map). Rejection tips only suggest these. */
+  available?: ServiceId[];
   children?: ReactNode;
 }
 
-export function BuilderCanvas({ nodes, edges, onNodesChange, onEdgesChange, setEdges, sim, onStructureChange, onSelect, children }: Props) {
+export function BuilderCanvas({
+  nodes,
+  edges,
+  onNodesChange,
+  onEdgesChange,
+  setEdges,
+  sim,
+  onStructureChange,
+  onSelect,
+  available,
+  children,
+}: Props) {
   const band = useBand();
   const { getNode, getEdges, getInternalNode, flowToScreenPosition } = useReactFlow<AppNode, AppEdge>();
   const wrap = useRef<HTMLDivElement>(null);
@@ -164,10 +177,10 @@ export function BuilderCanvas({ nodes, edges, onNodesChange, onEdgesChange, setE
           t.id,
           'Hmm, those don’t fit together',
           band === 'architect' ? check.rejection.tech : check.rejection.simple,
-          check.rejection.suggestions,
+          check.rejection.suggestions.filter((sid) => !available || available.includes(sid)).slice(0, 4),
         );
     },
-    [pieceOf, getEdges, explainAt, band],
+    [pieceOf, getEdges, explainAt, band, available],
   );
 
   // Drag-to-connect: React Flow tells us where the arrow came from and (usually) where it landed.

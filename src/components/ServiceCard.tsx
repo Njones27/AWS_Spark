@@ -3,11 +3,21 @@ import { iconUrl, SERVICES } from '../data/services';
 import type { ServiceId } from '../data/types';
 import { useBand } from '../store';
 
+interface Props {
+  service: ServiceId;
+  label?: string;
+  /** The pieces that can be placed here (the tray plus the map). Targets outside it are only counted. */
+  available?: ServiceId[];
+  onClose?: () => void;
+}
+
 /** Info card for a selected piece: what it is, and what it can connect to. */
-export function ServiceCard({ service, label, onClose }: { service: ServiceId; label?: string; onClose?: () => void }) {
+export function ServiceCard({ service, label, available, onClose }: Props) {
   const band = useBand();
   const def = SERVICES[service];
-  const to = targetsOf(service, band === 'architect');
+  const all = targetsOf(service, band === 'architect');
+  const to = available ? all.filter((t) => available.includes(t)) : all;
+  const more = all.length - to.length;
   const short = (id: ServiceId) => (band === 'architect' ? SERVICES[id].name.replace(/^(Amazon|AWS) /, '') : SERVICES[id].nickname);
   return (
     <section className={`service-card cat-${def.category}`} aria-label={`${def.nickname} info`}>
@@ -39,8 +49,11 @@ export function ServiceCard({ service, label, onClose }: { service: ServiceId; l
                 {short(t)}
               </span>
             ))}
+            {more > 0 && <span className="chip chip-more">+{more} more</span>}
           </div>
         </div>
+      ) : all.length > 0 ? (
+        <p className="service-card-end">It can send arrows to other pieces, but none of them are in this tray.</p>
       ) : (
         <p className="service-card-end">🏁 This is an end stop. Arrows go in, but not out.</p>
       )}

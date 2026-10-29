@@ -208,9 +208,10 @@ for (const b of BADGES) {
 }
 
 // Every AWS service reports its health to CloudWatch, and CloudTrail records every change to it.
+// IAM is the exception for CloudWatch: it publishes no metrics, and its activity shows up in CloudTrail instead.
 for (const s of Object.values(SERVICES)) {
   if (s.category === 'town') continue;
-  if (s.id !== 'cloudwatch') {
+  if (s.id !== 'cloudwatch' && s.id !== 'iam') {
     TABLE.push([
       s.id,
       'cloudwatch',
@@ -240,9 +241,17 @@ export function findRule(from: ServiceId, to: ServiceId): Rule | undefined {
   return index.get(`${from}>${to}`);
 }
 
-/** Where `from` can send arrows. Monitor arrows (to CloudWatch and CloudTrail) are optional extras. */
+/** The pieces every AWS piece can send a monitor arrow to. */
+const MONITORS: ServiceId[] = ['cloudwatch', 'cloudtrail'];
+
+/**
+ * Where `from` can send arrows. The monitor arrows every piece can send to CloudWatch and CloudTrail are optional
+ * extras, so `includeMonitor = false` leaves them out (but keeps CloudTrail → S3, which is CloudTrail's real job).
+ */
 export function targetsOf(from: ServiceId, includeMonitor = true): ServiceId[] {
-  return RULES.filter((r) => r.from === from && (includeMonitor || r.kind !== 'monitor')).map((r) => r.to);
+  return RULES.filter((r) => r.from === from && (includeMonitor || r.kind !== 'monitor' || !MONITORS.includes(r.to))).map(
+    (r) => r.to,
+  );
 }
 
 export function sourcesOf(to: ServiceId): ServiceId[] {
@@ -253,7 +262,7 @@ export function sourcesOf(to: ServiceId): ServiceId[] {
 const MISTAKES: { from?: ServiceId[]; to?: ServiceId[]; simple: string; tech: string }[] = [
   {
     from: ['users'],
-    to: ['dynamodb', 'rds', 'elasticache'],
+    to: ['dynamodb', 'rds', 'aurora', 'elasticache', 'redshift', 'opensearch'],
     simple: 'People can’t reach into the database directly. That’s like customers walking into the bakery’s back office! Go through a front desk and a helper first.',
     tech: 'Databases sit behind an application tier. Clients go through API Gateway with Lambda, or a load balancer with servers.',
   },
@@ -286,7 +295,7 @@ const MISTAKES: { from?: ServiceId[]; to?: ServiceId[]; simple: string; tech: st
   {
     from: [
       'rds', 'aurora', 'elasticache', 'glacier', 'redshift', 'opensearch', 'rekognition', 'polly', 'translate', 'bedrock',
-      'sagemaker', 'transcribe', 'comprehend', 'textract', 'phone', 'cognito', 'cloudtrail',
+      'sagemaker', 'transcribe', 'comprehend', 'textract', 'phone', 'cognito',
     ],
     simple: 'This piece is an end stop. It answers questions, but it doesn’t send requests onward.',
     tech: 'This service is called by others and returns a response. It doesn’t invoke downstream targets.',
@@ -299,13 +308,23 @@ export interface Rejection {
   suggestions: ServiceId[];
 }
 
+/** Why `from → to` can't connect. `suggestions` lists every piece `from` can send to; callers pick the ones on hand. */
 export function explainRejection(from: ServiceId, to: ServiceId): Rejection {
-  const suggestions = targetsOf(from, false).slice(0, 4);
+  const a = SERVICES[from];
+  const b = SERVICES[to];
+  const back = findRule(to, from);
+  if (back) {
+    return {
+      simple: `This arrow points the wrong way. Try drawing it from the ${b.nickname} to the ${a.nickname}.`,
+      tech: `Draw it the other way: ${b.name} ${back.verb} ${a.name}.`,
+      suggestions: [],
+    };
+  }
+
+  const suggestions = targetsOf(from, false);
   const hit = MISTAKES.find((m) => (!m.from || m.from.includes(from)) && (!m.to || m.to.includes(to)));
   if (hit) return { simple: hit.simple, tech: hit.tech, suggestions };
 
-  const a = SERVICES[from];
-  const b = SERVICES[to];
   return {
     simple: `${a.nickname} ${a.job}. It doesn’t send things to the ${b.nickname}, which ${b.job.replace(/^are /, 'is ')}.`,
     tech: `${a.name} has no integration that sends requests to ${b.name}.`,
