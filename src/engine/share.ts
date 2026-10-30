@@ -35,9 +35,9 @@ export function encodeDesign(d: SavedDiagram): string {
   const packed: Packed = {
     v: 1,
     n: d.nodes.map((n) => {
-      const row: PieceRow = [n.service, Math.round(n.pos.x), Math.round(n.pos.y), n.label ?? '', n.source?.demand ?? 0, n.source?.bots ?? 0, n.note ?? ''];
-      // Trim empty values off the end of each row.
-      while (row.length > 3 && !row[row.length - 1]) row.pop();
+      const row: PieceRow = [n.service, Math.round(n.pos.x), Math.round(n.pos.y), n.label ?? '', n.source?.demand, n.source?.bots, n.note ?? ''];
+      // Trim unused values off the end of each row. A source's 0 is kept, so it doesn't come back as the default.
+      while (row.length > 3 && (row[row.length - 1] === '' || row[row.length - 1] === undefined)) row.pop();
       return row;
     }),
     e: d.edges.flatMap((e) => {

@@ -7,7 +7,7 @@ export function shareLink(d: SavedDiagram): string {
   return `${window.location.origin}${window.location.pathname}#/playground?d=${encodeDesign(d)}`;
 }
 
-function useEscape(onClose: () => void) {
+export function useEscape(onClose: () => void) {
   useEffect(() => {
     const esc = (e: KeyboardEvent) => e.key === 'Escape' && onClose();
     window.addEventListener('keydown', esc);

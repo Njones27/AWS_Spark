@@ -1,7 +1,8 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { iconUrl, SERVICES } from '../../data/services';
 import { STARTERS, type Starter } from '../../data/starters';
 import { Sparky } from '../art/Sparky';
+import { useEscape } from './ShareDialog';
 
 interface Props {
   onPick: (starter: Starter) => void;
@@ -13,11 +14,7 @@ export function StarterPicker({ onPick, onClose }: Props) {
   const [picked, setPicked] = useState<string>(STARTERS[1].id);
   const starter = STARTERS.find((s) => s.id === picked)!;
 
-  useEffect(() => {
-    const esc = (e: KeyboardEvent) => e.key === 'Escape' && onClose();
-    window.addEventListener('keydown', esc);
-    return () => window.removeEventListener('keydown', esc);
-  }, [onClose]);
+  useEscape(onClose);
 
   return (
     <div className="modal-backdrop" onClick={(e) => e.target === e.currentTarget && onClose()}>

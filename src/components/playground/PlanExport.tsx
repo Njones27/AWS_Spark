@@ -2,10 +2,11 @@ import { getNodesBounds, getViewportForBounds, useReactFlow } from '@xyflow/reac
 import { toPng } from 'html-to-image';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { findRule } from '../../data/rules';
-import { iconUrl, SERVICES } from '../../data/services';
+import { iconUrl, SERVICES, shortName } from '../../data/services';
 import type { Band, ServiceId } from '../../data/types';
 import type { PlanInfo } from '../../store';
 import type { AppEdge, PieceNode } from '../canvas/model';
+import { useEscape } from './ShareDialog';
 
 export const PLAN_SOURCES = 'Diagram made with Spark: Cloud Builders. Icons: AWS Architecture Icons, Amazon Web Services.';
 
@@ -85,11 +86,7 @@ export function PlanExport({ pieces, edges, plan, onPlan, band, onClose }: Props
       .catch(() => setMap(null));
   }, [getNodes]);
 
-  useEffect(() => {
-    const esc = (e: KeyboardEvent) => e.key === 'Escape' && onClose();
-    window.addEventListener('keydown', esc);
-    return () => window.removeEventListener('keydown', esc);
-  }, [onClose]);
+  useEscape(onClose);
 
   const copy = () => {
     const text = planText(plan, summary);
@@ -157,7 +154,7 @@ export function PlanExport({ pieces, edges, plan, onPlan, band, onClose }: Props
                         id={`plan-use-${service}`}
                         aria-label={`What ${SERVICES[service].name} does in our project`}
                         value={plan.uses[service] ?? ''}
-                        placeholder={`What does ${SERVICES[service].name.replace(/^(Amazon|AWS) /, '')} do for you?`}
+                        placeholder={`What does ${shortName(service)} do for you?`}
                         maxLength={120}
                         onChange={(e) => onPlan({ ...plan, uses: { ...plan.uses, [service]: e.target.value || undefined } })}
                       />

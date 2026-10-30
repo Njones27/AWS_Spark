@@ -103,7 +103,22 @@ function PlaygroundInner({ share }: { share?: string }) {
 
   const sources = pieces.filter((n) => n.data.source);
   const demand = sources.reduce((a, n) => a + (n.data.source?.demand ?? 0), 0);
-  const who = sources[0] ? displayName(sources[0].data).main : DEFAULT_TOWN_LABEL;
+  const groups = [...new Set(sources.map((n) => displayName(n.data).main))];
+  // One group is named; several groups together are just "people".
+  const who = groups.length === 1 ? groups[0] : 'people';
+  const questions = useMemo(
+    () =>
+      showJudge
+        ? judgeQuestions(
+            pieces.map((n) => ({ id: n.id, service: n.data.service, label: n.data.label, source: n.data.source })),
+            d.edges,
+            band,
+          )
+        : [],
+    // `pieces` is derived from d.nodes on every render, so depend on d.nodes itself.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [showJudge, d.nodes, d.edges, band],
+  );
 
   const setPiece = (id: string, patch: Partial<PieceData>) =>
     d.setNodes((ns) => ns.map((n) => (n.id === id && isPiece(n) ? { ...n, data: { ...n.data, ...patch } } : n)));
@@ -221,20 +236,13 @@ function PlaygroundInner({ share }: { share?: string }) {
         </BuilderCanvas>
 
         {showJudge && !selectedNode && (
-          <JudgePanel
-            questions={judgeQuestions(
-              pieces.map((n) => ({ id: n.id, service: n.data.service, label: n.data.label, source: n.data.source })),
-              d.edges,
-              band,
-            )}
-            onClose={() => setShowJudge(false)}
-          />
+          <JudgePanel questions={questions} onClose={() => setShowJudge(false)} />
         )}
         {selectedNode && (
           <aside className="inspector">
             <ServiceCard
               service={selectedNode.data.service}
-              label={selectedNode.data.label}
+              label={selectedNode.data.label || undefined}
               available={available}
               onClose={() => setSelected(null)}
             >
@@ -299,7 +307,7 @@ function PlaygroundInner({ share }: { share?: string }) {
         <StarterPicker
           onClose={() => setShowStarters(false)}
           onPick={(starter) => {
-            if (!isBlank(toSaved(d.nodes, d.edges)) && !window.confirm('Replace your map with this starter plan?')) return;
+            if (!isBlank(toSaved(d.nodes, d.edges, { plan, goal })) && !window.confirm('Replace your map with this starter plan?')) return;
             load(starter.diagram);
             setShowStarters(false);
           }}

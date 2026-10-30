@@ -23,7 +23,7 @@ export function ProjectNotes({ piece, onChange }: Props) {
           value={label ?? ''}
           placeholder={shortName(service)}
           maxLength={40}
-          onChange={(e) => onChange({ label: e.target.value || undefined })}
+          onChange={(e) => onChange({ label: e.target.value })}
         />
       </label>
       {!isTown && (

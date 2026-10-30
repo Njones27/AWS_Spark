@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { fromSaved, toSaved } from '../components/canvas/saved';
+import { fromSaved, isBlank, toSaved } from '../components/canvas/saved';
 import { isPiece } from '../components/canvas/model';
 import { alternativesOf, PICK_WHEN } from '../data/alternatives';
 import { findRule } from '../data/rules';
@@ -54,6 +54,14 @@ describe('saved playground', () => {
     expect(again.nodes).toEqual(saved.nodes);
     expect(again.plan).toEqual(saved.plan);
     expect(again.goal).toEqual(saved.goal);
+  });
+
+  it('leaves out plan notes for services no longer on the map, and treats written text as not blank', () => {
+    const { nodes, edges } = fromSaved({ nodes: [{ id: 'u', service: 'users', pos: { x: 0, y: 0 } }], edges: [] });
+    const saved = toSaved(nodes, edges, { plan: { title: '', uses: { rds: 'Old note' } } });
+    expect(saved.plan?.uses).toEqual({});
+    expect(isBlank(saved)).toBe(true);
+    expect(isBlank(toSaved(nodes, edges, { goal: { what: 'sign up' } }))).toBe(false);
   });
 
   it('drops arrows that are not allowed connections', () => {
@@ -116,6 +124,11 @@ describe('share links', () => {
     ]);
     expect(back.plan).toEqual(design.plan);
     expect(back.goal).toEqual(design.goal);
+  });
+
+  it('keeps a visitor count of 0 instead of bringing back the default', () => {
+    const back = decodeDesign(encodeDesign({ nodes: [{ id: 'u', service: 'users', pos: { x: 0, y: 0 }, source: { demand: 0 } }], edges: [] }))!;
+    expect(back.nodes[0].source?.demand).toBe(0);
   });
 
   it('returns null for codes that are not a Spark design', () => {
