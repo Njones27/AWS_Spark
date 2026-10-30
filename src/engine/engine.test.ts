@@ -2,9 +2,10 @@ import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { LEVELS } from '../data/levels';
-import { RULES, explainRejection, findRule } from '../data/rules';
-import { SERVICE_LIST } from '../data/services';
+import { RULES, explainRejection, findRule, targetsOf } from '../data/rules';
+import { SERVICE_LIST, SERVICES } from '../data/services';
 import type { ServiceId } from '../data/types';
+import { badgesFor } from './badges';
 import { levelSolved, levelStart } from './levelGraph';
 import { simulate } from './simulate';
 import { checkConnection, wouldCreateCycle } from './validate';
@@ -46,10 +47,68 @@ describe('data', () => {
   });
 
   it('explains rejected connections with a reason and suggestions', () => {
-    const r = explainRejection('s3', 'route53');
+    const r = explainRejection('s3', 'rds');
     expect(r.simple.length).toBeGreaterThan(10);
     expect(r.suggestions.length).toBeGreaterThan(0);
     expect(explainRejection('users', 'rds').simple).toMatch(/database/);
+    expect(explainRejection('iam', 's3').simple).toMatch(/badge/);
+    expect(explainRejection('lambda', 'users').suggestions).not.toContain('cloudwatch');
+  });
+
+  it('says how to flip a backwards arrow', () => {
+    expect(explainRejection('lambda', 'iam').simple).toMatch(/wrong way.*from the Key Keeper to the Helper Robot/);
+    expect(explainRejection('rds', 'lambda').tech).toBe('Draw it the other way: AWS Lambda saves to Amazon RDS.');
+  });
+
+  it('gives every database the "can’t reach the database" message', () => {
+    for (const db of ['dynamodb', 'rds', 'aurora', 'elasticache', 'redshift', 'opensearch'] as ServiceId[]) {
+      expect(explainRejection('users', db).simple, db).toMatch(/database/);
+    }
+  });
+
+  it('only treats the arrows into CloudWatch and CloudTrail as optional extras', () => {
+    expect(targetsOf('lambda', false)).not.toContain('cloudwatch');
+    expect(targetsOf('lambda', false)).not.toContain('cloudtrail');
+    expect(targetsOf('cloudtrail', false)).toEqual(['s3']);
+    expect(findRule('iam', 'cloudwatch')).toBeUndefined(); // IAM publishes no CloudWatch metrics
+    expect(findRule('kms', 'cloudwatch')).toBeDefined();
+  });
+
+  it('gives every service a real connection, not just monitor arrows', () => {
+    for (const s of SERVICE_LIST) {
+      // CloudTrail is all monitoring: every piece's changes come in, and the logbook goes out to S3.
+      if (s.id === 'cloudtrail') continue;
+      expect(RULES.some((r) => r.kind !== 'monitor' && (r.from === s.id || r.to === s.id)), s.id).toBe(true);
+    }
+  });
+
+  it('never lets a badge service carry requests', () => {
+    for (const r of RULES) if (SERVICES[r.from].badge) expect(r.kind, `${r.from} -> ${r.to}`).not.toBe('data');
+  });
+});
+
+describe('badges', () => {
+  it('pins badge services on the pieces they point at, and nothing else', () => {
+    const n = (id: string, service: ServiceId) => ({ id, service });
+    const nodes = [
+      n('role', 'iam'),
+      n('fn', 'lambda'),
+      n('gw', 'apigw'),
+      n('tags', 'cognito'),
+      n('asg', 'autoscaling'),
+      n('vm', 'ec2'),
+      n('key', 'kms'),
+      n('db', 'dynamodb'),
+    ];
+    const edges = [
+      { source: 'role', target: 'fn' },
+      { source: 'role', target: 'fn' }, // a repeat shows once
+      { source: 'gw', target: 'tags' }, // a control arrow, but API Gateway isn't a badge service
+      { source: 'asg', target: 'vm' },
+      { source: 'key', target: 'db' },
+      { source: 'fn', target: 'db' }, // a data arrow
+    ];
+    expect(badgesFor(nodes, edges)).toEqual({ fn: ['iam'], vm: ['autoscaling'], db: ['kms'] });
   });
 });
 
@@ -215,6 +274,78 @@ describe('simulate', () => {
       [{ id: 'e', source: 'u', target: 'a' }],
     );
     expect(res.sources.u.failures[0].reason).toEqual({ kind: 'deadEnd', node: 'a' });
+  });
+
+  /** Townsfolk → s0 → s1 → … as a straight line. */
+  const line = (services: ServiceId[], demand = 10) => {
+    const ids = ['u', ...services.map((_, i) => `s${i}`)];
+    return {
+      nodes: [{ id: 'u', service: 'users' as ServiceId, source: { demand } }, ...services.map((service, i) => ({ id: `s${i}`, service }))],
+      edges: ids.slice(1).map((id, i) => ({ id: `e${i}`, source: ids[i], target: id })),
+    };
+  };
+
+  it('badges never change loads, capacity, or whether requests finish', () => {
+    // Level 6 starts with an overloaded EC2, so a badge that quietly added capacity would show up here.
+    for (const g of [levelSolved(byId('l4')), levelStart(byId('l6'))]) {
+      const nodes = [...g.nodes];
+      const edges = [...g.edges];
+      for (const n of g.nodes) {
+        for (const b of SERVICE_LIST) {
+          // Auto Scaling is the one badge that changes capacity (tested with level 6 above).
+          if (!b.badge || b.id === 'autoscaling' || !findRule(b.id, n.service)) continue;
+          nodes.push({ id: `${b.id}-${n.id}`, service: b.id });
+          edges.push({ id: `${b.id}-${n.id}-arrow`, source: `${b.id}-${n.id}`, target: n.id });
+        }
+      }
+      expect(Object.keys(badgesFor(nodes, edges)).length).toBeGreaterThan(0);
+      const plain = simulate(g.nodes, g.edges);
+      const badged = simulate(nodes, edges);
+      expect(badged.sources).toEqual(plain.sources);
+      for (const id of Object.keys(plain.nodes)) expect(badged.nodes[id], id).toEqual(plain.nodes[id]);
+    }
+  });
+
+  it('an AI agent needs something to think with', () => {
+    const alone = line(['apigw', 'lambda', 'agentcore']);
+    expect(simulate(alone.nodes, alone.edges).sources.u.failures[0].reason).toEqual({ kind: 'deadEnd', node: 's2' });
+    const thinking = line(['apigw', 'lambda', 'agentcore', 'bedrock']);
+    expect(simulate(thinking.nodes, thinking.edges).success).toBe(true);
+  });
+
+  it('the data hose needs somewhere to deliver', () => {
+    const alone = line(['apigw', 'firehose']);
+    expect(simulate(alone.nodes, alone.edges).sources.u.failures[0].reason).toEqual({ kind: 'deadEnd', node: 's1' });
+    const delivered = line(['apigw', 'firehose', 's3']);
+    expect(simulate(delivered.nodes, delivered.edges).success).toBe(true);
+  });
+
+  it('ElastiCache takes reads off Aurora too', () => {
+    const g = line(['apigw', 'lambda', 'aurora'], 200);
+    const res = simulate(
+      [...g.nodes, { id: 'c', service: 'elasticache' }],
+      [...g.edges, { id: 'cache', source: 's1', target: 'c' }],
+    );
+    expect(res.nodes.s2.load).toBeCloseTo(40);
+    expect(res.success).toBe(true);
+  });
+
+  it('a load balancer shares visitors across container crews', () => {
+    const res = simulate(
+      [
+        { id: 'u', service: 'users', source: { demand: 150 } },
+        { id: 'lb', service: 'elb' },
+        { id: 'a', service: 'ecs' },
+        { id: 'b', service: 'ecs' },
+      ],
+      [
+        { id: '1', source: 'u', target: 'lb' },
+        { id: '2', source: 'lb', target: 'a' },
+        { id: '3', source: 'lb', target: 'b' },
+      ],
+    );
+    expect(res.nodes.a.load).toBeCloseTo(75);
+    expect(res.success).toBe(true);
   });
 
   it('ramps with scale', () => {

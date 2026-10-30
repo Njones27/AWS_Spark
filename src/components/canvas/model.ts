@@ -96,8 +96,10 @@ export const useSim = () => useContext(SimContext);
 
 export interface UiState {
   wiggleId: string | null;
+  /** Badge services pinned on each piece, by node id. */
+  badges: Record<string, ServiceId[]>;
 }
-export const UiContext = createContext<UiState>({ wiggleId: null });
+export const UiContext = createContext<UiState>({ wiggleId: null, badges: {} });
 export const useUi = () => useContext(UiContext);
 
 // ── floating-edge geometry (from the React Flow "easy connect" example) ──

@@ -6,7 +6,7 @@ import type { ServiceId, SourceSpec } from '../data/types';
 export const CACHE_HIT = 0.8;
 /** How much extra capacity an Auto Scaling group gives an EC2 piece. */
 export const AUTOSCALE_FACTOR = 4;
-const CACHEABLE: ServiceId[] = ['rds', 'dynamodb'];
+const CACHEABLE: ServiceId[] = ['rds', 'aurora', 'dynamodb'];
 
 export interface SimNode {
   id: string;

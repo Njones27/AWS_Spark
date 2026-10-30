@@ -1,5 +1,6 @@
 import { Handle, Position, useReactFlow, type NodeProps } from '@xyflow/react';
 import { memo } from 'react';
+import { findRule } from '../../data/rules';
 import { iconUrl, SERVICES } from '../../data/services';
 import type { Band } from '../../data/types';
 import type { NodeResult } from '../../engine/simulate';
@@ -40,7 +41,7 @@ function Meter({ r, band }: { r: NodeResult; band: Band }) {
 function PieceNodeView({ id, data, selected }: NodeProps<PieceNodeType>) {
   const band = useBand();
   const { result } = useSim();
-  const { wiggleId } = useUi();
+  const { wiggleId, badges } = useUi();
   const { deleteElements } = useReactFlow();
   const def = SERVICES[data.service];
   const names = displayName(data, band);
@@ -64,6 +65,15 @@ function PieceNodeView({ id, data, selected }: NodeProps<PieceNodeType>) {
       <div className="piece-tile">
         <img src={iconUrl(data.service)} alt="" draggable={false} />
         {data.source?.far && <span className="piece-badge badge-far" title="Far away">🌊 far</span>}
+        {badges[id] && (
+          <span className="piece-badges">
+            {badges[id].map((b) => {
+              const giver = displayName({ service: b }, band).main;
+              const label = `${giver} ${findRule(b, data.service)?.verb ?? 'helps'} this piece`;
+              return <img key={b} src={iconUrl(b)} alt={label} title={label} draggable={false} />;
+            })}
+          </span>
+        )}
       </div>
       <div className="piece-name">{names.main}</div>
       {names.sub && <div className="piece-sub">{names.sub}</div>}
