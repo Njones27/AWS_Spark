@@ -1986,3 +1986,40 @@ img {
   font-size: 14px;
   font-weight: 600;
 }
+
+/* ── story chapters ──────────────────────────────────────── */
+.chapter-list {
+  display: grid;
+  gap: 6px;
+  background: var(--card);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-sm);
+  padding: 8px;
+}
+.chapter-link {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 10px;
+  align-items: center;
+  padding: 8px 10px;
+  border-radius: var(--r-sm);
+  color: var(--ink);
+  text-decoration: none;
+  font-size: 13.5px;
+}
+.chapter-link strong {
+  display: block;
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 15px;
+}
+.chapter-link:hover {
+  background: var(--paper);
+}
+.chapter-link.is-current {
+  background: var(--sun-soft);
+}
+.chapter-link.is-locked {
+  color: var(--ink-faint);
+  cursor: not-allowed;
+}

@@ -1,4 +1,5 @@
 import { ADVANCED } from './data/advanced';
+import { CHAPTER_2 } from './data/chapter2';
 import { CHAPTER_1 } from './data/levels';
 import { Home } from './screens/Home';
 import { LevelMap } from './screens/LevelMap';
@@ -11,7 +12,7 @@ export function App() {
   const route = useRoute();
   switch (route.name) {
     case 'map':
-      return <LevelMap chapter={CHAPTER_1} />;
+      return <LevelMap chapter={route.chapter === 'ch2' ? CHAPTER_2 : CHAPTER_1} />;
     case 'advanced':
       return <LevelMap chapter={ADVANCED} />;
     case 'level':

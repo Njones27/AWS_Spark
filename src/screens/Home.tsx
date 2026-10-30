@@ -2,7 +2,8 @@ import { TownScene } from '../components/art/Scenery';
 import { Sparky } from '../components/art/Sparky';
 import { BandPicker, BandSwitch } from '../components/Chrome';
 import { ADVANCED } from '../data/advanced';
-import { CHAPTER, LEVELS } from '../data/levels';
+import { STORY } from '../data/chapters';
+import { CHAPTER } from '../data/levels';
 import { iconUrl, SERVICE_LIST } from '../data/services';
 import { href } from '../router';
 import { useApp } from '../store';
@@ -10,7 +11,10 @@ import { useApp } from '../store';
 export function Home() {
   const band = useApp((s) => s.band);
   const completed = useApp((s) => s.completed);
-  const done = completed.filter((id) => LEVELS.some((l) => l.id === id)).length;
+  const storyLevels = STORY.flatMap((c) => c.levels);
+  const done = completed.filter((id) => storyLevels.some((l) => l.id === id)).length;
+  // Story Mode opens the first chapter that isn't finished.
+  const current = STORY.find((c) => !c.levels.every((l) => completed.includes(l.id))) ?? STORY[STORY.length - 1];
   const advDone = completed.filter((id) => ADVANCED.levels.some((l) => l.id === id)).length;
   return (
     <div className="home">
@@ -30,17 +34,17 @@ export function Home() {
           <p>Connect real AWS services, watch requests flow, and help a little town go online.</p>
         </div>
         <nav className="home-cards" aria-label="Choose a mode">
-          <a className="mode-card mode-story" href={href.map}>
+          <a className="mode-card mode-story" href={href.chapter(current.id)}>
             <span className="mode-icon" aria-hidden="true">📖</span>
             <span className="mode-text">
               <strong>Story Mode</strong>
-              <span>{CHAPTER.blurb}</span>
-              <span className="progress" aria-label={`${done} of ${LEVELS.length} levels done`}>
+              <span>{current === STORY[0] ? CHAPTER.blurb : current.blurb}</span>
+              <span className="progress" aria-label={`${done} of ${storyLevels.length} levels done`}>
                 <span className="progress-bar">
-                  <span style={{ width: `${(done / LEVELS.length) * 100}%` }} />
+                  <span style={{ width: `${(done / storyLevels.length) * 100}%` }} />
                 </span>
                 <span className="progress-num">
-                  {done}/{LEVELS.length}
+                  {done}/{storyLevels.length}
                 </span>
               </span>
             </span>
