@@ -155,7 +155,7 @@ function LevelInner({ level }: { level: Level }) {
   const next = chapter.levels[chapter.levels.indexOf(level) + 1];
   // After a story chapter's last level, the next story chapter (if any) is the next stop.
   const story = STORY.indexOf(chapter);
-  const nextChapter = next || story < 0 ? undefined : STORY[story + 1];
+  const nextChapter = (next || story < 0) ? undefined : STORY[story + 1];
   const selectedNode = pieces.find((n) => n.id === selected);
   const sources = pieces.filter((n) => n.data.source);
 

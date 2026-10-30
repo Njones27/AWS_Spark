@@ -2026,8 +2026,16 @@ img {
   cursor: not-allowed;
 }
 @media (max-width: 600px) {
-  /* The map is too small for every stop's name; the numbered stops stay tappable and the sidebar names the next one. */
+  /* The map is too small to show every stop's name, so the names are hidden visually but still read by screen readers.
+     The numbered stops stay tappable, and the sidebar names the next one. */
   .stop-label {
-    display: none;
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    clip-path: inset(50%);
+    white-space: nowrap;
+    padding: 0;
   }
 }
