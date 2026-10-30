@@ -1545,8 +1545,14 @@ img {
   max-height: calc(100% - 62px);
   overflow-y: auto;
   z-index: 15;
+  /* The padding is see-through, so let clicks there reach the map. The cards themselves stay clickable, and wheel
+     and touch scrolling over a card still scroll the panel. */
+  pointer-events: none;
   display: grid;
   gap: 10px;
+}
+.inspector > * {
+  pointer-events: auto;
 }
 .source-controls {
   background: var(--card);
