@@ -1,3 +1,5 @@
+import { ADVANCED } from './data/advanced';
+import { CHAPTER_1 } from './data/levels';
 import { Home } from './screens/Home';
 import { LevelMap } from './screens/LevelMap';
 import { LevelPlay } from './screens/LevelPlay';
@@ -9,7 +11,9 @@ export function App() {
   const route = useRoute();
   switch (route.name) {
     case 'map':
-      return <LevelMap />;
+      return <LevelMap chapter={CHAPTER_1} />;
+    case 'advanced':
+      return <LevelMap chapter={ADVANCED} />;
     case 'level':
       return <LevelPlay id={route.id} />;
     case 'playground':

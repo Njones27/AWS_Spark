@@ -4,6 +4,7 @@ import { useSyncExternalStore } from 'react';
 export type Route =
   | { name: 'home' }
   | { name: 'map' }
+  | { name: 'advanced' }
   | { name: 'level'; id: string }
   | { name: 'playground' }
   | { name: 'styleguide' };
@@ -13,6 +14,8 @@ function parse(hash: string): Route {
   switch (parts[0]) {
     case 'levels':
       return { name: 'map' };
+    case 'advanced':
+      return { name: 'advanced' };
     case 'level':
       return parts[1] ? { name: 'level', id: parts[1] } : { name: 'map' };
     case 'playground':
@@ -37,6 +40,8 @@ export function useRoute(): Route {
 export const href = {
   home: '#/',
   map: '#/levels',
+  advanced: '#/advanced',
+  chapter: (id: string) => (id === 'adv' ? '#/advanced' : '#/levels'),
   level: (id: string) => `#/level/${id}`,
   playground: '#/playground',
   styleguide: '#/styleguide',

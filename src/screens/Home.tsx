@@ -1,6 +1,7 @@
 import { TownScene } from '../components/art/Scenery';
 import { Sparky } from '../components/art/Sparky';
 import { BandPicker, BandSwitch } from '../components/Chrome';
+import { ADVANCED } from '../data/advanced';
 import { CHAPTER, LEVELS } from '../data/levels';
 import { iconUrl, SERVICE_LIST } from '../data/services';
 import { href } from '../router';
@@ -8,7 +9,9 @@ import { useApp } from '../store';
 
 export function Home() {
   const band = useApp((s) => s.band);
-  const done = useApp((s) => s.completed.filter((id) => LEVELS.some((l) => l.id === id)).length);
+  const completed = useApp((s) => s.completed);
+  const done = completed.filter((id) => LEVELS.some((l) => l.id === id)).length;
+  const advDone = completed.filter((id) => ADVANCED.levels.some((l) => l.id === id)).length;
   return (
     <div className="home">
       <TownScene />
@@ -38,6 +41,24 @@ export function Home() {
                 </span>
                 <span className="progress-num">
                   {done}/{LEVELS.length}
+                </span>
+              </span>
+            </span>
+            <span className="mode-go" aria-hidden="true">›</span>
+          </a>
+          <a className="mode-card mode-advanced" href={href.advanced}>
+            <span className="mode-icon" aria-hidden="true">🎓</span>
+            <span className="mode-text">
+              <strong>
+                Advanced Track <span className="mode-tag">College & up</span>
+              </strong>
+              <span>On call at Crumb & Co.: real incidents, monthly budgets, and security reviews.</span>
+              <span className="progress" aria-label={`${advDone} of ${ADVANCED.levels.length} tickets done`}>
+                <span className="progress-bar">
+                  <span style={{ width: `${(advDone / ADVANCED.levels.length) * 100}%` }} />
+                </span>
+                <span className="progress-num">
+                  {advDone}/{ADVANCED.levels.length}
                 </span>
               </span>
             </span>
