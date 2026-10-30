@@ -1888,3 +1888,25 @@ img {
     padding: 20px 22px;
   }
 }
+
+/* Hover explanation for a service (ServiceTip.tsx) */
+.service-tip {
+  position: fixed;
+  z-index: 1100;
+  max-width: min(280px, calc(100vw - 24px));
+  display: grid;
+  gap: 2px;
+  padding: 10px 12px;
+  border-radius: var(--r-sm);
+  background: var(--ink);
+  color: var(--card);
+  font-size: 13px;
+  line-height: 1.45;
+  box-shadow: var(--shadow-md);
+  pointer-events: none;
+}
+.service-tip strong {
+  font-family: var(--font-display);
+  font-size: 14px;
+  font-weight: 600;
+}

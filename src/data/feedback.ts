@@ -1,5 +1,5 @@
 import type { FailReason, SimResult } from '../engine/simulate';
-import { SERVICES } from './services';
+import { SERVICES, shortName } from './services';
 import type { Band, ServiceId } from './types';
 
 type Namer = (nodeId: string) => { name: string; service: ServiceId } | undefined;
@@ -33,14 +33,14 @@ export function explainFailure(reason: FailReason, sourceName: string, res: SimR
         const s = SERVICES[reason.need];
         if (reason.need === 'route53')
           return simple
-            ? `${sourceName} can’t find the website! They need to look up the address in the ${s.nickname} (Route 53).`
+            ? `${sourceName} can’t find the website! They need to look up the address in Route 53.`
             : `${sourceName} never resolves the domain through Route 53.`;
         if (reason.need === 'cloudfront')
           return simple
-            ? `It’s too slow for ${sourceName}. They’re far away and need the ${s.nickname} (CloudFront).`
+            ? `It’s too slow for ${sourceName}. They’re far away and need CloudFront.`
             : `${sourceName} is far from the origin. Serve them through CloudFront.`;
         return simple
-          ? `Requests from ${sourceName} never reach the ${s.nickname}.`
+          ? `Requests from ${sourceName} never reach ${shortName(reason.need)}.`
           : `Requests from ${sourceName} never reach ${s.name}.`;
       }
       const n = nameOf(reason.need);

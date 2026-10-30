@@ -86,7 +86,7 @@ function PlaygroundInner() {
   const selectedNode = pieces.find((n) => n.id === selected);
   const nameOf = (nid: string) => {
     const n = pieces.find((x) => x.id === nid);
-    return n ? { name: displayName(n.data, band).main, service: n.data.service } : undefined;
+    return n ? { name: displayName(n.data).main, service: n.data.service } : undefined;
   };
   const totals = sim
     ? Object.values(sim.sources).reduce((a, s) => ({ ok: a.ok + s.ok, demand: a.demand + s.demand }), { ok: 0, demand: 0 })
@@ -94,7 +94,7 @@ function PlaygroundInner() {
   const problem = sim ? topProblem(sim, nameOf, band) : null;
 
   const q = query.trim().toLowerCase();
-  const visible = catalog.filter((s) => !q || [s.name, s.nickname, s.job].some((t) => t.toLowerCase().includes(q)));
+  const visible = catalog.filter((s) => !q || [s.name, s.job].some((t) => t.toLowerCase().includes(q)));
 
   const setSource = (id: string, patch: Partial<SourceSpec>) =>
     d.setNodes((ns) =>
