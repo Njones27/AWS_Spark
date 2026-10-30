@@ -2472,16 +2472,28 @@ img {
   .share-dialog {
     padding: 20px 18px;
   }
+  /* The goal sits at the top of the map so it never covers the run summary next to the Run button. */
   .goal-card {
-    bottom: 84px;
+    top: 10px;
+    bottom: auto;
+    left: 10px;
+    width: calc(100% - 72px);
+    padding: 8px 10px;
+  }
+  .canvas-dock-right .run-summary {
+    max-width: calc(100vw - 180px);
+    padding: 6px 10px;
+  }
+  .canvas-dock-right .run-summary .sparky {
+    display: none;
   }
   .goal-hint {
     display: none;
   }
   /* Phones: the piece list sits above the map instead of beside it, and side panels use the full width. */
   .play-body {
-    grid-template-columns: 1fr;
-    grid-template-rows: 160px 1fr;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: 120px minmax(0, 1fr);
   }
   .catalog {
     border-right: none;
