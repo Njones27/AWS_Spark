@@ -1,0 +1,65 @@
+import { TownScene } from '../components/art/Scenery';
+import { Sparky } from '../components/art/Sparky';
+import { BandPicker, BandSwitch } from '../components/Chrome';
+import { CHAPTER, LEVELS } from '../data/levels';
+import { iconUrl } from '../data/services';
+import { href } from '../router';
+import { useApp } from '../store';
+
+export function Home() {
+  const band = useApp((s) => s.band);
+  const done = useApp((s) => s.completed.filter((id) => LEVELS.some((l) => l.id === id)).length);
+  return (
+    <div className="home">
+      <TownScene />
+      <div className="home-top">
+        <span className="wordmark">
+          <span className="wordmark-spark" aria-hidden="true">⚡</span> Spark
+        </span>
+        <BandSwitch />
+      </div>
+      <main className="home-hero">
+        <div className="home-title">
+          <Sparky mood="cheer" size={120} />
+          <h1>
+            Spark <span>Cloud Builders</span>
+          </h1>
+          <p>Connect real AWS services, watch requests flow, and help a little town go online.</p>
+        </div>
+        <nav className="home-cards" aria-label="Choose a mode">
+          <a className="mode-card mode-story" href={href.map}>
+            <span className="mode-icon" aria-hidden="true">📖</span>
+            <span className="mode-text">
+              <strong>Story Mode</strong>
+              <span>{CHAPTER.blurb}</span>
+              <span className="progress" aria-label={`${done} of ${LEVELS.length} levels done`}>
+                <span className="progress-bar">
+                  <span style={{ width: `${(done / LEVELS.length) * 100}%` }} />
+                </span>
+                <span className="progress-num">
+                  {done}/{LEVELS.length}
+                </span>
+              </span>
+            </span>
+            <span className="mode-go" aria-hidden="true">›</span>
+          </a>
+          <a className="mode-card mode-play" href={href.playground}>
+            <span className="mode-icon" aria-hidden="true">
+              <img src={iconUrl('lambda')} alt="" />
+            </span>
+            <span className="mode-text">
+              <strong>Playground</strong>
+              <span>Build anything with 26 pieces. Only connections that make sense will snap together!</span>
+            </span>
+            <span className="mode-go" aria-hidden="true">›</span>
+          </a>
+        </nav>
+      </main>
+      <footer className="home-foot">
+        <a href={href.styleguide}>Style guide</a>
+        <span>AWS service icons © Amazon Web Services, used for teaching. Not affiliated with or endorsed by AWS.</span>
+      </footer>
+      {!band && <BandPicker />}
+    </div>
+  );
+}
