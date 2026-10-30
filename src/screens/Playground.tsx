@@ -169,7 +169,9 @@ function PlaygroundInner({ share }: { share?: string }) {
           title="Our AWS plan"
           aria-label="Our AWS plan"
           onClick={() => {
+            // Clear the selection so the map picture doesn't show a highlighted piece and its ✕ button.
             setSelected(null);
+            d.setNodes((ns) => ns.map((n) => (n.selected ? { ...n, selected: false } : n)));
             setShowPlan(true);
           }}
         >

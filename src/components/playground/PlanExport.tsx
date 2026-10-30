@@ -71,19 +71,23 @@ export function PlanExport({ pieces, edges, plan, onPlan, band, onClose }: Props
   const [status, setStatus] = useState<string>('');
   const summary = useMemo(() => summarizePlan(pieces, edges, band), [pieces, edges, band]);
 
-  // Draw the map once when the card opens, the same way React Flow's "download image" example does.
+  // Draw the map once when the card opens, the same way React Flow's "download image" example does. Wait a frame first,
+  // so a selection cleared just before opening is gone from the map too.
   useEffect(() => {
-    const viewport = document.querySelector<HTMLElement>('.react-flow__viewport');
-    if (!viewport) return;
-    const v = getViewportForBounds(getNodesBounds(getNodes()), PIC_W, PIC_H, 0.2, 2, 0.06);
-    toPng(viewport, {
-      backgroundColor: '#f7f2e8',
-      width: PIC_W,
-      height: PIC_H,
-      style: { width: `${PIC_W}px`, height: `${PIC_H}px`, transform: `translate(${v.x}px, ${v.y}px) scale(${v.zoom})` },
-    })
-      .then(setMap)
-      .catch(() => setMap(null));
+    const frame = requestAnimationFrame(() => {
+      const viewport = document.querySelector<HTMLElement>('.react-flow__viewport');
+      if (!viewport) return;
+      const v = getViewportForBounds(getNodesBounds(getNodes()), PIC_W, PIC_H, 0.2, 2, 0.06);
+      toPng(viewport, {
+        backgroundColor: '#f7f2e8',
+        width: PIC_W,
+        height: PIC_H,
+        style: { width: `${PIC_W}px`, height: `${PIC_H}px`, transform: `translate(${v.x}px, ${v.y}px) scale(${v.zoom})` },
+      })
+        .then(setMap)
+        .catch(() => setMap(null));
+    });
+    return () => cancelAnimationFrame(frame);
   }, [getNodes]);
 
   useEscape(onClose);
@@ -116,70 +120,72 @@ export function PlanExport({ pieces, edges, plan, onPlan, band, onClose }: Props
         <button className="icon-btn plan-close" aria-label="Close" onClick={onClose}>
           ✕
         </button>
-        <div className="plan-card" ref={card}>
-          <p className="eyebrow">Ready for your pitch</p>
-          <h2 id="plan-title" className="plan-heading">
-            Our AWS plan:{' '}
-            <input
-              id="plan-title-input"
-              aria-label="Project name"
-              value={plan.title}
-              placeholder="Name your project"
-              maxLength={60}
-              onChange={(e) => onPlan({ ...plan, title: e.target.value })}
-            />
-          </h2>
-          <div className="plan-map">
-            {map ? <img src={map} alt="Your map in Spark" /> : <span className="muted small">Drawing your map…</span>}
-          </div>
-          {summary.services.length === 0 ? (
-            <p className="muted">Add some AWS pieces to your map, and they’ll show up here.</p>
-          ) : (
-            <table className="plan-table">
-              <thead>
-                <tr>
-                  <th>Service</th>
-                  <th>What it does in our project</th>
-                </tr>
-              </thead>
-              <tbody>
-                {summary.services.map(({ service, notes }) => (
-                  <tr key={service}>
-                    <td className="plan-service">
-                      <img src={iconUrl(service)} alt="" />
-                      {SERVICES[service].name}
-                    </td>
-                    <td>
-                      <input
-                        id={`plan-use-${service}`}
-                        aria-label={`What ${SERVICES[service].name} does in our project`}
-                        value={plan.uses[service] ?? ''}
-                        placeholder={`What does ${shortName(service)} do for you?`}
-                        maxLength={120}
-                        onChange={(e) => onPlan({ ...plan, uses: { ...plan.uses, [service]: e.target.value || undefined } })}
-                      />
-                      {notes.map((n, i) => (
-                        <p key={i} className="plan-why">
-                          <strong>Why we chose it:</strong> {n}
-                        </p>
-                      ))}
-                    </td>
+        <div className="modal-scroll">
+          <div className="plan-card" ref={card}>
+            <p className="eyebrow">Ready to share?</p>
+            <h2 id="plan-title" className="plan-heading">
+              Our AWS plan:{' '}
+              <input
+                id="plan-title-input"
+                aria-label="Project name"
+                value={plan.title}
+                placeholder="Name your project"
+                maxLength={60}
+                onChange={(e) => onPlan({ ...plan, title: e.target.value })}
+              />
+            </h2>
+            <div className="plan-map">
+              {map ? <img src={map} alt="Your map in Spark" /> : <span className="muted small">Drawing your map…</span>}
+            </div>
+            {summary.services.length === 0 ? (
+              <p className="muted">Add some AWS pieces to your map, and they’ll show up here.</p>
+            ) : (
+              <table className="plan-table">
+                <thead>
+                  <tr>
+                    <th>Service</th>
+                    <th>What it does in our project</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          )}
-          {summary.steps.length > 0 && (
-            <>
-              <h3 className="plan-sub">How it works</h3>
-              <ol className="plan-steps">
-                {summary.steps.map((s) => (
-                  <li key={s}>{s}</li>
-                ))}
-              </ol>
-            </>
-          )}
-          <p className="plan-sources">Sources: {PLAN_SOURCES}</p>
+                </thead>
+                <tbody>
+                  {summary.services.map(({ service, notes }) => (
+                    <tr key={service}>
+                      <td className="plan-service">
+                        <img src={iconUrl(service)} alt="" />
+                        {SERVICES[service].name}
+                      </td>
+                      <td>
+                        <input
+                          id={`plan-use-${service}`}
+                          aria-label={`What ${SERVICES[service].name} does in our project`}
+                          value={plan.uses[service] ?? ''}
+                          placeholder={`What does ${shortName(service)} do for you?`}
+                          maxLength={120}
+                          onChange={(e) => onPlan({ ...plan, uses: { ...plan.uses, [service]: e.target.value || undefined } })}
+                        />
+                        {notes.map((n, i) => (
+                          <p key={i} className="plan-why">
+                            <strong>Why we chose it:</strong> {n}
+                          </p>
+                        ))}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+            {summary.steps.length > 0 && (
+              <>
+                <h3 className="plan-sub">How it works</h3>
+                <ol className="plan-steps">
+                  {summary.steps.map((s) => (
+                    <li key={s}>{s}</li>
+                  ))}
+                </ol>
+              </>
+            )}
+            <p className="plan-sources">Sources: {PLAN_SOURCES}</p>
+          </div>
         </div>
         <div className="plan-actions">
           <p className="muted small" aria-live="polite">

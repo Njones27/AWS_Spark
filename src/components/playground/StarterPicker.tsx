@@ -19,33 +19,35 @@ export function StarterPicker({ onPick, onClose }: Props) {
   return (
     <div className="modal-backdrop" onClick={(e) => e.target === e.currentTarget && onClose()}>
       <div className="modal starter-picker" role="dialog" aria-modal="true" aria-labelledby="starter-title">
-        <div className="starter-head">
-          <Sparky mood="happy" size={64} bob={false} />
-          <div>
-            <p className="eyebrow">Start from a plan</p>
-            <h2 id="starter-title">What are you building?</h2>
+        <div className="modal-scroll">
+          <div className="starter-head">
+            <Sparky mood="happy" size={64} bob={false} />
+            <div>
+              <p className="eyebrow">Start from a plan</p>
+              <h2 id="starter-title">What are you building?</h2>
+            </div>
           </div>
-        </div>
-        <p className="muted">
-          Pick the kind of problem your team is solving. Spark sets up a plan that works, and you change it from there.
-        </p>
-        <div className="starter-grid" role="radiogroup" aria-label="Kinds of problems">
-          {STARTERS.map((s) => (
-            <button
-              key={s.id}
-              type="button"
-              role="radio"
-              aria-checked={s.id === picked}
-              className={`starter-card ${s.id === picked ? 'is-picked' : ''}`}
-              onClick={() => setPicked(s.id)}
-              onDoubleClick={() => onPick(s)}
-              autoFocus={s.id === picked}
-            >
-              <strong>{s.title}</strong>
-              <small>{s.examples}</small>
-              <Chain starter={s} />
-            </button>
-          ))}
+          <p className="muted">
+            Pick the kind of problem your team is solving. Spark sets up a plan that works, and you change it from there.
+          </p>
+          <div className="starter-grid" role="radiogroup" aria-label="Kinds of problems">
+            {STARTERS.map((s) => (
+              <button
+                key={s.id}
+                type="button"
+                role="radio"
+                aria-checked={s.id === picked}
+                className={`starter-card ${s.id === picked ? 'is-picked' : ''}`}
+                onClick={() => setPicked(s.id)}
+                onDoubleClick={() => onPick(s)}
+                autoFocus={s.id === picked}
+              >
+                <strong>{s.title}</strong>
+                <small>{s.examples}</small>
+                <Chain starter={s} />
+              </button>
+            ))}
+          </div>
         </div>
         <div className="modal-actions">
           <button className="btn btn-ghost" onClick={onClose}>

@@ -34,23 +34,25 @@ export function ShareDialog({ design, onClose }: { design: SavedDiagram; onClose
   return (
     <div className="modal-backdrop" onClick={(e) => e.target === e.currentTarget && onClose()}>
       <div className="modal share-dialog" role="dialog" aria-modal="true" aria-labelledby="share-title">
-        <p className="eyebrow">Share your design</p>
-        <h2 id="share-title">Send this to your team</h2>
-        <p className="muted">
-          Anyone with the link gets their own copy of this map, your notes, and your plan. Their changes don’t change
-          yours. Nothing is saved on a server.
-        </p>
-        <textarea
-          id="share-link"
-          ref={box}
-          className="share-link"
-          readOnly
-          rows={3}
-          value={link}
-          aria-label="Share link"
-          onFocus={(e) => e.currentTarget.select()}
-        />
-        <p className="share-warn">Keep names and personal details out of your notes, since the link carries them.</p>
+        <div className="modal-scroll">
+          <p className="eyebrow">Share your design</p>
+          <h2 id="share-title">Send this to your team</h2>
+          <p className="muted">
+            Anyone with the link gets their own copy of this map, your notes, and your plan. Their changes don’t change
+            yours. Nothing is saved on a server.
+          </p>
+          <textarea
+            id="share-link"
+            ref={box}
+            className="share-link"
+            readOnly
+            rows={3}
+            value={link}
+            aria-label="Share link"
+            onFocus={(e) => e.currentTarget.select()}
+          />
+          <p className="share-warn">Keep names and personal details out of your notes, since the link carries them.</p>
+        </div>
         <div className="share-actions">
           <p className="muted small" aria-live="polite">
             {status}
@@ -73,31 +75,33 @@ export function OpenShared({ ok, onOpen, onClose }: { ok: boolean; onOpen: () =>
   return (
     <div className="modal-backdrop">
       <div className="modal share-dialog" role="dialog" aria-modal="true" aria-labelledby="open-title">
-        <p className="eyebrow">Shared design</p>
-        {ok ? (
-          <>
-            <h2 id="open-title">Open your teammate’s design?</h2>
-            <p className="muted">It replaces the map you have here. If you want to keep yours, share it first.</p>
-            <div className="modal-actions">
-              <button className="btn btn-ghost" onClick={onClose}>
-                Keep my map
-              </button>
-              <button className="btn btn-primary" onClick={onOpen} autoFocus>
-                Open their design
-              </button>
-            </div>
-          </>
-        ) : (
-          <>
-            <h2 id="open-title">That link didn’t work</h2>
-            <p className="muted">Part of it may be missing. Ask your teammate to copy the whole link again.</p>
-            <div className="modal-actions">
-              <button className="btn btn-primary" onClick={onClose} autoFocus>
-                OK
-              </button>
-            </div>
-          </>
-        )}
+        <div className="modal-scroll">
+          <p className="eyebrow">Shared design</p>
+          {ok ? (
+            <>
+              <h2 id="open-title">Open your teammate’s design?</h2>
+              <p className="muted">It replaces the map you have here. If you want to keep yours, share it first.</p>
+              <div className="modal-actions">
+                <button className="btn btn-ghost" onClick={onClose}>
+                  Keep my map
+                </button>
+                <button className="btn btn-primary" onClick={onOpen} autoFocus>
+                  Open their design
+                </button>
+              </div>
+            </>
+          ) : (
+            <>
+              <h2 id="open-title">That link didn’t work</h2>
+              <p className="muted">Part of it may be missing. Ask your teammate to copy the whole link again.</p>
+              <div className="modal-actions">
+                <button className="btn btn-primary" onClick={onClose} autoFocus>
+                  OK
+                </button>
+              </div>
+            </>
+          )}
+        </div>
       </div>
     </div>
   );
