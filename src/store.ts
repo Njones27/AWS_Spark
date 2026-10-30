@@ -1,3 +1,4 @@
+import { createContext, useContext } from 'react';
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 import type { Band, ServiceId, SourceSpec, XY } from './data/types';
@@ -61,4 +62,11 @@ export const useApp = create<AppState>()(
   ),
 );
 
-export const useBand = (): Band => useApp((s) => s.band ?? 'builder');
+/** Pins the band for a subtree. The Advanced Track always uses Architect names, numbers, and explanations. */
+export const BandOverride = createContext<Band | null>(null);
+
+export const useBand = (): Band => {
+  const pinned = useContext(BandOverride);
+  const band = useApp((s) => s.band ?? 'builder');
+  return pinned ?? band;
+};

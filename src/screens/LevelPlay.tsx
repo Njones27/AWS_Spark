@@ -9,13 +9,16 @@ import { TopBar } from '../components/Chrome';
 import { ServiceCard } from '../components/ServiceCard';
 import { ServiceChip } from '../components/ServiceTip';
 import { topProblem } from '../data/feedback';
-import { CHAPTER, LEVELS, levelById, type Level, type Mood } from '../data/levels';
+import { chapterOf, levelById } from '../data/chapters';
+import { type Level, type Mood } from '../data/levels';
 import { iconUrl, SERVICES } from '../data/services';
 import { bt } from '../data/text';
 import type { ServiceId } from '../data/types';
+import { checkObjectives, firstFailed } from '../engine/objectives';
 import { simulate, type SimResult } from '../engine/simulate';
 import { go, href } from '../router';
-import { useApp, useBand } from '../store';
+import { BandOverride, useApp, useBand } from '../store';
+import { AdvancedChip } from './LevelMap';
 
 const RAMP_MS = 2600;
 const PIECE_W = 132;
@@ -40,9 +43,11 @@ export function LevelPlay({ id }: { id: string }) {
   }, [level]);
   if (!level) return null;
   return (
-    <ReactFlowProvider key={level.id}>
-      <LevelInner level={level} />
-    </ReactFlowProvider>
+    <BandOverride.Provider value={chapterOf(level).id === 'adv' ? 'architect' : null}>
+      <ReactFlowProvider key={level.id}>
+        <LevelInner level={level} />
+      </ReactFlowProvider>
+    </BandOverride.Provider>
   );
 }
 
@@ -63,6 +68,8 @@ type Phase = 'intro' | 'build' | 'running' | 'win' | 'fail';
 
 function LevelInner({ level }: { level: Level }) {
   const band = useBand();
+  const chapter = chapterOf(level);
+  const advanced = chapter.id === 'adv';
   const complete = useApp((s) => s.complete);
   const init = useCallback(() => buildLevel(level), [level]);
   const d = useDiagram(init);
@@ -94,9 +101,11 @@ function LevelInner({ level }: { level: Level }) {
     () => [...new Set([...level.palette.map((p) => p.service), ...d.nodes.filter(isPiece).map((n) => n.data.service)])],
     [level, d.nodes],
   );
+  // Pre-placed pieces can be unlocked (so they can be deleted), but they never come out of the tray.
+  const preset = useMemo(() => new Set(level.nodes.map((n) => n.id)), [level]);
   const dock: DockItemSpec[] = level.palette.map((p) => ({
     service: p.service,
-    left: p.count - pieces.filter((n) => !n.data.locked && n.data.service === p.service).length,
+    left: p.count - pieces.filter((n) => !preset.has(n.id) && n.data.service === p.service).length,
     isNew: level.teaches.includes(p.service),
   }));
 
@@ -115,7 +124,7 @@ function LevelInner({ level }: { level: Level }) {
       const final = simulate(g.nodes, g.edges, 1);
       setSim(final);
       timer.current = window.setTimeout(() => {
-        if (final.success) {
+        if (final.success && !firstFailed(checkObjectives(level, g.nodes, g.edges, final))) {
           complete(level.id);
           setPhase('win');
         } else {
@@ -136,8 +145,14 @@ function LevelInner({ level }: { level: Level }) {
     [d.nodes, band],
   );
   const problem = useMemo(() => (phase === 'fail' && sim ? topProblem(sim, nameOf, band) : null), [phase, sim, nameOf, band]);
+  // Budgets and required arrows update live as you build; the backlog is judged once a run finishes.
+  const objectives = useMemo(() => {
+    const g = toSim(d.nodes, d.edges);
+    return checkObjectives(level, g.nodes, g.edges, phase === 'running' ? null : sim);
+  }, [level, d.nodes, d.edges, sim, phase]);
+  const unmet = phase === 'fail' && !problem ? firstFailed(objectives) : undefined;
 
-  const next = LEVELS[LEVELS.indexOf(level) + 1];
+  const next = chapter.levels[chapter.levels.indexOf(level) + 1];
   const selectedNode = pieces.find((n) => n.id === selected);
   const sources = pieces.filter((n) => n.data.source);
 
@@ -146,23 +161,27 @@ function LevelInner({ level }: { level: Level }) {
   if (phase === 'running') {
     sparkyMood = 'think';
     sparkyText = band === 'explorer' ? 'Here come the visitors! Watch the dots…' : 'Here comes the traffic. Watch the meters!';
-  } else if (phase === 'fail' && problem) {
+  } else if (phase === 'fail' && (problem || unmet)) {
     sparkyMood = 'worried';
-    sparkyText = problem.text;
+    sparkyText = problem?.text ?? unmet!.fail;
   } else if (phase === 'win') {
     sparkyMood = 'cheer';
-    sparkyText = 'Everyone got what they needed. You did it!';
+    sparkyText = advanced ? 'Every request served and every check green. Ticket resolved!' : 'Everyone got what they needed. You did it!';
   }
 
   return (
     <div className={`screen level-screen phase-${phase}`}>
       <TopBar
-        back={{ href: href.map, label: 'Map' }}
+        back={{ href: href.chapter(chapter.id), label: 'Map' }}
         title={
           <>
-            <small>Level {level.number}</small> {level.title}
+            <small>
+              {chapter.unit} {level.number}
+            </small>{' '}
+            {level.title}
           </>
         }
+        hideBand={advanced}
       >
         <button
           className="btn btn-ghost"
@@ -175,6 +194,7 @@ function LevelInner({ level }: { level: Level }) {
         >
           ↺ Restart
         </button>
+        {advanced && <AdvancedChip />}
       </TopBar>
 
       <div className="level-body">
@@ -221,6 +241,27 @@ function LevelInner({ level }: { level: Level }) {
               );
             })}
           </section>
+
+          {objectives.length > 0 && (
+            <section className="goals constraints" aria-label="Constraints">
+              <h3>Constraints</h3>
+              {objectives.map((o) => {
+                // Going over budget shows at once; a missing arrow only counts as a miss after a run.
+                const state = o.ok === null ? 'pending' : o.ok ? 'ok' : phase === 'fail' || o.id === 'budget' ? 'bad' : 'pending';
+                return (
+                  <div key={o.id} className={`goal goal-${state}`}>
+                    <span className="goal-mark" aria-hidden="true">
+                      {state === 'ok' ? '✓' : state === 'bad' ? '!' : '○'}
+                    </span>
+                    <div className="goal-body">
+                      <strong>{o.label}</strong>
+                      {o.detail && <span className="goal-line">{o.detail}</span>}
+                    </div>
+                  </div>
+                );
+              })}
+            </section>
+          )}
 
           <section className="hints" aria-label="Hints">
             {level.hints.slice(0, hints).map((h, i) => (
@@ -283,7 +324,9 @@ function LevelInner({ level }: { level: Level }) {
               <div className="modal win-card" role="dialog" aria-modal="true" aria-labelledby="win-title">
                 <Confetti />
                 <Sparky mood="cheer" size={96} />
-                <p className="eyebrow">Level {level.number} complete!</p>
+                <p className="eyebrow">
+                  {chapter.unit} {level.number} {advanced ? 'resolved' : 'complete'}!
+                </p>
                 <h2 id="win-title">{level.lesson.title}</h2>
                 <p>{bt(level.lesson.text, band)}</p>
                 <div className="win-learned">
@@ -291,7 +334,7 @@ function LevelInner({ level }: { level: Level }) {
                     <ServiceChip key={s} service={s} full />
                   ))}
                 </div>
-                {!next && <p className="win-ending">{bt(CHAPTER.ending, band)}</p>}
+                {!next && <p className="win-ending">{bt(chapter.ending, band)}</p>}
                 <div className="modal-actions">
                   <button className="btn btn-ghost" onClick={stop}>
                     Keep tinkering
@@ -301,7 +344,7 @@ function LevelInner({ level }: { level: Level }) {
                       Next: {next.title} ›
                     </a>
                   ) : (
-                    <a className="btn btn-primary btn-lg" href={href.map}>
+                    <a className="btn btn-primary btn-lg" href={href.chapter(chapter.id)}>
                       Back to the map ›
                     </a>
                   )}
@@ -317,19 +360,30 @@ function LevelInner({ level }: { level: Level }) {
 
 function StoryIntro({ level, beat, onNext, onSkip }: { level: Level; beat: number; onNext: () => void; onSkip: () => void }) {
   const band = useBand();
+  const { cast, unit } = chapterOf(level);
   const b = level.intro[beat];
   const last = beat === level.intro.length - 1;
   return (
     <div className="modal-backdrop in-canvas">
       <div className={`modal story-card who-${b.who}`} role="dialog" aria-modal="true" aria-label={`Story: ${level.title}`}>
         <p className="eyebrow">
-          Level {level.number} · {level.concept}
+          {unit} {level.number} · {level.concept}
         </p>
         <h2>{level.title}</h2>
         <div className="story-line" key={beat}>
-          <div className="story-face">{b.who === 'sparky' ? <Sparky mood={b.mood ?? 'happy'} size={96} /> : <Rosa size={88} />}</div>
+          <div className="story-face">
+            {b.who === 'sparky' ? (
+              <Sparky mood={b.mood ?? 'happy'} size={96} />
+            ) : b.who === 'rosa' ? (
+              <Rosa size={88} />
+            ) : (
+              <span className="pager-face" aria-hidden="true">
+                🚨
+              </span>
+            )}
+          </div>
           <div className="story-say">
-            <span className="story-who">{b.who === 'sparky' ? 'Sparky' : 'Baker Rosa'}</span>
+            <span className="story-who">{cast[b.who]}</span>
             <p>{bt(b.text, band)}</p>
           </div>
         </div>

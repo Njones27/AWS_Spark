@@ -157,9 +157,68 @@ export function smoothPath(pts: { x: number; y: number }[]): string {
 }
 
 /** Level-map backdrop: meadow, pond, trees, and the winding road through every stop. */
-export function MapScene({ stops, progress }: { stops: { x: number; y: number }[]; progress: number }) {
+/** A city block for the Advanced Track map: a tower with lit windows. */
+function Tower({ x, y, w, h, tone }: { x: number; y: number; w: number; h: number; tone: string }) {
+  const rows = Math.floor((h - 16) / 18);
+  const cols = Math.floor((w - 8) / 14);
+  return (
+    <g transform={`translate(${x} ${y})`}>
+      <rect x={-w / 2} y={-h} width={w} height={h} rx="4" fill={tone} />
+      {Array.from({ length: rows * cols }, (_, i) => (
+        <rect
+          key={i}
+          x={-w / 2 + 6 + (i % cols) * 14}
+          y={-h + 10 + Math.floor(i / cols) * 18}
+          width="7"
+          height="9"
+          rx="1.5"
+          fill="var(--sun)"
+          opacity={(i * 7) % 5 ? 0.85 : 0.25}
+        />
+      ))}
+    </g>
+  );
+}
+
+function CityScene({ road, done, end }: { road: string; done: string; end: { x: number; y: number } }) {
+  const towers: [number, number, number, number][] = [
+    [60, 330, 50, 120], [130, 330, 40, 80], [460, 110, 60, 90], [540, 110, 44, 70], [690, 120, 54, 110],
+    [960, 560, 50, 140], [300, 580, 46, 90], [640, 590, 60, 100], [930, 160, 44, 90], [40, 160, 50, 100],
+  ];
+  return (
+    <svg className="map-scene" viewBox="0 0 1000 600" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
+      <rect width="1000" height="600" rx="40" fill="#2c3550" />
+      <path d="M0 140 Q180 80 320 130 T640 110 T1000 140 V0 H0 Z" fill="#36405f" />
+      <ellipse cx="560" cy="520" rx="120" ry="34" fill="#3e5a86" />
+      {towers.map(([x, y, w, h], i) => (
+        <Tower key={i} x={x} y={y} w={w} h={h} tone={i % 2 ? '#46507a' : '#525d8a'} />
+      ))}
+      <path d={road} stroke="#4a5478" strokeWidth="34" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+      <path d={road} stroke="#fff" strokeOpacity="0.35" strokeWidth="3" strokeDasharray="2 14" fill="none" strokeLinecap="round" />
+      <path d={done} className="flow-dash" stroke="var(--flow)" strokeWidth="5" fill="none" strokeLinecap="round" />
+      <g transform={`translate(${end.x + 80} ${end.y + 10})`}>
+        <Tower x={0} y={0} w={70} h={160} tone="#5d6aa0" />
+        <rect x="-44" y="-182" width="88" height="22" rx="11" fill="var(--coral)" />
+        <text x="0" y="-167" textAnchor="middle" fontFamily="var(--font-display)" fontWeight="600" fontSize="12" fill="#fff">
+          Crumb &amp; Co. HQ
+        </text>
+      </g>
+    </svg>
+  );
+}
+
+export function MapScene({
+  stops,
+  progress,
+  variant = 'town',
+}: {
+  stops: { x: number; y: number }[];
+  progress: number;
+  variant?: 'town' | 'city';
+}) {
   const road = smoothPath(stops);
   const done = smoothPath(stops.slice(0, Math.max(1, progress + 1)));
+  if (variant === 'city') return <CityScene road={road} done={done} end={stops[stops.length - 1]} />;
   return (
     <svg className="map-scene" viewBox="0 0 1000 600" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
       <rect width="1000" height="600" rx="40" fill="var(--meadow)" />

@@ -3,7 +3,7 @@ import type { BandText, ServiceId, SourceSpec, XY } from './types';
 export type Mood = 'happy' | 'think' | 'worried' | 'cheer';
 
 export interface Beat {
-  who: 'sparky' | 'rosa';
+  who: 'sparky' | 'rosa' | 'pager';
   mood?: Mood;
   text: BandText;
 }
@@ -17,6 +17,14 @@ export interface LevelNode {
   /** Pre-placed pieces can be moved but not removed. */
   locked?: boolean;
   source?: SourceSpec;
+}
+
+/** An arrow that must exist. `from` and `to` are node ids or service ids, like `SourceSpec.needs`. */
+export interface Requirement {
+  from: string;
+  to: string;
+  /** What the arrow achieves, shown in the goal list. */
+  label: string;
 }
 
 export interface Level {
@@ -33,8 +41,28 @@ export interface Level {
   palette: { service: ServiceId; count: number }[];
   hints: BandText[];
   lesson: { title: string; text: BandText };
+  /** Highest estimated monthly cost (see `COST`) for every piece on the board. */
+  budget?: number;
+  /** Arrows that must exist, such as an IAM role on a Lambda function. */
+  requires?: Requirement[];
+  /** Most requests per second that may pile up in queues. 0 means every queue must drain. */
+  maxBacklog?: number;
   /** The intended answer. Used by tests and by the final "show me" hint. */
   solution: { add: { id: string; service: ServiceId }[]; connect: [string, string][]; remove?: [string, string][] };
+}
+
+export interface Chapter {
+  id: string;
+  /** Shown above the map title, e.g. "Chapter 1". */
+  eyebrow: string;
+  title: string;
+  blurb: string;
+  ending: BandText;
+  /** What each level is called, e.g. "Level 3" or "Ticket 3". */
+  unit: string;
+  /** Speaker names shown in the story cards. */
+  cast: Record<Beat['who'], string>;
+  levels: Level[];
 }
 
 export const CHAPTER = {
@@ -512,6 +540,11 @@ export const LEVELS: Level[] = [
   },
 ];
 
-export function levelById(id: string): Level | undefined {
-  return LEVELS.find((l) => l.id === id);
-}
+export const CHAPTER_1: Chapter = {
+  id: 'ch1',
+  eyebrow: 'Chapter 1',
+  ...CHAPTER,
+  unit: 'Level',
+  cast: { sparky: 'Sparky', rosa: 'Baker Rosa', pager: 'Alert' },
+  levels: LEVELS,
+};

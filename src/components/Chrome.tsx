@@ -4,7 +4,17 @@ import type { Band } from '../data/types';
 import { useApp, useBand } from '../store';
 import { Sparky } from './art/Sparky';
 
-export function TopBar({ back, title, children }: { back?: { href: string; label: string }; title: ReactNode; children?: ReactNode }) {
+export function TopBar({
+  back,
+  title,
+  children,
+  hideBand,
+}: {
+  back?: { href: string; label: string };
+  title: ReactNode;
+  children?: ReactNode;
+  hideBand?: boolean;
+}) {
   return (
     <header className="topbar">
       {back && (
@@ -15,7 +25,7 @@ export function TopBar({ back, title, children }: { back?: { href: string; label
       <div className="topbar-title">{title}</div>
       <div className="topbar-actions">
         {children}
-        <BandSwitch />
+        {!hideBand && <BandSwitch />}
       </div>
     </header>
   );
