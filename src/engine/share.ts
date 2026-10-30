@@ -5,7 +5,8 @@ import type { SavedDiagram, SavedNode } from '../store';
 
 // A share link carries the whole design in the URL, so it needs no server and no account.
 // Short keys keep links short: v = format version, n = pieces, e = arrows, t = title, u = uses, g = goal.
-type PieceRow = [service: string, x: number, y: number, label?: string, demand?: number, bots?: number, note?: string];
+// A null label means the team cleared the name on purpose, so the real service name shows.
+type PieceRow = [service: string, x: number, y: number, label?: string | null, demand?: number, bots?: number, note?: string];
 interface Packed {
   v: 1;
   n: PieceRow[];
@@ -35,7 +36,8 @@ export function encodeDesign(d: SavedDiagram): string {
   const packed: Packed = {
     v: 1,
     n: d.nodes.map((n) => {
-      const row: PieceRow = [n.service, Math.round(n.pos.x), Math.round(n.pos.y), n.label ?? '', n.source?.demand, n.source?.bots, n.note ?? ''];
+      const label = n.label === '' ? null : (n.label ?? '');
+      const row: PieceRow = [n.service, Math.round(n.pos.x), Math.round(n.pos.y), label, n.source?.demand, n.source?.bots, n.note ?? ''];
       // Trim unused values off the end of each row. A source's 0 is kept, so it doesn't come back as the default.
       while (row.length > 3 && (row[row.length - 1] === '' || row[row.length - 1] === undefined)) row.pop();
       return row;
@@ -89,7 +91,7 @@ export function decodeDesign(code: string): SavedDiagram | null {
       id,
       service,
       pos: { x: px, y: py },
-      label: text(label)?.slice(0, 40),
+      label: label === null ? '' : text(label)?.slice(0, 40),
       note: text(note),
       source: isSource ? { demand: num(demand, 0, 500) ?? 50, bots: num(bots, 0, 500) || undefined } : undefined,
     });
@@ -97,11 +99,14 @@ export function decodeDesign(code: string): SavedDiagram | null {
   if (!nodes.length) return null;
 
   const serviceOf = new Map(nodes.map((n) => [n.id, n.service]));
+  const seen = new Set<string>();
   const edges = packed.e.flatMap((pair) => {
     const [s, t] = Array.isArray(pair) ? pair : [];
     const source = typeof s === 'number' ? ids[s] : null;
     const target = typeof t === 'number' ? ids[t] : null;
-    if (!source || !target || source === target) return [];
+    // Skip repeats too: an edited link could list the same arrow twice, and the simulation would count it twice.
+    if (!source || !target || source === target || seen.has(`${source}>${target}`)) return [];
+    seen.add(`${source}>${target}`);
     return findRule(serviceOf.get(source)!, serviceOf.get(target)!) ? [{ source, target }] : [];
   });
 

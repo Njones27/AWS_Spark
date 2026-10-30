@@ -126,6 +126,17 @@ describe('share links', () => {
     expect(back.goal).toEqual(design.goal);
   });
 
+  it('keeps a name the team cleared, so the real service name shows for the teammate too', () => {
+    const back = decodeDesign(encodeDesign({ nodes: [{ id: 'u', service: 'users', pos: { x: 0, y: 0 }, label: '' }], edges: [] }))!;
+    expect(back.nodes[0].label).toBe('');
+    expect(fromSaved(back).nodes.filter(isPiece)[0].data.label).toBe('');
+  });
+
+  it('drops repeated arrows from an edited link', () => {
+    const back = decodeDesign(pack({ v: 1, n: [['users', 0, 0], ['apigw', 300, 0]], e: [[0, 1], [0, 1]] }))!;
+    expect(back.edges).toEqual([{ source: 'p0', target: 'p1' }]);
+  });
+
   it('keeps a visitor count of 0 instead of bringing back the default', () => {
     const back = decodeDesign(encodeDesign({ nodes: [{ id: 'u', service: 'users', pos: { x: 0, y: 0 }, source: { demand: 0 } }], edges: [] }))!;
     expect(back.nodes[0].source?.demand).toBe(0);
