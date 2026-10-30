@@ -2,6 +2,8 @@
 
 A visual, game-like web app that teaches K–12 students how AWS services fit together.
 
+![Spark home screen: Story Mode and Playground over a cartoon town connected to the AWS cloud](docs/screens/home.png)
+
 - **Story Mode**: 9 levels where Baker Rosa's bakery, Crumb & Co., goes online. Each level gives you a few
   pieces. You connect them and press **Run** to watch requests flow along the arrows. Overloaded pieces
   turn red; queued work waits in line; gremlin bots get blocked.
@@ -9,6 +11,12 @@ A visual, game-like web app that teaches K–12 students how AWS services fit to
   that doesn't, and Sparky explains why and suggests what to connect instead.
 - **Grade bands**: Explorer (K–5), Builder (6–8), and Architect (9–12). Each band changes the names,
   explanations, numbers, and hints.
+
+| Story Mode level map | A level running: one server is overloaded |
+|---|---|
+| ![Chapter 1 level map with four levels complete](docs/screens/level-map.png) | ![Level 6: 150 visitors reach a server that can handle 50, so it turns red](docs/screens/level6-overload.png) |
+| **Sparky explains a connection that doesn't fit** | **Playground with IAM and KMS badges** |
+| ![Connecting customers straight to DynamoDB, and Sparky suggesting the Front Desk instead](docs/screens/invalid-connection.png) | ![Playground: CloudFront, S3, API Gateway, Lambda, DynamoDB, and Bedrock, with IAM and KMS badge arrows](docs/screens/playground.png) |
 
 ## Run it
 
