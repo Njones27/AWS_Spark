@@ -403,6 +403,32 @@ describe('simulate', () => {
     expect(res.nodes.slow.waiting + res.nodes.fast.waiting).toBeCloseTo(0);
   });
 
+  it('a queue hands its work to the reader with free room, not to one busy with other traffic', () => {
+    // The busy crew gets 90 of its 100 straight from a load balancer, so it only has room for 10 queue messages.
+    const res = simulate(
+      [
+        { id: 'web', service: 'users', source: { demand: 90 } },
+        { id: 'jobs', service: 'users', source: { demand: 100 } },
+        { id: 'lb', service: 'elb' },
+        { id: 'gw', service: 'apigw' },
+        { id: 'q', service: 'sqs' },
+        { id: 'busy', service: 'ecs' },
+        { id: 'idle', service: 'ecs' },
+      ],
+      [
+        { id: '1', source: 'web', target: 'lb' },
+        { id: '2', source: 'lb', target: 'busy' },
+        { id: '3', source: 'jobs', target: 'gw' },
+        { id: '4', source: 'gw', target: 'q' },
+        { id: '5', source: 'q', target: 'busy' },
+        { id: '6', source: 'q', target: 'idle' },
+      ],
+    );
+    expect(res.nodes.busy.waiting + res.nodes.idle.waiting).toBeCloseTo(0);
+    expect(res.nodes.busy.load).toBeLessThanOrEqual(100 + 1e-6);
+    expect(res.success).toBe(true);
+  });
+
   it('ramps with scale', () => {
     const solved = levelSolved(byId('l4'));
     expect(simulate(solved.nodes, solved.edges, 0.5).sources.hungry.demand).toBe(25);

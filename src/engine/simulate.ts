@@ -121,65 +121,82 @@ export function simulate(nodes: SimNode[], edges: SimEdge[], scale = 1): SimResu
     inflow.set(id, f);
   };
 
-  const nodeRes: Record<string, NodeResult> = {};
-  const edgeRes: Record<string, EdgeResult> = {};
+  let nodeRes: Record<string, NodeResult> = {};
+  let edgeRes: Record<string, EdgeResult> = {};
   const dropRatio = new Map<string, number>();
   /** Share of each edge's requests answered from a cached copy, so they never travel it. */
   const hitRate = new Map<string, number>();
   /** Share of a splitting piece's requests that each arrow carries. */
   const splitShare = new Map<string, number>();
+  /** Requests each piece gets straight from its arrows (not from a queue), from the previous pass. */
+  let directIn = new Map<string, number>();
 
-  for (const id of order) {
-    const n = byId.get(id)!;
-    const def = SERVICES[n.service];
-    let { h, b, qh, qb } = inflow.get(id) ?? { h: 0, b: 0, qh: 0, qb: 0 };
-    if (n.source) {
-      h += n.source.demand * scale;
-      b += (n.source.bots ?? 0) * scale;
+  // Readers pull from a queue when they have room, so a queue shares work in proportion to each reader's free room:
+  // its capacity minus what already arrives straight from other arrows. That isn't known until every piece upstream
+  // of the readers has run, so the first pass shares by capacity and the second uses the free room the first found.
+  const sum = (xs: number[]) => xs.reduce((a, x) => a + x, 0);
+  const forward = () => {
+    const seen = new Map<string, number>();
+    inflow.clear();
+    nodeRes = {};
+    edgeRes = {};
+    for (const id of order) {
+      const n = byId.get(id)!;
+      const def = SERVICES[n.service];
+      let { h, b, qh, qb } = inflow.get(id) ?? { h: 0, b: 0, qh: 0, qb: 0 };
+      if (n.source) {
+        h += n.source.demand * scale;
+        b += (n.source.bots ?? 0) * scale;
+      }
+      const load = h + b + qh + qb;
+      const bots = b + qb;
+
+      let blocked = 0;
+      if (def.filtersBots) {
+        blocked = b + qb;
+        b = 0;
+        qb = 0;
+      }
+
+      const capacity = n.source ? Number.POSITIVE_INFINITY : capacityOf(n);
+      const direct = h + b;
+      seen.set(id, direct);
+      const queued = qh + qb;
+      const drop = direct > capacity ? 1 - capacity / direct : 0;
+      const room = Math.max(0, capacity - direct);
+      const passQueued = queued > room ? room / queued : 1;
+      const waiting = queued > room ? queued - room : 0;
+      dropRatio.set(id, drop);
+
+      const oh = h * (1 - drop) + qh * passQueued;
+      const ob = b * (1 - drop) + qb * passQueued;
+
+      const children = outs.get(id) ?? [];
+      const hasCache = def.forward === 'broadcast' && children.some((e) => SERVICES[byId.get(e.target)!.service].cache);
+      // A queue shares by free room (or by capacity when nobody has any); everything else splits evenly, like round-robin.
+      const caps = children.map((e) => capacityOf(byId.get(e.target)!));
+      const free = caps.map((c, i) => Math.max(0, c - (directIn.get(children[i].target) ?? 0)));
+      const weights = sum(free) > 1e-9 ? free : caps;
+      const total = sum(weights);
+      const weighted = !!def.queue && Number.isFinite(total) && total > 0;
+      children.forEach((e, i) => splitShare.set(e.id, weighted ? weights[i] / total : 1 / children.length));
+      for (const e of children) {
+        const hit = def.cdnHitRate ?? (hasCache && CACHEABLE.includes(byId.get(e.target)!.service) ? CACHE_HIT : 0);
+        hitRate.set(e.id, hit);
+        const share = (def.forward === 'split' ? splitShare.get(e.id)! : 1) * (1 - hit);
+        edgeRes[e.id] = { flow: oh * share, bots: ob * share };
+        add(e.target, oh * share, ob * share, !!def.queue);
+      }
+
+      const busy = (direct * (1 - drop) + queued * passQueued) / capacity;
+      const status: NodeStatus =
+        load <= 1e-9 ? 'idle' : drop > 1e-9 ? 'overload' : waiting > 1e-9 ? 'waiting' : busy >= 0.8 ? 'busy' : 'ok';
+      nodeRes[id] = { load, bots, capacity, dropped: direct * drop, waiting, blocked, status };
     }
-    const load = h + b + qh + qb;
-    const bots = b + qb;
-
-    let blocked = 0;
-    if (def.filtersBots) {
-      blocked = b + qb;
-      b = 0;
-      qb = 0;
-    }
-
-    const capacity = n.source ? Number.POSITIVE_INFINITY : capacityOf(n);
-    const direct = h + b;
-    const queued = qh + qb;
-    const drop = direct > capacity ? 1 - capacity / direct : 0;
-    const room = Math.max(0, capacity - direct);
-    const passQueued = queued > room ? room / queued : 1;
-    const waiting = queued > room ? queued - room : 0;
-    dropRatio.set(id, drop);
-
-    const oh = h * (1 - drop) + qh * passQueued;
-    const ob = b * (1 - drop) + qb * passQueued;
-
-    const children = outs.get(id) ?? [];
-    const hasCache = def.forward === 'broadcast' && children.some((e) => SERVICES[byId.get(e.target)!.service].cache);
-    // Readers pull from a queue when they have room, so each takes work in proportion to its capacity.
-    // Everything else that splits shares evenly, like round-robin.
-    const caps = children.map((e) => capacityOf(byId.get(e.target)!));
-    const total = caps.reduce((a, c) => a + c, 0);
-    const weighted = !!def.queue && Number.isFinite(total) && total > 0;
-    children.forEach((e, i) => splitShare.set(e.id, weighted ? caps[i] / total : 1 / children.length));
-    for (const e of children) {
-      const hit = def.cdnHitRate ?? (hasCache && CACHEABLE.includes(byId.get(e.target)!.service) ? CACHE_HIT : 0);
-      hitRate.set(e.id, hit);
-      const share = (def.forward === 'split' ? splitShare.get(e.id)! : 1) * (1 - hit);
-      edgeRes[e.id] = { flow: oh * share, bots: ob * share };
-      add(e.target, oh * share, ob * share, !!def.queue);
-    }
-
-    const busy = (direct * (1 - drop) + queued * passQueued) / capacity;
-    const status: NodeStatus =
-      load <= 1e-9 ? 'idle' : drop > 1e-9 ? 'overload' : waiting > 1e-9 ? 'waiting' : busy >= 0.8 ? 'busy' : 'ok';
-    nodeRes[id] = { load, bots, capacity, dropped: direct * drop, waiting, blocked, status };
-  }
+    directIn = seen;
+  };
+  forward();
+  forward();
 
   // ── Backward pass: outcome distributions ─────────────────────
   const memo = new Map<string, Outcome[]>();
