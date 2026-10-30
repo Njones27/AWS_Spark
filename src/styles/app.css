@@ -165,6 +165,8 @@ img {
 .screen {
   display: grid;
   grid-template-rows: auto 1fr;
+  /* Never wider than the screen, so a wide top bar wraps instead of stretching the page on narrow devices. */
+  grid-template-columns: minmax(0, 1fr);
   height: 100dvh;
   min-height: 0;
 }
@@ -2022,4 +2024,10 @@ img {
 .chapter-link.is-locked {
   color: var(--ink-faint);
   cursor: not-allowed;
+}
+@media (max-width: 600px) {
+  /* The map is too small for every stop's name; the numbered stops stay tappable and the sidebar names the next one. */
+  .stop-label {
+    display: none;
+  }
 }

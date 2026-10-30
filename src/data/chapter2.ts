@@ -149,7 +149,7 @@ export const CHAPTER_2_LEVELS: Level[] = [
       { service: 'lambda', count: 1 },
       { service: 'sns', count: 1 },
     ],
-    hints: ['The office starts with API Gateway, then Lambda.', 'School Office → API Gateway → Lambda → SNS → Family Phones.'],
+    hints: ['The office needs API Gateway, then Lambda.', 'School Office → API Gateway → Lambda → SNS → Family Phones.'],
     lesson: {
       title: 'Send alerts',
       text: {

@@ -9,7 +9,7 @@ import { TopBar } from '../components/Chrome';
 import { ServiceCard } from '../components/ServiceCard';
 import { ServiceChip } from '../components/ServiceTip';
 import { topProblem } from '../data/feedback';
-import { chapterOf, levelById } from '../data/chapters';
+import { chapterOf, levelById, STORY } from '../data/chapters';
 import { type Level, type Mood } from '../data/levels';
 import { iconUrl, SERVICES } from '../data/services';
 import { bt } from '../data/text';
@@ -153,6 +153,9 @@ function LevelInner({ level }: { level: Level }) {
   const unmet = phase === 'fail' && !problem ? firstFailed(objectives) : undefined;
 
   const next = chapter.levels[chapter.levels.indexOf(level) + 1];
+  // After a story chapter's last level, the next story chapter (if any) is the next stop.
+  const story = STORY.indexOf(chapter);
+  const nextChapter = next || story < 0 ? undefined : STORY[story + 1];
   const selectedNode = pieces.find((n) => n.id === selected);
   const sources = pieces.filter((n) => n.data.source);
 
@@ -342,6 +345,10 @@ function LevelInner({ level }: { level: Level }) {
                   {next ? (
                     <a className="btn btn-primary btn-lg" href={href.level(next.id)}>
                       Next: {next.title} ›
+                    </a>
+                  ) : nextChapter ? (
+                    <a className="btn btn-primary btn-lg" href={href.chapter(nextChapter.id)}>
+                      Start {nextChapter.eyebrow}: {nextChapter.title} ›
                     </a>
                   ) : (
                     <a className="btn btn-primary btn-lg" href={href.chapter(chapter.id)}>
