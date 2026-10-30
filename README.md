@@ -7,6 +7,11 @@ A visual, game-like web app that teaches K–12 students how AWS services fit to
 - **Story Mode**: 9 levels where Baker Rosa's bakery, Crumb & Co., goes online. Each level gives you a few
   pieces. You connect them and press **Run** to watch requests flow along the arrows. Overloaded pieces
   turn red; queued work waits in line; gremlin bots get blocked.
+- **Advanced Track (college & up)**: 7 on-call tickets two years later, when Crumb & Co. has grown into a national
+  delivery platform and you're its first cloud engineer. Tickets add constraints beyond "everyone is happy": a monthly
+  **budget**, **required arrows** (an IAM role, a KMS key, a Cognito authorizer, a CloudWatch alarm), and queues that
+  must **drain**. Topics: least privilege, cost-aware scaling, queue backlogs and containers, edge security, SNS/SQS
+  fan-out, an S3 + Athena data lake, and a grounded Bedrock AgentCore agent. Always uses real AWS names and numbers.
 - **Playground**: build anything with 48 pieces, from S3 and Lambda to IAM, containers, data tools, and Bedrock AgentCore. Only connections that make sense snap together. Try one
   that doesn't, and Sparky explains why and suggests what to connect instead.
 - **Grade bands**: Explorer (K–5), Builder (6–8), and Architect (9–12). Each band changes the names,
@@ -37,6 +42,9 @@ Progress is saved in the browser (localStorage). Nothing is sent to a server.
 | `src/data/services.ts` | The 48 pieces: real name, kid nickname, per-band blurbs, capacity, and how traffic leaves each one |
 | `src/data/rules.ts` | Directional allow-list of connections (`from → to`), with a verb plus simple and technical "why" text, and hand-written explanations for common mistakes |
 | `src/data/levels.ts` | Chapter 1 story, goals, pre-placed pieces, tray palette, hints, lesson, and the intended solution |
+| `src/data/advanced.ts` | Advanced Track tickets, with budgets, required arrows, and backlog limits |
+| `src/data/costs.ts` | Rough monthly cost of each piece, used by budget tickets |
+| `src/engine/objectives.ts` | Checks a ticket's budget, required arrows, and queue backlog |
 | `src/engine/simulate.ts` | Traffic model. A forward pass computes the load on every piece; a backward pass works out why each request did or didn't finish |
 | `src/engine/validate.ts` | Connection checks: rule, duplicate, self, and loop |
 | `src/components/canvas/` | React Flow canvas, pieces, flowing dashed edges with request dots, the tray (drag or tap), and the "why" bubble |
@@ -51,11 +59,15 @@ Progress is saved in the browser (localStorage). Nothing is sent to a server.
 - **Badges**: IAM, KMS, Secrets Manager, Shield, Fargate, and Auto Scaling don't carry requests. Their arrows pin
   a badge on the piece they point at (for example, IAM → Lambda gives Lambda a permission badge). Apart from Auto
   Scaling's extra capacity, badges never make requests fail.
+- SQS hands messages to its readers in proportion to their capacity, because readers pull work when they have room.
 - Pieces that need somewhere to send work (AgentCore, Firehose, Athena, Glue, AppSync) fail as a dead end without it.
 
 ### Add a level
 Append to `LEVELS` in `src/data/levels.ts`, including a `solution`. `npm test` fails if the starting
 setup already passes, if the solution doesn't, or if any arrow isn't an allowed connection.
+
+Advanced tickets go in `ADVANCED_LEVELS` in `src/data/advanced.ts` and can also set `budget`, `requires`, and
+`maxBacklog`. The same test checks that the start fails and the solution passes every constraint.
 
 ### Add a service
 1. Add its icon mapping to `scripts/import-icons.mjs`, then run

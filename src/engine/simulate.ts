@@ -126,6 +126,8 @@ export function simulate(nodes: SimNode[], edges: SimEdge[], scale = 1): SimResu
   const dropRatio = new Map<string, number>();
   /** Share of each edge's requests answered from a cached copy, so they never travel it. */
   const hitRate = new Map<string, number>();
+  /** Share of a splitting piece's requests that each arrow carries. */
+  const splitShare = new Map<string, number>();
 
   for (const id of order) {
     const n = byId.get(id)!;
@@ -159,10 +161,16 @@ export function simulate(nodes: SimNode[], edges: SimEdge[], scale = 1): SimResu
 
     const children = outs.get(id) ?? [];
     const hasCache = def.forward === 'broadcast' && children.some((e) => SERVICES[byId.get(e.target)!.service].cache);
+    // Readers pull from a queue when they have room, so each takes work in proportion to its capacity.
+    // Everything else that splits shares evenly, like round-robin.
+    const caps = children.map((e) => capacityOf(byId.get(e.target)!));
+    const total = caps.reduce((a, c) => a + c, 0);
+    const weighted = !!def.queue && Number.isFinite(total) && total > 0;
+    children.forEach((e, i) => splitShare.set(e.id, weighted ? caps[i] / total : 1 / children.length));
     for (const e of children) {
       const hit = def.cdnHitRate ?? (hasCache && CACHEABLE.includes(byId.get(e.target)!.service) ? CACHE_HIT : 0);
       hitRate.set(e.id, hit);
-      const share = (def.forward === 'split' ? 1 / children.length : 1) * (1 - hit);
+      const share = (def.forward === 'split' ? splitShare.get(e.id)! : 1) * (1 - hit);
       edgeRes[e.id] = { flow: oh * share, bots: ob * share };
       add(e.target, oh * share, ob * share, !!def.queue);
     }
@@ -202,7 +210,7 @@ export function simulate(nodes: SimNode[], edges: SimEdge[], scale = 1): SimResu
     if (!children.length) {
       rest = [{ p: 1, reached: new Set(), fail: def.answers ? undefined : { kind: 'deadEnd', node: id } }];
     } else if (def.forward === 'split') {
-      rest = children.flatMap((e) => weigh(along(e), 1 / children.length));
+      rest = children.flatMap((e) => weigh(along(e), splitShare.get(e.id)!));
     } else {
       rest = children.map(along).reduce(product);
     }
