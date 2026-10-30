@@ -132,38 +132,49 @@ function PlaygroundInner({ share }: { share?: string }) {
       <TopBar back={{ href: href.home, label: 'Home' }} title="Playground">
         <button
           className="btn btn-ghost"
+          title="Clear"
+          aria-label="Clear"
           onClick={() => {
             if (!window.confirm('Clear the playground and start fresh?')) return;
             load(null);
             setShowStarters(true);
           }}
         >
-          🧹 Clear
+          <span aria-hidden="true">🧹</span>
+          <span className="btn-label">Clear</span>
         </button>
-        <button className="btn btn-ghost" onClick={() => setShowStarters(true)}>
-          ✨ Starters
+        <button className="btn btn-ghost" title="Starters" aria-label="Starters" onClick={() => setShowStarters(true)}>
+          <span aria-hidden="true">✨</span>
+          <span className="btn-label">Starters</span>
         </button>
         <button
           className="btn btn-ghost"
           aria-pressed={showJudge}
+          title="Judge practice"
+          aria-label="Judge practice"
           onClick={() => {
             setSelected(null);
             setShowJudge((j) => !j);
           }}
         >
-          🎤 Judge practice
+          <span aria-hidden="true">🎤</span>
+          <span className="btn-label">Judge practice</span>
         </button>
-        <button className="btn btn-ghost" onClick={() => setShowShare(true)}>
-          🔗 Share
+        <button className="btn btn-ghost" title="Share" aria-label="Share" onClick={() => setShowShare(true)}>
+          <span aria-hidden="true">🔗</span>
+          <span className="btn-label">Share</span>
         </button>
         <button
           className="btn btn-primary"
+          title="Our AWS plan"
+          aria-label="Our AWS plan"
           onClick={() => {
             setSelected(null);
             setShowPlan(true);
           }}
         >
-          📄 Our AWS plan
+          <span aria-hidden="true">📄</span>
+          <span className="btn-label btn-label-main">Our AWS plan</span>
         </button>
       </TopBar>
 

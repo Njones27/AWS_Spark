@@ -165,6 +165,8 @@ img {
 .screen {
   display: grid;
   grid-template-rows: auto 1fr;
+  /* Never wider than the screen, so a wide top bar wraps instead of stretching the page on narrow devices. */
+  grid-template-columns: minmax(0, 1fr);
   height: 100dvh;
   min-height: 0;
 }
@@ -2116,6 +2118,11 @@ img {
   color: var(--ok);
 }
 
+.starter-picker,
+.share-dialog {
+  max-height: calc(100dvh - 32px);
+  overflow-y: auto;
+}
 .starter-picker {
   max-width: 880px;
 }
@@ -2213,6 +2220,7 @@ img {
   padding: 24px 28px 16px;
   background: var(--card);
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: 10px;
 }
 .plan-heading {
@@ -2436,4 +2444,80 @@ img {
 }
 .judge-answer b {
   font-weight: 600;
+}
+
+/* The Playground's top bar shrinks to icons on narrower screens (iPad portrait, phones). */
+@media (max-width: 1180px) {
+  .playground-screen .btn-label:not(.btn-label-main) {
+    display: none;
+  }
+}
+@media (max-width: 600px) {
+  .playground-screen .btn-label-main {
+    display: none;
+  }
+  .playground-screen .topbar {
+    flex-wrap: wrap;
+    row-gap: 6px;
+  }
+  .playground-screen .topbar-actions {
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 6px;
+  }
+  .starter-grid {
+    grid-template-columns: 1fr;
+  }
+  .starter-picker,
+  .share-dialog {
+    padding: 20px 18px;
+  }
+  .goal-card {
+    bottom: 84px;
+  }
+  .goal-hint {
+    display: none;
+  }
+  /* Phones: the piece list sits above the map instead of beside it, and side panels use the full width. */
+  .play-body {
+    grid-template-columns: 1fr;
+    grid-template-rows: 160px 1fr;
+  }
+  .catalog {
+    border-right: none;
+    border-bottom: 2px solid var(--paper-2);
+  }
+  .inspector {
+    left: 12px;
+    right: 12px;
+    width: auto;
+  }
+  .plan-card {
+    padding: 18px 16px 12px;
+  }
+  .plan-actions {
+    padding: 10px 16px 14px;
+  }
+  /* Each service becomes its own block: the name, then what it does. */
+  .plan-table thead {
+    display: none;
+  }
+  .plan-table,
+  .plan-table tbody,
+  .plan-table tr,
+  .plan-table td {
+    display: block;
+    width: 100%;
+  }
+  .plan-table td {
+    border-bottom: none;
+    padding: 4px 0;
+  }
+  .plan-table tr {
+    padding: 6px 0;
+    border-bottom: 1px solid var(--paper-2);
+  }
+  .plan-heading {
+    font-size: 22px;
+  }
 }
