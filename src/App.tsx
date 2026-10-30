@@ -17,7 +17,7 @@ export function App() {
     case 'level':
       return <LevelPlay id={route.id} />;
     case 'playground':
-      return <Playground />;
+      return <Playground share={route.share} />;
     case 'styleguide':
       return <StyleGuide />;
     default:

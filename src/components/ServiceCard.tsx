@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import { targetsOf } from '../data/rules';
 import { iconUrl, SERVICES } from '../data/services';
 import { ServiceChip } from './ServiceTip';
@@ -10,10 +11,12 @@ interface Props {
   /** The pieces that can be placed here (the tray plus the map). Targets outside it are only counted. */
   available?: ServiceId[];
   onClose?: () => void;
+  /** Extra sections shown under the explanation, above the list of arrows (the Playground's project notes). */
+  children?: ReactNode;
 }
 
 /** Info card for a selected piece: what it is, and what it can connect to. */
-export function ServiceCard({ service, label, available, onClose }: Props) {
+export function ServiceCard({ service, label, available, onClose, children }: Props) {
   const band = useBand();
   const def = SERVICES[service];
   const all = targetsOf(service, band === 'architect');
@@ -34,6 +37,7 @@ export function ServiceCard({ service, label, available, onClose }: Props) {
         )}
       </header>
       <p>{def.blurb[band]}</p>
+      {children}
       {band !== 'explorer' && Number.isFinite(def.capacity) && def.category !== 'town' && (
         <p className="service-card-cap">
           Can handle about <strong>{def.capacity}</strong> {band === 'architect' ? 'req/s' : 'visitors at once'} in this game.

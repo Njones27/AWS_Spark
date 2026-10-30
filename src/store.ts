@@ -8,11 +8,24 @@ export interface SavedNode {
   service: ServiceId;
   pos: XY;
   source?: SourceSpec;
+  /** The team's own name for the piece, like "Sign-up checker". */
+  label?: string;
+  /** Why the team chose this piece. */
+  note?: string;
+}
+
+/** What the team writes for their pitch: a project title and what each service does in their project. */
+export interface PlanInfo {
+  title: string;
+  uses: Partial<Record<ServiceId, string>>;
 }
 
 export interface SavedDiagram {
   nodes: SavedNode[];
   edges: { source: string; target: string }[];
+  plan?: PlanInfo;
+  /** The goal sentence: "{demand} {source label} can {what}". */
+  goal?: { what: string };
 }
 
 interface AppState {
@@ -42,7 +55,8 @@ export const useApp = create<AppState>()(
     }),
     {
       name: 'spark-cloud-builders',
-      version: 1,
+      version: 2,
+      migrate: migrateSaved,
       // Storage can be blocked (private mode, managed Chromebooks); fall back to memory.
       storage: createJSONStorage(() => {
         try {
@@ -61,6 +75,14 @@ export const useApp = create<AppState>()(
     },
   ),
 );
+
+/**
+ * Version 2 only added optional fields (piece names, notes, the plan, and the goal), so older saves load as they are.
+ * Without a migrate function, zustand would throw away saves from an older version.
+ */
+export function migrateSaved(persisted: unknown): AppState {
+  return persisted as AppState;
+}
 
 /** Pins the band for a subtree. The Advanced Track always uses Architect names, numbers, and explanations. */
 export const BandOverride = createContext<Band | null>(null);
