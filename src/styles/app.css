@@ -2006,6 +2006,22 @@ img {
   font-size: 14px;
   font-weight: 600;
 }
+/* A technical word that opens its definition when tapped (Terms.tsx). It reads as part of the sentence. */
+.term {
+  display: inline;
+  padding: 0;
+  border: 0;
+  background: none;
+  text-align: inherit;
+  text-decoration: underline dotted var(--pond-deep);
+  text-decoration-thickness: 2px;
+  text-underline-offset: 3px;
+  cursor: help;
+}
+.term[aria-expanded='true'] {
+  border-radius: 3px;
+  background: var(--paper-2);
+}
 
 /* ── playground challenge tools ──────────────────────────── */
 .field {
