@@ -20,7 +20,7 @@ export function Terms({ text }: { text: string }) {
 
 function TermButton({ term, text }: { term: Term; text: string }) {
   const id = useId();
-  const btn = useRef<HTMLButtonElement>(null);
+  const btn = useRef<HTMLSpanElement>(null);
   const box = useRef<HTMLDivElement>(null);
   const [anchor, setAnchor] = useState<DOMRect | null>(null);
   const [pos, setPos] = useState<{ left: number; top: number } | null>(null);
@@ -58,22 +58,36 @@ function TermButton({ term, text }: { term: Term; text: string }) {
     };
   }, [anchor]);
 
+  const toggle = (el: HTMLElement) => {
+    setPos(null);
+    // A word that wraps onto two lines has two boxes; anchor the tip to the line that was tapped (the first one).
+    setAnchor(anchor ? null : el.getClientRects()[0] ?? el.getBoundingClientRect());
+  };
+
   return (
     <>
-      <button
+      {/* A span rather than a <button>: browsers lay buttons out as unbreakable boxes, so a long term (or the bracket
+          or comma after it) jumped to its own line. A span wraps with the sentence like any other word. */}
+      <span
         ref={btn}
-        type="button"
+        role="button"
+        tabIndex={0}
         className="term"
         aria-expanded={!!anchor}
         aria-describedby={anchor ? id : undefined}
         onClick={(e) => {
           e.stopPropagation();
-          setPos(null);
-          setAnchor(anchor ? null : e.currentTarget.getBoundingClientRect());
+          toggle(e.currentTarget);
+        }}
+        onKeyDown={(e) => {
+          if (e.key !== 'Enter' && e.key !== ' ') return;
+          e.preventDefault();
+          e.stopPropagation();
+          toggle(e.currentTarget);
         }}
       >
         {text}
-      </button>
+      </span>
       {/* The tip opens beside a button that already has focus, so screen readers hear the definition from here. */}
       <span className="sr-only" role="status">
         {anchor ? `${term.title}: ${term.def}` : ''}
