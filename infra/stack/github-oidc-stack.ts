@@ -1,4 +1,4 @@
-// Account-level stack (config/app-config-account.json): the GitHub Actions OIDC provider and the AWS Budgets.
+// Account-level stack (config/app-config-account-<dev|prod>.json): the GitHub Actions OIDC provider and the AWS Budgets.
 // Deployed by hand once per account by script/setup_initial.sh, never by CI.
 
 import * as cdk from 'aws-cdk-lib';

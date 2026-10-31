@@ -1,5 +1,5 @@
 // Instantiates whichever stacks the loaded config lists under `Stack`:
-// - config/app-config-account.json: GitHubOidc
+// - config/app-config-account-<dev|prod>.json: GitHubOidc (one per AWS account)
 // - config/app-config-<stage>.json: Cicd, Data, Api, Web, Ops
 // Stacks share values through SSM parameters resolved at deploy time, so the explicit dependencies below are
 // what makes `cdk deploy` run them in order: Data -> Api -> Web -> Ops. Cicd stands alone.
@@ -7,6 +7,7 @@
 import * as cdk from 'aws-cdk-lib';
 
 import { AppContext } from './template/app-context';
+import { applyRoleBoundary } from './permissions-boundary';
 import { ApiStack } from '../stack/api-stack';
 import { CicdStack } from '../stack/cicd-stack';
 import { DataStack } from '../stack/data-stack';
@@ -49,6 +50,8 @@ export function createStacks(appContext: AppContext): SparkStacks {
 
     cdk.Tags.of(appContext.cdkApp).add('Project', Project.Name);
     cdk.Tags.of(appContext.cdkApp).add('Stage', Project.Stage);
+    // Every role gets the Spark-RoleBoundary permissions boundary (required by the bootstrap exec policy).
+    applyRoleBoundary(appContext.cdkApp);
 
     return stacks;
 }

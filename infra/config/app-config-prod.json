@@ -2,9 +2,9 @@
   "Project": {
     "Name": "Spark",
     "Stage": "Prod",
-    "Account": "179326015123",
+    "Account": "027729116436",
     "Region": "us-east-1",
-    "Profile": "walkworthy"
+    "Profile": "spark-prod"
   },
   "Stack": {
     "Cicd": {

@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { AppContext, AppContextError, ProjectPrefixType } from '../lib/template/app-context';
-import { configPath, synthConfig, templateOf, writeConfigCopy } from './helpers';
+import { ACCOUNTS, configPath, synthConfig, templateOf, writeConfigCopy } from './helpers';
 
 describe('AppContext and config validation', () => {
     afterEach(() => {
@@ -21,12 +21,12 @@ describe('AppContext and config validation', () => {
         expect(appContext.stackCommonProps.projectPrefix).toBe('Spark-Dev');
         expect(appContext.appConfig.Stack.Web.Name).toBe('Spark-Dev-Web');
         expect(appContext.appConfig.Stack.Web.ShortStackName).toBe('Web');
-        expect(appContext.stackCommonProps.env).toEqual({ account: '179326015123', region: 'us-east-1' });
+        expect(appContext.stackCommonProps.env).toEqual({ account: ACCOUNTS.dev, region: 'us-east-1' });
     });
 
     it('ignores a context override for a key the config does not have', () => {
         // synthConfig always passes Stack.Web.DistPath; the account config has no Web stack.
-        expect(() => synthConfig(configPath('account'))).not.toThrow();
+        expect(() => synthConfig(configPath('account-dev'))).not.toThrow();
     });
 
     it('rejects unknown stack keys', () => {

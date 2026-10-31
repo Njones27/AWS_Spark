@@ -15,12 +15,18 @@ import cdkJson from '../cdk.json';
 export const INFRA_DIR = path.resolve(__dirname, '..');
 export const FIXTURE_DIST = path.join(__dirname, 'fixtures', 'site');
 
-export function configPath(name: 'account' | 'dev' | 'prod'): string {
+export type ConfigName = 'account-dev' | 'account-prod' | 'dev' | 'prod';
+export const CONFIG_NAMES: readonly ConfigName[] = ['account-dev', 'account-prod', 'dev', 'prod'];
+
+/** The AWS account each shipped config targets: one account for dev, one for prod. */
+export const ACCOUNTS = { dev: '166147842278', prod: '027729116436' } as const;
+
+export function configPath(name: ConfigName): string {
     return path.join(INFRA_DIR, 'config', `app-config-${name}.json`);
 }
 
 /** Copy a shipped config to a temp file with `mutate` applied, so tests never touch infra/config. */
-export function writeConfigCopy(name: 'account' | 'dev' | 'prod', mutate: (config: any) => void): string {
+export function writeConfigCopy(name: ConfigName, mutate: (config: any) => void): string {
     const config = JSON.parse(fs.readFileSync(configPath(name), 'utf8'));
     mutate(config);
     const file = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'spark-infra-')), `app-config-${name}.json`);
@@ -57,10 +63,12 @@ export function templateOf(stack: cdk.Stack | undefined): Template {
     return Template.fromStack(stack);
 }
 
+export function stacksOf(result: SynthResult): cdk.Stack[] {
+    return result.appContext.cdkApp.node.children.filter((child): child is cdk.Stack => cdk.Stack.isStack(child));
+}
+
 export function stackIds(result: SynthResult): string[] {
-    return result.appContext.cdkApp.node.children
-        .filter((child): child is cdk.Stack => cdk.Stack.isStack(child))
-        .map((stack) => stack.stackName);
+    return stacksOf(result).map((stack) => stack.stackName);
 }
 
 /** The single resource of `type` in a template, or a failure listing how many there were. */

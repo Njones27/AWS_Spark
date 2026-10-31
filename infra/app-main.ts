@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // CDK entry point (cdk.json: `npx tsx app-main.ts`). Shaped like aws-samples/aws-cdk-project-template-for-devops
-// infra/app-main.ts: pick a config with `-c APP_CONFIG=config/app-config-<account|dev|prod>.json` or `export APP_CONFIG=...`.
+// infra/app-main.ts: pick a config with `-c APP_CONFIG=config/app-config-<account-dev|account-prod|dev|prod>.json` or `export APP_CONFIG=...`.
 
 import { AppContext, AppContextError, ProjectPrefixType } from './lib/template/app-context';
 import { createStacks } from './lib/create-stacks';
