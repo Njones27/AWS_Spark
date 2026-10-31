@@ -23,6 +23,15 @@ describe('tap-to-define terms', () => {
     expect(terms('rapid comfortable stables')).toEqual([]);
   });
 
+  it('leaves everyday words alone', () => {
+    expect(terms('Their summer events are on a paper flyer')).toEqual([]);
+  });
+
+  it('defines "key" for both encryption and S3 file names', () => {
+    const key = findTerms('Objects are addressed by bucket and key').find((p) => typeof p !== 'string');
+    expect(typeof key !== 'string' && key?.term.def).toMatch(/S3/);
+  });
+
   it('keeps the text intact', () => {
     const line = 'IAM → Checkout, KMS → Orders table, API Gateway → Cognito.';
     expect(

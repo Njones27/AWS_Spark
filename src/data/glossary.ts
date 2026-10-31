@@ -125,10 +125,6 @@ const TERMS: (Term & { words: string[] })[] = [
     id: 'fan-out', title: 'Fan-out', words: ['fan-out', 'Fan-out'],
     def: 'Sending one message to many listeners at once, so each system gets its own copy.',
   },
-  {
-    id: 'event', title: 'Event', words: ['event'],
-    def: 'A note that something happened, like “a new order was placed,” that other systems can react to.',
-  },
 
   // ── security ────────────────────────────────────────────────
   {
@@ -145,7 +141,7 @@ const TERMS: (Term & { words: string[] })[] = [
   },
   {
     id: 'key', title: 'Key', words: ['key'],
-    def: 'A secret value used to lock (encrypt) information and unlock it again. Whoever controls the key controls who can read it.',
+    def: 'In security, a secret value that locks (encrypts) information and unlocks it again. In S3, a key is simply a file’s name inside its bucket.',
   },
   {
     id: 'cmk', title: 'Customer managed key', words: ['customer managed key'],
@@ -177,13 +173,13 @@ const TERMS: (Term & { words: string[] })[] = [
   },
   {
     id: 'botnet', title: 'Botnet', words: ['botnet'],
-    def: 'Many computers controlled by one person and used together, often to flood or copy a website.',
+    def: 'Many hacked computers controlled by one attacker and used together, often to flood a website with fake traffic.',
   },
 
   // ── AI ──────────────────────────────────────────────────────
   {
     id: 'model', title: 'AI model', words: ['model', 'language model'],
-    def: 'A program trained on lots of examples, so it can write and answer questions in everyday language.',
+    def: 'A program trained on lots of examples, so it can make predictions or write and answer in everyday language.',
   },
   {
     id: 'agent', title: 'AI agent', words: ['agent'],
@@ -219,11 +215,9 @@ for (const t of [...TERMS, ...SERVICE_TERMS]) {
 }
 
 const escape = (s: string) => s.replace(/[.*+?^${}()|[\]\\/]/g, '\\$&');
-// Longest first, so "API Gateway" wins over "API". An optional "s" covers plurals.
-const PATTERN = new RegExp(
-  `(?<![\\w])(${[...BY_WORD.keys()].sort((a, b) => b.length - a.length).map(escape).join('|')})(s?)(?![\\w])`,
-  'g',
-);
+// Longest first, so "API Gateway" wins over "API". An optional "s" covers plurals. Every word starts and ends with a
+// letter or digit, so \b marks its edges (and older iPads' Safari can't read lookbehinds).
+const PATTERN = new RegExp(`\\b(${[...BY_WORD.keys()].sort((a, b) => b.length - a.length).map(escape).join('|')})(s?)\\b`, 'g');
 
 export type Piece = string | { term: Term; text: string };
 

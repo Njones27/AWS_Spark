@@ -13,7 +13,7 @@ export function Terms({ text }: { text: string }) {
   if (band !== 'architect') return <>{text}</>;
   return (
     <>
-      {findTerms(text).map((p, i) => (typeof p === 'string' ? p : <TermButton key={i} term={p.term} text={p.text} />))}
+      {findTerms(text).map((p, i) => (typeof p === 'string' ? p : <TermButton key={`${i}-${p.term.id}`} term={p.term} text={p.text} />))}
     </>
   );
 }
@@ -74,6 +74,10 @@ function TermButton({ term, text }: { term: Term; text: string }) {
       >
         {text}
       </button>
+      {/* The tip opens beside a button that already has focus, so screen readers hear the definition from here. */}
+      <span className="sr-only" role="status">
+        {anchor ? `${term.title}: ${term.def}` : ''}
+      </span>
       {anchor &&
         createPortal(
           <div
