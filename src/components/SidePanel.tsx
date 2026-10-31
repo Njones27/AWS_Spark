@@ -110,7 +110,7 @@ export function SidePanel({
           aria-label={`Resize ${label.toLowerCase()} panel`}
           aria-valuemin={MIN}
           aria-valuemax={MAX}
-          aria-valuenow={saved.width}
+          aria-valuenow={Math.round(Math.max(MIN, Math.min(saved.width, window.innerWidth * 0.4)))}
           tabIndex={0}
           title="Drag to resize. Double-click to reset."
           onPointerDown={onPointerDown}

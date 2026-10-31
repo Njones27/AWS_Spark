@@ -716,7 +716,7 @@ img {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
   grid-template-rows: minmax(0, 1fr);
-  width: max(200px, min(var(--panel-w), 40vw));
+  width: max(220px, min(var(--panel-w), 40vw));
   min-height: 0;
 }
 .side-panel > aside {
