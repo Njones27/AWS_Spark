@@ -333,7 +333,7 @@ function LevelInner({ level }: { level: Level }) {
 
       <div className="level-body">
         {!phone && (
-          <SidePanel id="level" label="Mission" width={330} className="story-panel">
+          <SidePanel id="level" label="Mission" width={window.innerWidth <= 1180 ? 270 : 330} className="story-panel">
             {panel}
             {serviceCard}
           </SidePanel>

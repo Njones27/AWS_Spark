@@ -2896,16 +2896,6 @@ img {
   }
 }
 
-/* Every scroll box holds its own positioned children. Without this, hidden screen-reader text (.sr-only, which is
-   absolutely positioned) far down a scrolled list escapes the box and makes the whole page taller, so the screen
-   scrolls and slides out from under the top bar. */
-.story-panel,
-.catalog,
-.map-main,
-.modal-scroll {
-  position: relative;
-}
-
 /* Scrollbars: a thin thumb on a clear track, so no square strip shows beside rounded cards. */
 .inspector,
 .story-panel,
@@ -3056,6 +3046,10 @@ img {
 }
 .sr-only {
   position: absolute;
+  /* Pinned to the corner of whatever holds it. Left where it falls, one far down a scrolled panel escaped the panel
+     and made the whole page taller, so the screen scrolled and slid out from under the top bar. */
+  top: 0;
+  left: 0;
   width: 1px;
   height: 1px;
   overflow: hidden;

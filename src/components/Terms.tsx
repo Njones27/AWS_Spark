@@ -83,7 +83,8 @@ function TermButton({ term, text }: { term: Term; text: string }) {
           if (e.key !== 'Enter' && e.key !== ' ') return;
           e.preventDefault();
           e.stopPropagation();
-          toggle(e.currentTarget);
+          // Holding the key down would flick the definition open and shut.
+          if (!e.repeat) toggle(e.currentTarget);
         }}
       >
         {text}

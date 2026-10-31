@@ -21,6 +21,11 @@ function load(key: string, width: number): Saved {
   }
 }
 
+/** The panel's width on screen, which the CSS caps below the saved one on a narrow window. Resizing starts from it. */
+function shownWidth(handle: HTMLElement) {
+  return handle.parentElement?.getBoundingClientRect().width ?? MIN;
+}
+
 function clamp(w: number) {
   return Math.round(Math.min(MAX, Math.max(MIN, w)));
 }
@@ -51,13 +56,15 @@ export function SidePanel({
   const panelId = useId();
   const start = useRef<{ x: number; width: number } | null>(null);
 
+  // Saved once a drag ends, not on every step of it.
   useEffect(() => {
+    if (dragging) return;
     try {
       localStorage.setItem(key, JSON.stringify(saved));
     } catch {
       // Storage can be blocked; the panel still works, it just isn't remembered.
     }
-  }, [key, saved]);
+  }, [key, saved, dragging]);
 
   const resize = (w: number) => setSaved((s) => ({ ...s, width: clamp(w) }));
   const toggle = () => setSaved((s) => ({ ...s, open: !s.open }));
@@ -66,9 +73,7 @@ export function SidePanel({
     if (e.button !== 0) return;
     e.preventDefault();
     e.currentTarget.setPointerCapture(e.pointerId);
-    // Start from the width on screen, which the CSS may have capped below the saved one on a narrow window.
-    const shown = e.currentTarget.parentElement?.getBoundingClientRect().width ?? saved.width;
-    start.current = { x: e.clientX, width: shown };
+    start.current = { x: e.clientX, width: shownWidth(e.currentTarget) };
     setDragging(true);
   };
   const onPointerMove = (e: PointerEvent<HTMLDivElement>) => {
@@ -79,9 +84,10 @@ export function SidePanel({
     setDragging(false);
   };
   const onKeyDown = (e: KeyboardEvent<HTMLDivElement>) => {
+    const shown = shownWidth(e.currentTarget);
     const next =
-      e.key === 'ArrowLeft' ? saved.width - STEP
-      : e.key === 'ArrowRight' ? saved.width + STEP
+      e.key === 'ArrowLeft' ? shown - STEP
+      : e.key === 'ArrowRight' ? shown + STEP
       : e.key === 'Home' ? MIN
       : e.key === 'End' ? MAX
       : null;

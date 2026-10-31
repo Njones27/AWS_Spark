@@ -292,7 +292,7 @@ function PlaygroundInner({ share, shareId }: { share?: string; shareId?: string 
 
       <div className="play-body">
         {!phone && (
-          <SidePanel id="playground" label="Pieces" width={260} className="catalog">
+          <SidePanel id="playground" label="Pieces" width={window.innerWidth <= 900 ? 220 : 260} className="catalog">
             {pieceList}
           </SidePanel>
         )}

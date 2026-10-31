@@ -311,7 +311,7 @@ export function BuilderCanvas({
               if (event) moved.current = true;
             }}
             fitView
-            fitViewOptions={{ padding: fitPadding() }}
+            fitViewOptions={{ padding: sideways ? PHONE_WIDE_FIT : phone ? PHONE_FIT : LAPTOP_FIT }}
             minZoom={0.3}
             maxZoom={1.8}
             connectionRadius={44}
