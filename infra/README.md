@@ -169,6 +169,9 @@ merge to main ──> deploy.yml ──> dev: deploy, smoke test ──> prod: w
   only from `main` (`deploy.yml`), after the owner approves the `prod` environment.
 - Dev holds whatever deployed last: the newest PR push, or `main` after a merge. With two PRs open at once,
   the last one pushed wins until the other is pushed again.
+- Dev deploys from PRs and from `main` share one queue. If a PR push queues behind a running dev deploy while a
+  merge-to-main dev deploy is also waiting, GitHub keeps only the newest, so the main run's `dev` job is cancelled
+  and its `prod` job is skipped. Nothing reaches prod; re-run **Actions → Deploy** for that merge.
 - PRs from forks run `verify` only. They get no OIDC token, and their code never runs with AWS credentials.
 - A newer push to the same PR cancels its old checks, but never a deploy that has started (job-level
   concurrency, see below).
