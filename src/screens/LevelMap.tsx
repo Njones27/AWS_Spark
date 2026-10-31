@@ -1,6 +1,7 @@
 import { MapScene } from '../components/art/Scenery';
 import { Sparky } from '../components/art/Sparky';
 import { TopBar } from '../components/Chrome';
+import { STORY } from '../data/chapters';
 import type { Chapter } from '../data/levels';
 import { iconUrl } from '../data/services';
 import { bt } from '../data/text';
@@ -20,6 +21,14 @@ const STOPS: Record<string, { x: number; y: number }[]> = {
     { x: 880, y: 310 },
     { x: 780, y: 170 },
   ],
+  ch2: [
+    { x: 110, y: 470 },
+    { x: 290, y: 400 },
+    { x: 250, y: 220 },
+    { x: 470, y: 180 },
+    { x: 650, y: 330 },
+    { x: 850, y: 260 },
+  ],
   adv: [
     { x: 100, y: 490 },
     { x: 270, y: 400 },
@@ -31,8 +40,18 @@ const STOPS: Record<string, { x: number; y: number }[]> = {
   ],
 };
 
+/** True once every level in a chapter is done. */
+export const chapterDone = (chapter: Chapter, completed: string[]) => chapter.levels.every((l) => completed.includes(l.id));
+
+/** A Story Mode chapter opens when the one before it is finished. */
+export function chapterOpen(chapter: Chapter, completed: string[], unlockAll: boolean) {
+  const i = STORY.indexOf(chapter);
+  return unlockAll || i <= 0 || chapterDone(STORY[i - 1], completed);
+}
+
 export function isUnlocked(chapter: Chapter, index: number, completed: string[], unlockAll: boolean) {
-  return unlockAll || index === 0 || completed.includes(chapter.levels[index - 1].id);
+  if (index === 0) return chapterOpen(chapter, completed, unlockAll);
+  return unlockAll || completed.includes(chapter.levels[index - 1].id);
 }
 
 export function LevelMap({ chapter }: { chapter: Chapter }) {
@@ -102,8 +121,31 @@ export function LevelMap({ chapter }: { chapter: Chapter }) {
           </div>
           {nextIndex >= 0 && (
             <a className="btn btn-primary btn-lg" href={href.level(levels[nextIndex].id)}>
-              {progress ? 'Keep going' : advanced ? 'Start your first shift' : 'Start the story'} ▶
+              {progress ? 'Keep going' : advanced ? 'Start your first shift' : chapter === STORY[0] ? 'Start the story' : `Start ${chapter.eyebrow}`} ▶
             </a>
+          )}
+          {!advanced && (
+            <nav className="chapter-list" aria-label="Story chapters">
+              {STORY.map((c) => {
+                const open = chapterOpen(c, completed, unlockAll);
+                const done = c.levels.filter((l) => completed.includes(l.id)).length;
+                return (
+                  <a
+                    key={c.id}
+                    href={open ? href.chapter(c.id) : undefined}
+                    aria-disabled={!open}
+                    aria-current={c.id === chapter.id ? 'page' : undefined}
+                    className={`chapter-link ${c.id === chapter.id ? 'is-current' : ''} ${open ? '' : 'is-locked'}`}
+                  >
+                    <span aria-hidden="true">{done === c.levels.length ? '⭐' : open ? '📖' : '🔒'}</span>
+                    <span>
+                      <strong>{c.eyebrow}</strong>
+                      {c.title} · {done} of {c.levels.length}
+                    </span>
+                  </a>
+                );
+              })}
+            </nav>
           )}
           {advanced && (
             <p className="map-note">

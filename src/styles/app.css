@@ -2561,3 +2561,54 @@ img {
   scrollbar-width: thin;
   scrollbar-color: var(--paper-3) transparent;
 }
+
+/* ── story chapters ──────────────────────────────────────── */
+.chapter-list {
+  display: grid;
+  gap: 6px;
+  background: var(--card);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-sm);
+  padding: 8px;
+}
+.chapter-link {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 10px;
+  align-items: center;
+  padding: 8px 10px;
+  border-radius: var(--r-sm);
+  color: var(--ink);
+  text-decoration: none;
+  font-size: 13.5px;
+}
+.chapter-link strong {
+  display: block;
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 15px;
+}
+.chapter-link:hover {
+  background: var(--paper);
+}
+.chapter-link.is-current {
+  background: var(--sun-soft);
+}
+.chapter-link.is-locked {
+  color: var(--ink-faint);
+  cursor: not-allowed;
+}
+@media (max-width: 600px) {
+  /* The map is too small to show every stop's name, so the names are hidden visually but still read by screen readers.
+     The numbered stops stay tappable, and the sidebar names the next one. */
+  .stop-label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    clip-path: inset(50%);
+    white-space: nowrap;
+    padding: 0;
+  }
+}

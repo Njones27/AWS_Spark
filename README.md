@@ -7,6 +7,10 @@ A visual, game-like web app that teaches K–12 students how AWS services fit to
 - **Story Mode**: 9 levels where Baker Rosa's bakery, Crumb & Co., goes online. Each level gives you a few
   pieces. You connect them and press **Run** to watch requests flow along the arrows. Overloaded pieces
   turn red; queued work waits in line; gremlin bots get blocked.
+  **Chapter 2: Maple Hollow Helps** opens after that: 6 levels where the whole town needs help with the kinds of
+  problems STLP teams pick (a library events site, park cleanup sign-ups, late-bus alerts, an AI school helper, notes
+  in every language, and a photo lost-and-found), using CloudFront, S3, API Gateway, Lambda, DynamoDB, SNS, Bedrock,
+  Translate, Polly, and Rekognition.
 - **Advanced Track (college & up)**: 7 on-call tickets two years later, when Crumb & Co. has grown into a national
   delivery platform and you're its first cloud engineer. Tickets add constraints beyond "everyone is happy": a monthly
   **budget**, **required arrows** (an IAM role, a KMS key, a Cognito authorizer, a CloudWatch alarm), and queues that

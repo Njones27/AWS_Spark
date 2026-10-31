@@ -3,7 +3,7 @@ import { useSyncExternalStore } from 'react';
 // Hash routes work on any static host (S3, Amplify, GitHub Pages) without rewrite rules.
 export type Route =
   | { name: 'home' }
-  | { name: 'map' }
+  | { name: 'map'; chapter: string }
   | { name: 'advanced' }
   | { name: 'level'; id: string }
   /** `share` is a teammate's design from a share link: #/playground?d=… */
@@ -15,11 +15,11 @@ function parse(hash: string): Route {
   const parts = path.split('/').filter(Boolean);
   switch (parts[0]) {
     case 'levels':
-      return { name: 'map' };
+      return { name: 'map', chapter: parts[1] === '2' ? 'ch2' : 'ch1' };
     case 'advanced':
       return { name: 'advanced' };
     case 'level':
-      return parts[1] ? { name: 'level', id: parts[1] } : { name: 'map' };
+      return parts[1] ? { name: 'level', id: parts[1] } : { name: 'map', chapter: 'ch1' };
     case 'playground':
       return { name: 'playground', share: new URLSearchParams(query).get('d') ?? undefined };
     case 'styleguide':
@@ -43,7 +43,7 @@ export const href = {
   home: '#/',
   map: '#/levels',
   advanced: '#/advanced',
-  chapter: (id: string) => (id === 'adv' ? '#/advanced' : '#/levels'),
+  chapter: (id: string) => (id === 'adv' ? '#/advanced' : id === 'ch2' ? '#/levels/2' : '#/levels'),
   level: (id: string) => `#/level/${id}`,
   playground: '#/playground',
   styleguide: '#/styleguide',
