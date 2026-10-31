@@ -8,6 +8,14 @@ const DELAY = 350;
 const GAP = 8;
 const EDGE = 12;
 
+/** Where a tip goes: above the element (or below, if there's no room), kept inside the window. */
+export function placeTip(anchor: DOMRect, box: HTMLElement) {
+  const { width, height } = box.getBoundingClientRect();
+  const left = Math.min(Math.max(EDGE, anchor.left + anchor.width / 2 - width / 2), window.innerWidth - width - EDGE);
+  const top = anchor.top - height - GAP >= EDGE ? anchor.top - height - GAP : anchor.bottom + GAP;
+  return { left, top };
+}
+
 /**
  * Hover (mouse) or keyboard-focus explanation for a service: its full name and the blurb for the current band.
  * Spread `props` on the element that triggers it and render `tip` next to it. Touch doesn't open it: tapping a
@@ -40,13 +48,8 @@ export function useServiceTip(service: ServiceId) {
     };
   }, [anchor, hide]);
 
-  // Place it above the element (or below, if there's no room), kept inside the window.
   useEffect(() => {
-    if (!anchor || !box.current) return;
-    const { width, height } = box.current.getBoundingClientRect();
-    const left = Math.min(Math.max(EDGE, anchor.left + anchor.width / 2 - width / 2), window.innerWidth - width - EDGE);
-    const top = anchor.top - height - GAP >= EDGE ? anchor.top - height - GAP : anchor.bottom + GAP;
-    setPos({ left, top });
+    if (anchor && box.current) setPos(placeTip(anchor, box.current));
   }, [anchor]);
 
   useEffect(() => () => window.clearTimeout(timer.current), []);

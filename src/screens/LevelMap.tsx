@@ -2,12 +2,13 @@ import { MapScene } from '../components/art/Scenery';
 import { Sparky } from '../components/art/Sparky';
 import { BuilderKeyButton } from '../components/BuilderKey';
 import { TopBar } from '../components/Chrome';
+import { Terms } from '../components/Terms';
 import { STORY } from '../data/chapters';
 import type { Chapter } from '../data/levels';
 import { iconUrl } from '../data/services';
 import { bt } from '../data/text';
 import { href } from '../router';
-import { useApp, useBand } from '../store';
+import { BandOverride, useApp, useBand } from '../store';
 
 // Stop positions in the 1000×600 map space.
 const STOPS: Record<string, { x: number; y: number }[]> = {
@@ -56,9 +57,17 @@ export function isUnlocked(chapter: Chapter, index: number, completed: string[],
 }
 
 export function LevelMap({ chapter }: { chapter: Chapter }) {
-  const userBand = useBand();
+  // The Advanced Track always uses Architect detail, for everything on the screen.
+  return (
+    <BandOverride.Provider value={chapter.id === 'adv' ? 'architect' : null}>
+      <ChapterMap chapter={chapter} />
+    </BandOverride.Provider>
+  );
+}
+
+function ChapterMap({ chapter }: { chapter: Chapter }) {
+  const band = useBand();
   const advanced = chapter.id === 'adv';
-  const band = advanced ? 'architect' : userBand;
   const levels = chapter.levels;
   const completed = useApp((s) => s.completed);
   const unlockAll = useApp((s) => s.unlockAll);
@@ -113,13 +122,23 @@ export function LevelMap({ chapter }: { chapter: Chapter }) {
           <div className="speech">
             <Sparky mood={finished ? 'cheer' : 'happy'} size={84} />
             <p>
-              {finished
-                ? bt(chapter.ending, band)
-                : nextIndex >= 0
-                  ? `Next up: “${levels[nextIndex].title}”. ${bt(levels[nextIndex].goal, band)}`
-                  : chapter.blurb}
+              <Terms
+                text={
+                  finished
+                    ? bt(chapter.ending, band)
+                    : nextIndex >= 0
+                      ? `Next up: “${levels[nextIndex].title}”. ${bt(levels[nextIndex].goal, band)}`
+                      : chapter.blurb
+                }
+              />
             </p>
           </div>
+          {advanced && (
+            <p className="term-hint">
+              <span aria-hidden="true">📖</span> Tap any <span className="term-sample">dotted word</span> to see what it means
+              in plain words.
+            </p>
+          )}
           {nextIndex >= 0 && (
             <a className="btn btn-primary btn-lg" href={href.level(levels[nextIndex].id)}>
               {progress ? 'Keep going' : advanced ? 'Start your first shift' : chapter === STORY[0] ? 'Start the story' : `Start ${chapter.eyebrow}`} ▶

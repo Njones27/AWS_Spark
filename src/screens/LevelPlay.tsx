@@ -9,6 +9,7 @@ import { TopBar } from '../components/Chrome';
 import { Sheet, TurnTip } from '../components/PhoneChrome';
 import { ServiceCard } from '../components/ServiceCard';
 import { ServiceChip } from '../components/ServiceTip';
+import { Terms } from '../components/Terms';
 import { topProblem } from '../data/feedback';
 import { chapterOf, levelById, STORY } from '../data/chapters';
 import { type Level, type Mood } from '../data/levels';
@@ -198,7 +199,9 @@ function LevelInner({ level }: { level: Level }) {
     <>
       <div className={`speech speech-${sparkyMood}`} aria-live={phone ? undefined : 'polite'}>
         <Sparky mood={sparkyMood} size={78} />
-        <p>{sparkyText}</p>
+        <p>
+          <Terms text={sparkyText} />
+        </p>
       </div>
 
       <section className="goals" aria-label="Goals">
@@ -213,7 +216,9 @@ function LevelInner({ level }: { level: Level }) {
               <div className="goal-body">
                 <strong>{n.data.label}</strong>
                 <span className="goal-line">
-                  {res ? `${Math.round(res.ok)} of ${Math.round(res.demand)} happy` : `${n.data.source!.demand} ${band === 'architect' ? 'req/s' : 'visitors'}`}
+                  <Terms
+                    text={res ? `${Math.round(res.ok)} of ${Math.round(res.demand)} happy` : `${n.data.source!.demand} ${band === 'architect' ? 'req/s' : 'visitors'}`}
+                  />
                   {!!n.data.source!.bots && !res && <> + {n.data.source!.bots} gremlin bots</>}
                 </span>
                 {!!n.data.source!.needs?.length && (
@@ -249,8 +254,14 @@ function LevelInner({ level }: { level: Level }) {
                   {state === 'ok' ? '✓' : state === 'bad' ? '!' : '○'}
                 </span>
                 <div className="goal-body">
-                  <strong>{o.label}</strong>
-                  {o.detail && <span className="goal-line">{o.detail}</span>}
+                  <strong>
+                    <Terms text={o.label} />
+                  </strong>
+                  {o.detail && (
+                    <span className="goal-line">
+                      <Terms text={o.detail} />
+                    </span>
+                  )}
                 </div>
               </div>
             );
@@ -261,7 +272,7 @@ function LevelInner({ level }: { level: Level }) {
       <section className="hints" aria-label="Hints">
         {level.hints.slice(0, hints).map((h, i) => (
           <p key={i} className="hint">
-            <span aria-hidden="true">💡</span> {bt(h, band)}
+            <span aria-hidden="true">💡</span> <Terms text={bt(h, band)} />
           </p>
         ))}
         {hints < level.hints.length && (
@@ -410,13 +421,19 @@ function LevelInner({ level }: { level: Level }) {
                   {chapter.unit} {level.number} {advanced ? 'resolved' : 'complete'}!
                 </p>
                 <h2 id="win-title">{level.lesson.title}</h2>
-                <p>{bt(level.lesson.text, band)}</p>
+                <p>
+                  <Terms text={bt(level.lesson.text, band)} />
+                </p>
                 <div className="win-learned">
                   {level.teaches.map((s) => (
                     <ServiceChip key={s} service={s} full />
                   ))}
                 </div>
-                {!next && <p className="win-ending">{bt(chapter.ending, band)}</p>}
+                {!next && (
+                  <p className="win-ending">
+                    <Terms text={bt(chapter.ending, band)} />
+                  </p>
+                )}
                 <div className="modal-actions">
                   <button className="btn btn-ghost" onClick={stop}>
                     Keep tinkering
@@ -483,7 +500,9 @@ function StoryIntro({ level, beat, onNext, onSkip }: { level: Level; beat: numbe
           </div>
           <div className="story-say">
             <span className="story-who">{cast[b.who]}</span>
-            <p>{bt(b.text, band)}</p>
+            <p>
+              <Terms text={bt(b.text, band)} />
+            </p>
           </div>
         </div>
         <div className="story-foot">
