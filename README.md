@@ -18,6 +18,17 @@ A visual, game-like web app that teaches K–12 students how AWS services fit to
   fan-out, an S3 + Athena data lake, and a grounded Bedrock AgentCore agent. Always uses real AWS names and numbers.
 - **Playground**: build anything with 48 pieces, from S3 and Lambda to IAM, containers, data tools, and Bedrock AgentCore. Only connections that make sense snap together. Try one
   that doesn't, and Sparky explains why and suggests what to connect instead.
+- **Challenge tools** (in the Playground), for K–12 teams pitching an AWS solution to a community problem:
+  - **Starters**: pick your kind of problem (share information, collect sign-ups, send alerts, AI answers, understand
+    photos, more languages) and start from a plan that already works.
+  - **Your project's words and a goal**: rename any piece ("Sign-up checker"), with the AWS name kept underneath, and set a
+    goal like "80 volunteers can sign up". **Run** checks it.
+  - **Why we chose it**: a note on each piece, plus other services that could do the same job and when to pick each.
+  - **Our AWS plan**: a pitch-ready card with a picture of the map, what each service does, how it works, and the
+    sources to cite. Copy it as text or save it as a picture.
+  - **Judge practice**: questions a judge might ask, checked against your map: a 10× crowd, who can read your data,
+    how you'd know something broke, and why you picked each main service.
+  - **Share**: a link that carries the whole design, so teammates, coaches, and mentors can open it. No server or account.
 - **Grade bands**: Explorer (K–5), Builder (6–8), and Architect (9–12). Every band uses the real AWS service
   names. Each band changes the explanations, numbers, and hints.
 - **Hover to learn**: point at any piece, tray item, or service chip to see what that service does, explained
@@ -51,6 +62,9 @@ Progress is saved in the browser (localStorage). Nothing is sent to a server.
 | `src/data/advanced.ts` | Advanced Track tickets, with budgets, required arrows, and backlog limits |
 | `src/data/costs.ts` | Rough monthly cost of each piece, used by budget tickets |
 | `src/engine/objectives.ts` | Checks a ticket's budget, required arrows, and queue backlog |
+| `src/data/starters.ts`, `src/data/alternatives.ts` | Playground starter plans, and which services can do the same job (with "pick it when…") |
+| `src/engine/judge.ts`, `src/engine/share.ts` | Judge-practice questions checked against a map, and share-link encoding (validated on open) |
+| `src/components/playground/` | Starters, goal card, project notes, plan export, judge panel, share dialog |
 | `src/engine/simulate.ts` | Traffic model. A forward pass computes the load on every piece; a backward pass works out why each request did or didn't finish |
 | `src/engine/validate.ts` | Connection checks: rule, duplicate, self, and loop |
 | `src/components/canvas/` | React Flow canvas, pieces, flowing dashed edges with request dots, the tray (drag or tap), and the "why" bubble |
