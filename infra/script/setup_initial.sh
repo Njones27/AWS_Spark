@@ -66,14 +66,21 @@ echo "ConcurrentExecutions quota in $REGION: $QUOTA"
 RESERVED="$(config_get "$STAGE_CONFIG" Stack.Api.ReservedConcurrency)"
 RESERVED="${RESERVED:-0}"
 NEEDED=$((RESERVED + 100))
-if [ "$QUOTA" -lt "$NEEDED" ]; then
+STAGE_NAME="$(config_get "$STAGE_CONFIG" Project.Name)-$(config_get "$STAGE_CONFIG" Project.Stage)"
+if [ "$RESERVED" -eq 0 ]; then
+  echo "OK: $STAGE_NAME reserves no concurrency, so any quota works."
+  if [ "$QUOTA" -lt 1000 ]; then
+    echo "Note: the quota is below the default 1000. Request it before setting Api.ReservedConcurrency:"
+    echo "  aws service-quotas request-service-quota-increase --region $REGION --service-code lambda --quota-code L-B99A9384 --desired-value 1000"
+  fi
+elif [ "$QUOTA" -lt "$NEEDED" ]; then
   cat <<WARN
-WARNING: the quota ($QUOTA) is below the stage reservation plus the 100 Lambda keeps unreserved ($NEEDED).
-$(config_get "$STAGE_CONFIG" Project.Name)-$(config_get "$STAGE_CONFIG" Project.Stage) reserves $RESERVED (Api.ReservedConcurrency in $STAGE_CONFIG), so it will fail to deploy until
-the quota is raised. Request the default quota, then deploy the stage once it is granted:
+WARNING: $STAGE_NAME reserves $RESERVED (Api.ReservedConcurrency in $STAGE_CONFIG), which needs a quota of at
+least $NEEDED (the reservation plus the 100 Lambda keeps unreserved). The quota is $QUOTA, so the Api stack will fail
+to deploy until it is raised. Request it, or set Api.ReservedConcurrency to 0 meanwhile:
   aws service-quotas request-service-quota-increase --region $REGION \\
     --service-code lambda --quota-code L-B99A9384 --desired-value 1000
-A stage with ReservedConcurrency 0 deploys fine in the meantime. Continuing.
+Continuing.
 WARN
 else
   echo "OK: covers the stage reservation ($RESERVED) plus 100 unreserved."
