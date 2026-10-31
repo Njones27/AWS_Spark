@@ -9,7 +9,9 @@
     "preview": "vite preview",
     "test": "vitest run",
     "typecheck": "tsc -b --noEmit",
-    "icons": "node scripts/import-icons.mjs"
+    "icons": "node scripts/import-icons.mjs",
+    "test:all": "vitest run && npm test -w backend && npm test -w infra",
+    "typecheck:all": "tsc -b --noEmit && npm run typecheck -w backend && npm run typecheck -w infra"
   },
   "dependencies": {
     "@fontsource-variable/fredoka": "^5.3.0",
@@ -27,5 +29,12 @@
     "typescript": "~5.9",
     "vite": "^7.3.7",
     "vitest": "^5.0.5"
+  },
+  "workspaces": [
+    "backend",
+    "infra"
+  ],
+  "engines": {
+    "node": ">=24"
   }
 }

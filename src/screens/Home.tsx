@@ -1,5 +1,6 @@
 import { TownScene } from '../components/art/Scenery';
 import { Sparky } from '../components/art/Sparky';
+import { BuilderKeyButton } from '../components/BuilderKey';
 import { BandPicker, BandSwitch } from '../components/Chrome';
 import { ADVANCED } from '../data/advanced';
 import { STORY } from '../data/chapters';
@@ -23,7 +24,10 @@ export function Home() {
         <span className="wordmark">
           <span className="wordmark-spark" aria-hidden="true">⚡</span> Spark
         </span>
-        <BandSwitch />
+        <div className="topbar-actions">
+          <BuilderKeyButton variant="chip" />
+          <BandSwitch />
+        </div>
       </div>
       <main className="home-hero">
         <div className="home-title">

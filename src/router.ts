@@ -6,11 +6,14 @@ export type Route =
   | { name: 'map'; chapter: string }
   | { name: 'advanced' }
   | { name: 'level'; id: string }
-  /** `share` is a teammate's design from a share link: #/playground?d=… */
-  | { name: 'playground'; share?: string }
+  /**
+   * A teammate's design from a share link. `share` is the whole design in a long link (#/playground?d=…);
+   * `shareId` is a short link (#/s/<id>) that Spark's API looks up.
+   */
+  | { name: 'playground'; share?: string; shareId?: string }
   | { name: 'styleguide' };
 
-function parse(hash: string): Route {
+export function parseRoute(hash: string): Route {
   const [path, query = ''] = hash.replace(/^#\/?/, '').split('?');
   const parts = path.split('/').filter(Boolean);
   switch (parts[0]) {
@@ -22,6 +25,8 @@ function parse(hash: string): Route {
       return parts[1] ? { name: 'level', id: parts[1] } : { name: 'map', chapter: 'ch1' };
     case 'playground':
       return { name: 'playground', share: new URLSearchParams(query).get('d') ?? undefined };
+    case 's':
+      return parts[1] ? { name: 'playground', shareId: parts[1] } : { name: 'playground' };
     case 'styleguide':
       return { name: 'styleguide' };
     default:
@@ -36,7 +41,7 @@ const subscribe = (cb: () => void) => {
 
 export function useRoute(): Route {
   const hash = useSyncExternalStore(subscribe, () => window.location.hash);
-  return parse(hash);
+  return parseRoute(hash);
 }
 
 export const href = {
@@ -46,6 +51,8 @@ export const href = {
   chapter: (id: string) => (id === 'adv' ? '#/advanced' : id === 'ch2' ? '#/levels/2' : '#/levels'),
   level: (id: string) => `#/level/${id}`,
   playground: '#/playground',
+  /** A short share link. */
+  share: (id: string) => `#/s/${id}`,
   styleguide: '#/styleguide',
 };
 

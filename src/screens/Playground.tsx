@@ -1,5 +1,7 @@
 import { ReactFlowProvider } from '@xyflow/react';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { ApiError } from '../api/client';
+import { getShare } from '../api/shares';
 import { Sparky } from '../components/art/Sparky';
 import { BuilderCanvas } from '../components/canvas/BuilderCanvas';
 import { displayName, isPiece, toSim, type PieceData } from '../components/canvas/model';
@@ -11,7 +13,7 @@ import { GoalCard } from '../components/playground/GoalCard';
 import { JudgePanel } from '../components/playground/JudgePanel';
 import { PlanExport } from '../components/playground/PlanExport';
 import { ProjectNotes } from '../components/playground/ProjectNotes';
-import { OpenShared, ShareDialog } from '../components/playground/ShareDialog';
+import { OpenShared, ShareDialog, type SharedState } from '../components/playground/ShareDialog';
 import { StarterPicker } from '../components/playground/StarterPicker';
 import { ServiceCard } from '../components/ServiceCard';
 import { topProblem } from '../data/feedback';
@@ -25,15 +27,28 @@ import { useApp, useBand, type PlanInfo, type SavedDiagram } from '../store';
 
 const EMPTY_PLAN: PlanInfo = { title: '', uses: {} };
 
-export function Playground({ share }: { share?: string }) {
+/** Takes a share link out of the address bar, so a reload doesn't ask again. */
+function clearShareLink() {
+  window.history.replaceState(null, '', `${window.location.pathname}#/playground`);
+  window.dispatchEvent(new HashChangeEvent('hashchange'));
+}
+
+/** A teammate's design from a share code, ready to ask about. */
+function openCode(code: string): { design: SavedDiagram | null; state: SharedState } {
+  const design = decodeDesign(code);
+  return { design, state: design ? 'ready' : 'broken' };
+}
+
+/** `share` is a long link's design code; `shareId` is a short link's id. */
+export function Playground({ share, shareId }: { share?: string; shareId?: string }) {
   return (
     <ReactFlowProvider>
-      <PlaygroundInner share={share} />
+      <PlaygroundInner share={share} shareId={shareId} />
     </ReactFlowProvider>
   );
 }
 
-function PlaygroundInner({ share }: { share?: string }) {
+function PlaygroundInner({ share, shareId }: { share?: string; shareId?: string }) {
   const band = useBand();
   const savePlayground = useApp((s) => s.savePlayground);
   const init = useCallback(() => fromSaved(useApp.getState().playground), []);
@@ -45,28 +60,69 @@ function PlaygroundInner({ share }: { share?: string }) {
   const [showShare, setShowShare] = useState(false);
   const [showJudge, setShowJudge] = useState(false);
   // A teammate's design from a share link waits here until the student says to open it.
-  const [shared, setShared] = useState<{ design: SavedDiagram | null } | null>(null);
+  const [shared, setShared] = useState<{ design: SavedDiagram | null; state: SharedState } | null>(null);
   const [showStarters, setShowStarters] = useState(
-    () => !share && isBlank(useApp.getState().playground ?? { nodes: [], edges: [] }),
+    () => !share && !shareId && isBlank(useApp.getState().playground ?? { nodes: [], edges: [] }),
   );
   // Read a share link, then take the design out of the address bar so a reload doesn't ask again.
   useEffect(() => {
     if (!share) return;
-    setShared({ design: decodeDesign(share) });
+    setShared(openCode(share));
     setShowStarters(false);
-    window.history.replaceState(null, '', `${window.location.pathname}#/playground`);
-    window.dispatchEvent(new HashChangeEvent('hashchange'));
+    clearShareLink();
   }, [share]);
+  // A short link is looked up first, then opens just like a long one. The ref stops a second lookup when React runs
+  // the effect twice in development; it resets once the link leaves the address bar, so the same link can be tried again.
+  const lookedUp = useRef<string | null>(null);
+  useEffect(() => {
+    if (!shareId) {
+      lookedUp.current = null;
+      return;
+    }
+    if (lookedUp.current === shareId) return;
+    lookedUp.current = shareId;
+    setShared({ design: null, state: 'loading' });
+    setShowStarters(false);
+    clearShareLink();
+    getShare(shareId)
+      .then(openCode, (e): { design: null; state: SharedState } => ({
+        design: null,
+        state: e instanceof ApiError && e.offline ? 'offline' : 'missing',
+      }))
+      // Only if the student is still waiting for it, not after "Keep my map".
+      .then((next) => setShared((cur) => (cur?.state === 'loading' ? next : cur)));
+  }, [shareId]);
   const [running, setRunning] = useState(false);
   const [selected, setSelected] = useState<string | null>(null);
   const [query, setQuery] = useState('');
   const drop = useDropPiece(d.setNodes, PLAY_CLOUD);
 
   // Save (debounced) whenever the diagram, plan, or goal changes.
+  const lastSaved = useRef(useApp.getState().playground);
   useEffect(() => {
-    const t = window.setTimeout(() => savePlayground(toSaved(d.nodes, d.edges, { plan, goal })), 400);
+    const t = window.setTimeout(() => {
+      const saved = toSaved(d.nodes, d.edges, { plan, goal });
+      lastSaved.current = saved;
+      savePlayground(saved);
+    }, 400);
     return () => window.clearTimeout(t);
   }, [d.nodes, d.edges, plan, goal, savePlayground]);
+  // A newer design can arrive from the student's Builder Key while this screen is open (the start-up sync). Show it,
+  // rather than letting this screen's next save put the older copy back.
+  const resetDiagram = d.reset;
+  useEffect(
+    () =>
+      useApp.subscribe((s, prev) => {
+        if (s.playground === prev.playground || s.playground === lastSaved.current) return;
+        lastSaved.current = s.playground;
+        setRunning(false);
+        setSelected(null);
+        resetDiagram(fromSaved(s.playground));
+        setPlan(s.playground?.plan ?? EMPTY_PLAN);
+        setGoal(s.playground?.goal ?? { what: '' });
+      }),
+    [resetDiagram],
+  );
 
   // The playground simulates live: change anything while running and the flow updates.
   const structure = useMemo(() => toSim(d.nodes, d.edges), [d.nodes, d.edges]);
@@ -308,7 +364,7 @@ function PlaygroundInner({ share }: { share?: string }) {
       {showShare && <ShareDialog design={toSaved(d.nodes, d.edges, { plan, goal })} onClose={() => setShowShare(false)} />}
       {shared && (
         <OpenShared
-          ok={!!shared.design}
+          state={shared.state}
           onClose={() => setShared(null)}
           onOpen={() => {
             load(shared.design);

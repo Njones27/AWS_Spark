@@ -56,7 +56,8 @@ The Playground also has **challenge tools** for teams pitching an AWS solution t
   Copy it as text or save it as a picture.
 - **Judge practice**: questions a judge might ask, checked against your map: a 10× crowd, who can read your
   data, how you'd know something broke, and why you picked each main service.
-- **Share**: a link that carries the whole design. No server or account needed.
+- **Share**: a short link (`#/s/…`) to send your team. If Spark's API can't be reached, you get the long link
+  instead, which carries the whole design and needs no server or account.
 
 ### Grade bands
 
@@ -76,7 +77,11 @@ npm run build      # static site in dist/
 ```
 
 The build is a static site with hash routing and a relative base, so `dist/` works from S3 + CloudFront,
-Amplify, GitHub Pages, or any sub-path. Progress is saved in the browser. Nothing is sent to a server.
+Amplify, GitHub Pages, or any sub-path. Progress is always saved in the browser, so the app works with no backend.
+The first time a student finishes a level or builds in the Playground, Spark's API (same site, under `/api`) makes
+them a **Builder Key** like `MAPLE-OTTER-4821`, and progress then also syncs to it in the background, so they can
+type the key on another computer and keep going. Spark never asks for or stores names or emails. To try the API
+locally, run `SPARK_API_PROXY=https://<dev CloudFront domain> npm run dev`.
 
 ## How it's built
 
@@ -90,6 +95,7 @@ Amplify, GitHub Pages, or any sub-path. Progress is saved in the browser. Nothin
 | `src/engine/simulate.ts` | Traffic model: a forward pass computes load, a backward pass works out why each request did or didn't finish |
 | `src/engine/validate.ts`, `src/engine/objectives.ts` | Connection checks (rule, duplicate, self, loop) and ticket constraints (budget, required arrows, backlog) |
 | `src/engine/judge.ts`, `src/engine/share.ts` | Judge-practice questions and share-link encoding |
+| `src/api/`, `src/sync.ts` | Calls to Spark's API, short share links, and background Builder Key sync |
 | `src/components/canvas/` | React Flow canvas, pieces, flowing arrows, the tray, and the "why" bubble |
 | `src/components/playground/` | Starters, goal card, project notes, plan export, judge panel, share dialog |
 | `src/screens/` | Home, level map, level play, Playground, style guide (`#/styleguide`) |

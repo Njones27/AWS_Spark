@@ -1,0 +1,1057 @@
+<title>Spark on AWS</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="description" content="How Spark: Cloud Builders is hosted on AWS from GitHub with CDK: CloudFront, S3, API Gateway, Lambda, DynamoDB, Builder Key identity, CI/CD and cost.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600&family=JetBrains+Mono:wght@400;500;600&family=Lexend:wght@300..600&display=swap">
+<style>
+/* Layout: one 1120px column on Spark's map-paper ground. Diagrams sit in card wells that scroll sideways on phones,
+   prose stays near 70ch, tables carry the detail. Pond blue marks the static path, flow teal the API path. */
+:root {
+  --paper: #f7f2e8;
+  --paper-2: #efe7d7;
+  --card: #fffdf8;
+  --ink: #263043;
+  --ink-soft: #5a6374;
+  --line: #e2d6bf;
+  --line-strong: #c4b496;
+  --pond: #2b6f9e;
+  --pond-tint: #e1edf7;
+  --flow: #1f7d72;
+  --flow-tint: #dcf1ec;
+  --sun: #8f6000;
+  --sun-tint: #fff0c2;
+  --ok: #24784f;
+  --ok-tint: #d9f0e3;
+  --bad: #bf3439;
+  --bad-tint: #fbe1e1;
+  --font-display: 'Fredoka', ui-rounded, 'Arial Rounded MT Bold', system-ui, sans-serif;
+  --font-body: 'Lexend', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #131924;
+    --paper-2: #1a2230;
+    --card: #1c2431;
+    --ink: #e7ebf1;
+    --ink-soft: #a1abbb;
+    --line: #2c384c;
+    --line-strong: #465571;
+    --pond: #7fb5e6;
+    --pond-tint: #17293b;
+    --flow: #55c8b8;
+    --flow-tint: #14322f;
+    --sun: #f1c453;
+    --sun-tint: #352c15;
+    --ok: #6fd19f;
+    --ok-tint: #16301f;
+    --bad: #ff7a7f;
+    --bad-tint: #3a1e22;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #131924;
+  --paper-2: #1a2230;
+  --card: #1c2431;
+  --ink: #e7ebf1;
+  --ink-soft: #a1abbb;
+  --line: #2c384c;
+  --line-strong: #465571;
+  --pond: #7fb5e6;
+  --pond-tint: #17293b;
+  --flow: #55c8b8;
+  --flow-tint: #14322f;
+  --sun: #f1c453;
+  --sun-tint: #352c15;
+  --ok: #6fd19f;
+  --ok-tint: #16301f;
+  --bad: #ff7a7f;
+  --bad-tint: #3a1e22;
+  color-scheme: dark;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+@media (prefers-reduced-motion: no-preference) { html { scroll-behavior: smooth; } }
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-weight: 350;
+  font-size: 15px;
+  line-height: 1.6;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  -webkit-font-smoothing: antialiased;
+}
+.page { max-width: 1120px; margin: 0 auto; padding-block: 48px 80px; }
+h1, h2, h3 { margin: 0; text-wrap: balance; }
+h1 { font-family: var(--font-display); font-weight: 600; font-size: clamp(2.5rem, 6vw, 3.75rem); line-height: 1; letter-spacing: -0.01em; }
+h2 { font-family: var(--font-display); font-weight: 600; font-size: clamp(1.5rem, 3vw, 1.85rem); line-height: 1.15; }
+h3 { font-weight: 600; font-size: 1rem; line-height: 1.35; }
+p { margin: 0; }
+strong { font-weight: 600; }
+a { color: var(--pond); text-underline-offset: 2px; }
+a:hover { color: var(--ink); }
+a:focus-visible { outline: 2px solid var(--pond); outline-offset: 2px; border-radius: 3px; }
+code { font-family: var(--font-mono); font-size: 0.84em; background: var(--paper-2); border-radius: 5px; padding: 0.08em 0.34em; overflow-wrap: break-word; }
+code, pre, .who, .eyebrow, .key, .key-parts, .lat-val, .lat-axis, .dg text { font-variant-ligatures: none; font-feature-settings: "liga" 0, "calt" 0; }
+sup { line-height: 0; }
+
+/* masthead */
+.mast { display: grid; gap: 18px; padding-bottom: 28px; border-bottom: 1px solid var(--line); }
+.eyebrow { font-family: var(--font-mono); font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-soft); }
+.lede { font-size: clamp(1rem, 1.6vw, 1.15rem); max-width: 66ch; line-height: 1.55; }
+.facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 14px 24px; margin: 6px 0 0; }
+.facts div { min-width: 0; }
+.facts dt { font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-soft); }
+.facts dd { margin: 2px 0 0; font-weight: 500; font-variant-numeric: tabular-nums; }
+.toc { display: flex; flex-wrap: wrap; gap: 6px 18px; padding-block: 14px; border-bottom: 1px solid var(--line); font-size: 13.5px; }
+.toc a { color: var(--ink-soft); text-decoration: none; }
+.toc a:hover { color: var(--ink); text-decoration: underline; }
+
+/* sections */
+main { display: grid; gap: 72px; padding-top: 52px; }
+section { display: grid; gap: 22px; scroll-margin-top: 16px; min-width: 0; }
+main > *, section > *, .diagram > *, .flow > *, .flows > *, .store-grid > * { min-width: 0; }
+.sec-head { display: grid; gap: 8px; max-width: 74ch; }
+.note { color: var(--ink-soft); font-size: 14px; max-width: 80ch; }
+.cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 440px), 1fr)); gap: 28px; }
+.cols > * { min-width: 0; display: grid; gap: 12px; align-content: start; }
+
+/* diagrams */
+.diagram { margin: 0; background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 20px; display: grid; gap: 14px; min-width: 0; }
+.scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+.dg { display: block; width: 100%; height: auto; min-width: 880px; }
+.diagram figcaption { color: var(--ink-soft); font-size: 13.5px; max-width: 88ch; }
+.scroll-hint { display: none; font-size: 12px; color: var(--ink-soft); }
+@media (max-width: 920px) { .scroll-hint { display: block; } }
+.legend { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 8px 22px; font-size: 12.5px; color: var(--ink-soft); }
+.legend li { display: flex; align-items: center; gap: 8px; }
+.sw { width: 28px; height: 0; border-top: 2px solid var(--ink-soft); }
+.sw.edge { border-top-color: var(--pond); }
+.sw.api { border-top-color: var(--flow); }
+.sw.opt { border-top-style: dashed; }
+.sw.bad { border-top-color: var(--bad); border-top-style: dashed; }
+
+.dg text { fill: var(--ink); font-family: var(--font-body); }
+.dg .t { font-size: 13.5px; font-weight: 600; }
+.dg .t2 { font-size: 12.5px; font-weight: 600; }
+.dg .s { font-size: 11px; fill: var(--ink-soft); }
+.dg .m { font-family: var(--font-mono); font-size: 10.5px; fill: var(--ink-soft); }
+.dg .mb { font-family: var(--font-mono); font-size: 11.5px; font-weight: 600; }
+.dg .sm { font-size: 10px; }
+.dg .cap { font-size: 9.5px; font-weight: 600; letter-spacing: 0.12em; fill: var(--ink-soft); }
+.dg .n { fill: var(--card); stroke: var(--line-strong); stroke-width: 1.4; }
+.dg .n-edge { fill: var(--pond-tint); stroke: var(--pond); }
+.dg .n-api { fill: var(--flow-tint); stroke: var(--flow); }
+.dg .n-opt { stroke-dasharray: 6 5; }
+.dg .n-bad { fill: var(--bad-tint); stroke: var(--bad); stroke-dasharray: 6 5; }
+.dg .n-sun { fill: var(--sun-tint); stroke: var(--sun); }
+.dg .panel { fill: var(--paper-2); stroke: var(--line); stroke-width: 1.2; }
+.dg .port { fill: var(--card); stroke-width: 1.2; }
+.dg .port-edge { stroke: var(--pond); }
+.dg .port-api { stroke: var(--flow); }
+.dg .chip { fill: var(--card); stroke: var(--line-strong); stroke-width: 1; }
+.dg .pill-ok { fill: var(--ok-tint); stroke: var(--ok); stroke-width: 1; }
+.dg .e { fill: none; stroke: var(--ink-soft); stroke-width: 1.6; }
+.dg .e-edge { stroke: var(--pond); stroke-width: 2; }
+.dg .e-api { stroke: var(--flow); stroke-width: 2; }
+.dg .e-opt { stroke-dasharray: 5 4; }
+.dg .e-dot { stroke-dasharray: 2 4; }
+.dg .e-bad { stroke: var(--bad); stroke-dasharray: 6 4; }
+.dg .dot { fill: var(--ink-soft); }
+.dg .ah-ink { fill: var(--ink-soft); }
+.dg .ah-pond { fill: var(--pond); }
+.dg .ah-flow { fill: var(--flow); }
+.dg .ah-bad { fill: var(--bad); }
+.dg .flowc { fill: var(--flow); }
+.dg .pondc { fill: var(--pond); }
+.dg .badc { fill: var(--bad); }
+.dg .okc { fill: var(--ok); }
+.dg .sunc { fill: var(--sun); }
+
+/* request flows */
+.flows { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 480px), 1fr)); gap: 20px; }
+.flow { background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 20px 22px 22px; display: grid; gap: 14px; align-content: start; min-width: 0; }
+.flow-head { display: grid; gap: 2px; }
+.flow-sub { color: var(--ink-soft); font-size: 13px; }
+.steps { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; counter-reset: s; font-size: 14px; }
+.steps li { counter-increment: s; display: grid; grid-template-columns: 24px 1fr; gap: 10px; align-items: start; }
+.steps li::before { content: counter(s); width: 24px; height: 24px; border-radius: 50%; background: var(--ink); color: var(--card); font: 600 12px/24px var(--font-mono); text-align: center; }
+.steps li > div { min-width: 0; }
+.who { display: inline-block; font: 500 11px/1.65 var(--font-mono); padding: 0 8px; border-radius: 999px; margin-right: 6px; white-space: nowrap; }
+.w-dev { background: var(--paper-2); color: var(--ink-soft); }
+.w-edge { background: var(--pond-tint); color: var(--pond); }
+.w-api { background: var(--flow-tint); color: var(--flow); }
+.flow-note { font-size: 13px; color: var(--ink-soft); border-top: 1px solid var(--line); padding-top: 12px; }
+
+/* tables */
+.table-wrap { overflow-x: auto; min-width: 0; }
+table { width: 100%; border-collapse: collapse; font-size: 14px; font-variant-numeric: tabular-nums; }
+th { text-align: left; font-weight: 500; font-size: 11.5px; letter-spacing: 0.07em; text-transform: uppercase; color: var(--ink-soft); padding: 0 16px 10px 0; border-bottom: 1.5px solid var(--line-strong); vertical-align: bottom; }
+td { padding: 11px 16px 11px 0; border-bottom: 1px solid var(--line); vertical-align: top; }
+th:last-child, td:last-child { padding-right: 0; }
+td:first-child { font-weight: 500; }
+.t-wide { min-width: 700px; }
+.t-mid { min-width: 560px; }
+table.mini { font-size: 12.5px; }
+table.mini th { font-size: 10.5px; padding-bottom: 6px; }
+table.mini td { padding: 7px 12px 7px 0; font-weight: 350; }
+table.mini tr:last-child td { border-bottom: none; }
+tr.total td { font-weight: 600; border-bottom: none; border-top: 1.5px solid var(--line-strong); }
+.rk { font-family: var(--font-display); font-weight: 600; font-size: 1.15rem; line-height: 1.3; color: var(--pond); width: 36px; padding-top: 9px; }
+
+/* identity */
+.id-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 360px), 1fr)); gap: 24px 32px; align-items: start; }
+.id-grid > * { min-width: 0; display: grid; gap: 10px; }
+.plain { margin: 0; padding-left: 1.1em; display: grid; gap: 6px; }
+.set-aside { margin: 12px 0 0; padding-left: 1.1em; columns: 2 400px; column-gap: 40px; font-size: 14px; }
+.set-aside li { break-inside: avoid; margin-bottom: 10px; }
+.keycard { background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 22px; }
+.key { font-family: var(--font-mono); font-weight: 600; font-size: clamp(1.45rem, 4vw, 2.1rem); letter-spacing: 0.04em; line-height: 1.1; overflow-wrap: anywhere; }
+.key .dash { color: var(--ink-soft); }
+.key .digits { color: var(--flow); }
+.key-parts { font-family: var(--font-mono); font-size: 11.5px; color: var(--ink-soft); letter-spacing: 0.06em; text-transform: uppercase; }
+.store-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr)); gap: 22px 28px; }
+.store { display: grid; gap: 8px; align-content: start; padding-top: 12px; border-top: 3px solid var(--line-strong); min-width: 0; }
+.store.yes { border-top-color: var(--flow); }
+.store.no { border-top-color: var(--bad); }
+.store.later { border-top-color: var(--sun); }
+.store ul { margin: 0; padding-left: 1.1em; display: grid; gap: 6px; font-size: 14px; }
+.store p { font-size: 14px; }
+
+/* code */
+pre.code { margin: 0; background: var(--paper-2); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; overflow-x: auto; font: 400 12.5px/1.6 var(--font-mono); color: var(--ink); }
+pre.code code { background: none; padding: 0; font-size: inherit; overflow-wrap: normal; }
+pre.wrap { white-space: pre-wrap; }
+pre.wrap code { overflow-wrap: anywhere; }
+.code-label { font-size: 12px; color: var(--ink-soft); }
+
+/* account move */
+.move { list-style: none; margin: 0; padding: 0; counter-reset: m; display: grid; gap: 16px; max-width: 82ch; }
+.move li { counter-increment: m; display: grid; grid-template-columns: 32px 1fr; gap: 12px; }
+.move li::before { content: counter(m); font: 600 1.3rem/1.25 var(--font-display); color: var(--pond); }
+.move li > div { min-width: 0; }
+
+/* latency */
+.lat { display: grid; gap: 12px; padding: 18px 20px; background: var(--card); border: 1px solid var(--line); border-radius: 16px; }
+.lat-row { display: grid; grid-template-columns: 250px 1fr 92px; gap: 14px; align-items: center; font-size: 13.5px; }
+.lat-label { min-width: 0; }
+.lat-val { font-family: var(--font-mono); font-size: 12px; text-align: right; color: var(--ink-soft); }
+.lat-track { position: relative; height: 16px; background-image: linear-gradient(to right, var(--line) 1px, transparent 1px); background-size: 25% 100%; border-right: 1px solid var(--line); }
+.lat-bar { position: absolute; top: 2px; bottom: 2px; left: calc(var(--from) / 400 * 100%); width: calc((var(--to) - var(--from)) / 400 * 100%); border-radius: 4px; }
+.lat-bar.edge { background: var(--pond); }
+.lat-bar.api { background: var(--flow); }
+.lat-bar.cold { background: var(--flow-tint); border: 1.5px solid var(--flow); }
+.lat-axis { position: relative; height: 16px; font-family: var(--font-mono); font-size: 11px; color: var(--ink-soft); }
+.lat-axis span { position: absolute; top: 0; transform: translateX(-50%); white-space: nowrap; }
+.lat-axis span:first-child { transform: none; }
+.lat-axis span:last-child { transform: translateX(-100%); }
+@media (max-width: 640px) {
+  .lat-row { grid-template-columns: 1fr auto; grid-template-areas: "label val" "track track"; gap: 6px 10px; }
+  .lat-label { grid-area: label; }
+  .lat-val { grid-area: val; }
+  .lat-row .lat-track, .lat-row .lat-axis { grid-area: track; }
+  .lat-row > .spacer { display: none; }
+}
+
+/* sources + footer */
+.sources { margin: 0; padding: 0; list-style: none; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 440px), 1fr)); gap: 12px 32px; font-size: 14px; }
+.sources li { min-width: 0; display: grid; gap: 1px; }
+.sources a { overflow-wrap: anywhere; }
+.sources .src-what { color: var(--ink-soft); font-size: 13px; }
+.foot { margin-top: 72px; padding-top: 18px; border-top: 1px solid var(--line); color: var(--ink-soft); font-size: 13px; }
+@media (max-width: 560px) {
+  .page { padding-block: 32px 56px; }
+  main { gap: 56px; padding-top: 40px; }
+  .diagram { padding: 14px; }
+  .flow { padding: 16px; }
+  .facts { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+</style>
+
+<div class="page">
+<header class="mast">
+  <p class="eyebrow">Spark: Cloud Builders · deployment design · approved 2026-10-30</p>
+  <h1>Spark on AWS</h1>
+  <p class="lede">Spark is a game-like web app that teaches students how AWS services fit together. This design hosts it on AWS straight from the GitHub repo with CDK, adds a small backend for cross-device progress and short share links, keeps the bill near zero and latency low, and puts every account-specific value in config so the whole stack can move to another AWS account.</p>
+  <dl class="facts">
+    <div><dt>Region</dt><dd>us-east-1</dd></div>
+    <div><dt>Stages</dt><dd>dev, prod (one account for now)</dd></div>
+    <div><dt>Ships from</dt><dd>GitHub Actions + OIDC</dd></div>
+    <div><dt>Prod cost</dt><dd>≈ $2 to 5 a month</dd></div>
+    <div><dt>Sized for</dt><dd>10× ~1,000 concurrent users</dd></div>
+    <div><dt>Domain</dt><dd>None yet, CloudFront URL</dd></div>
+  </dl>
+</header>
+
+<nav class="toc" aria-label="Sections">
+  <a href="#architecture">Architecture</a>
+  <a href="#flows">Request flows</a>
+  <a href="#components">Components</a>
+  <a href="#identity">Identity</a>
+  <a href="#api">API and data</a>
+  <a href="#cicd">CI/CD</a>
+  <a href="#cdk">CDK stacks</a>
+  <a href="#move">Account move</a>
+  <a href="#cost">Cost, scale, latency</a>
+  <a href="#risks">Risks</a>
+  <a href="#sources">Sources</a>
+</nav>
+
+<main>
+
+<!-- ───────────────────────── Architecture ───────────────────────── -->
+<section id="architecture">
+  <div class="sec-head">
+    <h2>Architecture</h2>
+    <p>One CloudFront distribution is the only public entry point. It serves the built app from a private bucket and sends <code>/api/*</code> to a single Lambda function behind an HTTP API, so the app and its API share one origin and need no CORS.</p>
+  </div>
+  <figure class="diagram">
+    <p class="scroll-hint">Scroll sideways to see the whole diagram.</p>
+    <div class="scroll">
+<svg class="dg" viewBox="0 0 1080 540" role="img" aria-label="Students reach Amazon CloudFront over HTTPS. The default behavior serves files from a private Amazon S3 bucket through Origin Access Control. The /api/* behavior adds an x-origin-verify header and forwards to an Amazon API Gateway HTTP API, which invokes one AWS Lambda function that reads and writes one Amazon DynamoDB table. Route 53 and ACM are optional until a domain exists. A direct call to the execute-api URL without the header gets 403. CloudWatch alarms, SNS email and AWS Budgets sit to the side.">
+  <defs>
+    <marker id="a-ink" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" class="ah-ink"/></marker>
+    <marker id="a-pond" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" class="ah-pond"/></marker>
+    <marker id="a-flow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" class="ah-flow"/></marker>
+    <marker id="a-bad" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" class="ah-bad"/></marker>
+  </defs>
+
+  <!-- students -->
+  <rect x="12" y="205" width="136" height="100" rx="12" class="n"/>
+  <text x="80" y="240" class="t" text-anchor="middle">Students and</text>
+  <text x="80" y="259" class="t" text-anchor="middle">coordinators</text>
+  <text x="80" y="283" class="s" text-anchor="middle">Chromebooks, iPads</text>
+  <line x1="148" y1="255" x2="250" y2="255" class="e" marker-end="url(#a-ink)"/>
+  <text x="199" y="246" class="m" text-anchor="middle">HTTPS</text>
+  <text x="199" y="272" class="s sm" text-anchor="middle">HTTP/3, Brotli</text>
+
+  <!-- route 53 + acm (optional) -->
+  <rect x="252" y="12" width="200" height="80" rx="12" class="n n-opt"/>
+  <text x="352" y="35" class="t" text-anchor="middle">Amazon Route 53</text>
+  <text x="352" y="53" class="s" text-anchor="middle">+ AWS Certificate Manager</text>
+  <text x="352" y="74" class="s sm sunc" text-anchor="middle">only when a domain exists</text>
+  <line x1="352" y1="92" x2="352" y2="118" class="e e-opt" marker-end="url(#a-ink)"/>
+  <text x="362" y="110" class="m sm">Web.DomainName set</text>
+
+  <!-- cloudfront -->
+  <rect x="252" y="120" width="200" height="270" rx="14" class="n n-edge"/>
+  <text x="352" y="148" class="t" text-anchor="middle">Amazon CloudFront</text>
+  <text x="352" y="166" class="s" text-anchor="middle">PriceClass 100</text>
+  <text x="352" y="182" class="s" text-anchor="middle">HTTP/2+3 · compression</text>
+  <rect x="264" y="198" width="176" height="50" rx="8" class="port port-edge"/>
+  <text x="276" y="219" class="mb pondc">default  *</text>
+  <text x="276" y="237" class="s">+ response headers policy</text>
+  <text x="352" y="290" class="cap" text-anchor="middle">CACHE BEHAVIORS</text>
+  <rect x="264" y="322" width="176" height="50" rx="8" class="port port-api"/>
+  <text x="276" y="343" class="mb flowc">/api/*</text>
+  <text x="276" y="361" class="m sm">CachingDisabled</text>
+
+  <!-- static path -->
+  <line x1="440" y1="223" x2="620" y2="223" class="e e-edge" marker-end="url(#a-pond)"/>
+  <text x="530" y="213" class="s" text-anchor="middle">OAC-signed requests</text>
+  <text x="530" y="240" class="s sm" text-anchor="middle">cached at the edge</text>
+  <rect x="622" y="175" width="200" height="96" rx="12" class="n n-edge"/>
+  <text x="722" y="201" class="t" text-anchor="middle">Amazon S3 bucket</text>
+  <text x="722" y="220" class="s" text-anchor="middle">private, no public access</text>
+  <text x="722" y="237" class="s" text-anchor="middle">dist/ via BucketDeployment</text>
+  <text x="722" y="256" class="m sm" text-anchor="middle">prune: false</text>
+
+  <!-- api path -->
+  <line x1="440" y1="347" x2="620" y2="347" class="e e-api" marker-end="url(#a-flow)"/>
+  <text x="537" y="337" class="mb flowc" text-anchor="middle" style="font-size:10.5px">x-origin-verify: &lt;secret&gt;</text>
+  <text x="537" y="365" class="m sm" text-anchor="middle">AllViewerExceptHostHeader</text>
+  <rect x="622" y="299" width="200" height="96" rx="12" class="n n-api"/>
+  <text x="722" y="325" class="t" text-anchor="middle">Amazon API Gateway</text>
+  <text x="722" y="344" class="s" text-anchor="middle">HTTP API · payload 2.0</text>
+  <text x="722" y="361" class="s" text-anchor="middle">stage + route throttling</text>
+  <text x="722" y="379" class="s" text-anchor="middle">access logs</text>
+  <line x1="822" y1="347" x2="876" y2="347" class="e e-api" marker-end="url(#a-flow)"/>
+  <text x="849" y="337" class="s sm" text-anchor="middle">invoke</text>
+  <rect x="878" y="299" width="186" height="96" rx="12" class="n n-api"/>
+  <text x="971" y="325" class="t" text-anchor="middle">AWS Lambda “api”</text>
+  <text x="971" y="344" class="s" text-anchor="middle">Node 24 · arm64 · esbuild</text>
+  <text x="971" y="361" class="s" text-anchor="middle">one router, 512 MB, 10 s</text>
+  <text x="971" y="379" class="s" text-anchor="middle">reserved concurrency cap</text>
+  <line x1="971" y1="395" x2="971" y2="439" class="e e-api" marker-end="url(#a-flow)"/>
+  <text x="961" y="422" class="s" text-anchor="end">profiles + shares</text>
+  <rect x="878" y="441" width="186" height="84" rx="12" class="n n-api"/>
+  <text x="971" y="467" class="t" text-anchor="middle">Amazon DynamoDB</text>
+  <text x="971" y="486" class="s" text-anchor="middle">one table per stage</text>
+  <text x="971" y="503" class="s" text-anchor="middle">on-demand, TTL</text>
+
+  <!-- bypass attempt -->
+  <rect x="252" y="440" width="200" height="72" rx="12" class="n n-bad"/>
+  <text x="352" y="466" class="t" text-anchor="middle">Direct caller</text>
+  <text x="352" y="484" class="s" text-anchor="middle">raw execute-api URL,</text>
+  <text x="352" y="500" class="s" text-anchor="middle">no CloudFront header</text>
+  <path d="M452 476 H722 V397" class="e e-bad" marker-end="url(#a-bad)"/>
+  <text x="587" y="466" class="s badc" text-anchor="middle">Lambda answers 403 forbidden</text>
+
+  <!-- ops -->
+  <rect x="878" y="12" width="186" height="248" rx="12" class="panel"/>
+  <text x="892" y="33" class="cap">OPS + COST GUARDRAILS</text>
+  <rect x="890" y="44" width="162" height="58" rx="8" class="n"/>
+  <text x="971" y="68" class="t2" text-anchor="middle">Amazon CloudWatch</text>
+  <text x="971" y="86" class="s" text-anchor="middle">alarms + dashboard</text>
+  <line x1="971" y1="102" x2="971" y2="122" class="e" marker-end="url(#a-ink)"/>
+  <text x="980" y="116" class="s sm">alarm</text>
+  <rect x="890" y="124" width="162" height="50" rx="8" class="n"/>
+  <text x="971" y="146" class="t2" text-anchor="middle">Amazon SNS</text>
+  <text x="971" y="163" class="s" text-anchor="middle">email to the owner</text>
+  <rect x="890" y="184" width="162" height="66" rx="8" class="n"/>
+  <text x="971" y="206" class="t2" text-anchor="middle">AWS Budgets</text>
+  <text x="971" y="224" class="s" text-anchor="middle">$10 and $25 actual</text>
+  <text x="971" y="240" class="s" text-anchor="middle">email to the owner</text>
+  <line x1="971" y1="297" x2="971" y2="263" class="e e-dot" marker-end="url(#a-ink)"/>
+  <text x="980" y="285" class="s sm">metrics</text>
+</svg>
+    </div>
+    <ul class="legend" aria-hidden="true">
+      <li><span class="sw edge"></span>static files</li>
+      <li><span class="sw api"></span>API calls</li>
+      <li><span class="sw opt"></span>off until config turns it on</li>
+      <li><span class="sw bad"></span>rejected</li>
+    </ul>
+    <figcaption>Static files and API calls reach the same distribution and split by path. Only CloudFront can read the bucket (Origin Access Control), and the Lambda rejects any request without CloudFront's <code>x-origin-verify</code> header, so a direct call to the <code>execute-api</code> URL gets 403. Route 53 and ACM are created only when <code>Web.DomainName</code> is set. Alarms cover API 5xx, Lambda errors and throttles, and the CloudFront 5xx rate.</figcaption>
+  </figure>
+  <p class="note">Everything runs in us-east-1. Kentucky users are about 20 ms away, CloudFront certificates must live there anyway, and one region means no cross-region plumbing.</p>
+</section>
+
+<!-- ───────────────────────── Request flows ───────────────────────── -->
+<section id="flows">
+  <div class="sec-head">
+    <h2>Request flows</h2>
+    <p><code>localStorage</code> stays the source of truth on the device. Sync runs in the background, so the UI waits on the API only for share and recover, and the app keeps working when a school network blocks <code>/api</code>.</p>
+  </div>
+  <div class="flows">
+
+    <article class="flow">
+      <div class="flow-head"><h3>First page load</h3><p class="flow-sub">Every visit. Static files only.</p></div>
+      <ol class="steps">
+        <li><div><span class="who w-edge">CloudFront</span><code>GET /</code> lands on the nearest edge location, 20 to 50 ms to first byte.</div></li>
+        <li><div><span class="who w-edge">CloudFront → S3</span>The edge returns its cached <code>index.html</code>, or fetches it from the private bucket through OAC.</div></li>
+        <li><div><span class="who w-dev">Browser</span>Hashed files under <code>/assets/</code> download once and stay cached for a year.</div></li>
+        <li><div><span class="who w-dev">Browser</span>The app boots from <code>localStorage</code>. Playing needs no API call.</div></li>
+      </ol>
+      <div class="table-wrap">
+        <table class="mini">
+          <thead><tr><th>Files</th><th>Cache-Control</th></tr></thead>
+          <tbody>
+            <tr><td><code>assets/**</code></td><td><code>public, max-age=31536000, immutable</code></td></tr>
+            <tr><td><code>index.html</code>, <code>icons/</code>, <code>favicon.svg</code></td><td><code>public, max-age=0, s-maxage=86400, must-revalidate</code></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="flow-note">Edges keep <code>index.html</code> for a day and browsers revalidate it. Each deploy invalidates <code>/*</code> (one path, inside the 1,000 free a month). Both uploads use <code>prune: false</code>, so a student holding yesterday's <code>index.html</code> can still fetch its fonts and chunks.</p>
+    </article>
+
+    <article class="flow">
+      <div class="flow-head"><h3>Progress sync with a Builder Key</h3><p class="flow-sub">Background and debounced. Never blocks play.</p></div>
+      <ol class="steps">
+        <li><div><span class="who w-dev">Browser</span>The first finished level or saved Playground design calls <code>POST /api/profiles</code>. Profiles are created lazily, never on first visit.</div></li>
+        <li><div><span class="who w-api">Lambda</span>Returns <code>profileId</code>, a random 256-bit <code>token</code> and a <code>builderKey</code>. The app keeps token and key in <code>localStorage</code> beside the zustand state.</div></li>
+        <li><div><span class="who w-dev">Browser</span>After each change, a ~2 s debounce sends <code>PUT /api/profiles/me</code> with <code>Authorization: Bearer &lt;token&gt;</code> and the whole state.</div></li>
+        <li><div><span class="who w-api">Lambda → DynamoDB</span>Merges into <code>PROFILE#&lt;id&gt;</code>. <code>completed</code> becomes the set union (stored order first); <code>band</code>, <code>playground</code> and <code>unlockAll</code> take the request's values; <code>updatedAt</code> is server time.</div></li>
+        <li><div><span class="who w-dev">Browser</span>Replaces its copy with the merged state from the response. On load, <code>GET /api/profiles/me</code> does the same.</div></li>
+      </ol>
+      <p class="flow-note">Two devices never lose a finished level. A blocked API, a 5 s timeout or a 429 means the client retries later while <code>localStorage</code> keeps working.</p>
+    </article>
+
+    <article class="flow">
+      <div class="flow-head"><h3>Short share link</h3><p class="flow-sub">One visible wait, with a fallback.</p></div>
+      <ol class="steps">
+        <li><div><span class="who w-dev">Browser</span>Share in the Playground posts the existing <code>encodeDesign</code> code to <code>POST /api/shares</code>.</div></li>
+        <li><div><span class="who w-api">Lambda</span>Accepts it only if <code>decodeDesign(code)</code> returns a design, using the same <code>src/engine/share.ts</code> bundled by esbuild. Otherwise 400; over 16 KB, 413.</div></li>
+        <li><div><span class="who w-api">DynamoDB</span>Stores <code>SHARE#&lt;id&gt;</code> with a 2-year TTL. The response is a 10-character id.</div></li>
+        <li><div><span class="who w-dev">Browser</span>Shows <code>https://&lt;host&gt;/#/s/&lt;id&gt;</code>. It is a hash route, so CloudFront needs no rewrite and <code>base: './'</code> stays.</div></li>
+        <li><div><span class="who w-dev">Browser</span>Opening the link calls <code>GET /api/shares/{id}</code>, gets <code>{code}</code>, then behaves exactly like <code>#/playground?d=&lt;code&gt;</code>.</div></li>
+      </ol>
+      <p class="flow-note">If the POST fails, the dialog shows the long <code>#/playground?d=</code> link instead, which works with no API at all.</p>
+    </article>
+
+    <article class="flow">
+      <div class="flow-head"><h3>Continue on another device</h3><p class="flow-sub">The Builder Key is all a student carries.</p></div>
+      <ol class="steps">
+        <li><div><span class="who w-dev">Browser</span>On the new device the student types the key into Continue my progress, for example <code>MAPLE-OTTER-4821</code>.</div></li>
+        <li><div><span class="who w-api">Lambda</span><code>POST /api/profiles/recover</code> normalises it (trim, uppercase, spaces and underscores become <code>-</code>) and hashes it with SHA-256.</div></li>
+        <li><div><span class="who w-api">DynamoDB</span><code>KEY#&lt;keyHash&gt;</code> points to the profile. An unknown key gets 404.</div></li>
+        <li><div><span class="who w-api">Lambda</span>Issues a fresh token and invalidates the old one, then returns the profile and its state.</div></li>
+        <li><div><span class="who w-dev">Browser</span>Stores the new token and applies the state. Normal sync resumes.</div></li>
+      </ol>
+      <p class="flow-note">Recover is tightly throttled per route, with backoff per key prefix. It is not limited per IP, because a whole school sits behind one NAT address.</p>
+    </article>
+
+  </div>
+</section>
+
+<!-- ───────────────────────── Components ───────────────────────── -->
+<section id="components">
+  <div class="sec-head">
+    <h2>Components</h2>
+    <p>Every piece is serverless and billed per use, so an idle stage costs close to nothing.</p>
+  </div>
+  <div class="table-wrap">
+    <table class="t-wide">
+      <thead><tr><th style="width:13%">Piece</th><th style="width:33%">Choice</th><th>Why</th></tr></thead>
+      <tbody>
+        <tr><td>Static hosting</td><td>Private Amazon S3 bucket + Amazon CloudFront with Origin Access Control</td><td>Documented AWS pattern. The bucket is never public. CloudFront's always-free tier covers 1 TB and 10M requests a month, so static delivery costs nothing at this scale.</td></tr>
+        <tr><td>API edge</td><td>CloudFront <code>/api/*</code> behavior to the HTTP API origin</td><td>Same origin as the app: no CORS preflight, <code>connect-src 'self'</code> in the CSP, one URL to move later. Uses the managed <code>AllViewerExceptHostHeader</code> policy AWS documents for API Gateway origins.</td></tr>
+        <tr><td>API</td><td>Amazon API Gateway HTTP API</td><td>$1.00 per million requests against $3.50 for REST. Stage and per-route throttling act as a cost cap. A JWT authorizer is available later for coordinators.</td></tr>
+        <tr><td>Compute</td><td>One AWS Lambda <code>NodejsFunction</code> (Node 24, arm64, esbuild) with a small in-code router</td><td>One warm container serves every route, so fewer cold starts than per-route functions. arm64 is about 20% cheaper.</td></tr>
+        <tr><td>Data</td><td>One Amazon DynamoDB table per stage, on-demand</td><td>Zero capacity planning, absorbs spikes, 25 GB storage free. PITR and deletion protection in prod only.</td></tr>
+        <tr><td>DNS / TLS</td><td>Amazon Route 53 + AWS Certificate Manager, created only when <code>Web.DomainName</code> is set</td><td>Nothing to pay until a domain exists ($0.50 a month per hosted zone after).</td></tr>
+        <tr><td>CI/CD</td><td>GitHub Actions + OIDC federation to IAM</td><td>No long-lived AWS keys in GitHub. Per-environment roles make the account move a variable change.</td></tr>
+        <tr><td>Ops</td><td>Amazon CloudWatch alarms and dashboard, AWS Budgets, log retention 14 d dev / 30 d prod</td><td>Cheap visibility. The budget email is the real safety net.</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div>
+    <h3>Considered and set aside</h3>
+    <ul class="set-aside">
+        <li><strong>Lambda Function URL behind CloudFront with OAC.</strong> Cheaper (no $1/M), one fewer hop, IAM-locked via <code>FunctionUrlOrigin.withOriginAccessControl</code>. But every POST/PUT must carry <code>x-amz-content-sha256</code>, there is no stage throttling (reserved concurrency becomes the cap), and the function must live in the Web stack. Kept as a one-stack swap.</li>
+        <li><strong>Amplify Hosting.</strong> Same services underneath, less control over caching and CSP, harder to move between accounts.</li>
+        <li><strong>CDK Pipelines on CodePipeline.</strong> The owner wants GitHub as the pipeline.</li>
+        <li><strong>Cognito for students.</strong> See Identity below.</li>
+        <li><strong>No backend at all.</strong> An 8-character save code (band + completed levels) would cover progress, but not saved Playground diagrams, short share links or future coordinator rosters. The backend buys exactly those three.</li>
+    </ul>
+  </div>
+</section>
+
+<!-- ───────────────────────── Identity ───────────────────────── -->
+<section id="identity">
+  <div class="sec-head">
+    <h2>Identity without student accounts</h2>
+    <p>Students are never asked for a name, email or password. The API issues an anonymous profile, and a short Builder Key is the only thing a student carries to another device.</p>
+  </div>
+  <div class="id-grid">
+    <div>
+      <h3>Why not Cognito for students</h3>
+      <ul class="plain">
+        <li>K-5 students often have no email address.</li>
+        <li>Passwords are friction on shared Chromebooks.</li>
+        <li>Districts often block Google sign-in for under-18s.</li>
+        <li>Collecting names or emails from under-13s pulls in COPPA consent rules.</li>
+      </ul>
+    </div>
+    <div class="keycard">
+      <p class="key" aria-label="Example Builder Key: MAPLE-OTTER-4821">MAPLE<span class="dash">-</span>OTTER<span class="dash">-</span><span class="digits">4821</span></p>
+      <p class="key-parts">word · word · four digits</p>
+      <p>Two different words from a 1,000-word kid-safe list (animals, plants, colours, weather, food, everyday objects) plus four digits, about 10<sup>10</sup> combinations. It arrives with a random 256-bit bearer token. Both stay in <code>localStorage</code>, so the key can be shown again on that device.</p>
+    </div>
+  </div>
+  <div class="store-grid">
+    <div class="store yes">
+      <h3>Stored</h3>
+      <ul>
+        <li>SHA-256 of the token and of the normalised key, never the raw values</li>
+        <li>The progress blob: <code>band</code>, <code>completed</code>, <code>playground</code>, <code>unlockAll</code></li>
+        <li><code>createdAt</code>, <code>updatedAt</code>, and a TTL two years after the last write</li>
+        <li>Shared designs: the <code>code</code> and <code>createdAt</code>, TTL two years</li>
+      </ul>
+    </div>
+    <div class="store no">
+      <h3>Never stored</h3>
+      <ul>
+        <li>Names, emails or passwords</li>
+        <li>IP addresses (none in the table)</li>
+        <li>Free text of any kind. The closed schema rejects unknown fields with 400.</li>
+        <li>The token or Builder Key in plain form</li>
+      </ul>
+    </div>
+    <div class="store later">
+      <h3>Reserved for coordinators (adults)</h3>
+      <p>A Cognito user pool and an HTTP API JWT authorizer on <code>/api/classes/*</code>, class codes that link Builder Keys to a roster, and a reset-a-student's-key action. All additive: nothing above changes.</p>
+    </div>
+  </div>
+  <div class="cols">
+    <div>
+      <h3>Security and privacy guardrails</h3>
+      <ul class="plain">
+        <li>The bucket is private behind OAC. The API answers only requests carrying CloudFront's origin header. HTTPS only.</li>
+        <li>Recovery is throttled with per-key backoff. No per-IP WAF rules, which would block whole schools behind one NAT.</li>
+        <li>Payload sizes are capped server-side with the same validators the client uses.</li>
+        <li>CloudFront and API access logs are kept 14 to 30 days for operations only. The app gets a one-line privacy note.</li>
+        <li>The GitHub deploy role's trust is pinned to repo and environment, and it can only assume CDK bootstrap roles.</li>
+      </ul>
+    </div>
+    <div>
+      <h3>Response headers policy (default behavior)</h3>
+      <p class="code-label">HSTS, <code>nosniff</code>, <code>Referrer-Policy: strict-origin-when-cross-origin</code>, and this CSP, report-only in dev first:</p>
+      <pre class="code wrap"><code>default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'</code></pre>
+    </div>
+  </div>
+</section>
+
+<!-- ───────────────────────── API and data ───────────────────────── -->
+<section id="api">
+  <div class="sec-head">
+    <h2>API and data</h2>
+    <p>Seven routes under <code>/api</code>, JSON in and out. Routes are registered in API Gateway with the <code>/api</code> prefix and CloudFront forwards the full path unchanged. <code>docs/aws/CONTRACT.md</code> is the shared spec for <code>infra/</code>, <code>backend/</code> and <code>src/</code>.</p>
+  </div>
+  <div class="table-wrap">
+    <table class="t-wide">
+      <thead><tr><th>Route</th><th>Auth</th><th>Request</th><th>Success</th></tr></thead>
+      <tbody>
+        <tr><td><code>GET /api/health</code></td><td>none</td><td>–</td><td><code>200 { ok, stage, version, time }</code>, used by the deploy smoke test</td></tr>
+        <tr><td><code>POST /api/profiles</code></td><td>none, throttled</td><td><code>{}</code></td><td><code>201 { profileId, token, builderKey, state, updatedAt }</code></td></tr>
+        <tr><td><code>GET /api/profiles/me</code></td><td>bearer</td><td>–</td><td><code>200 { profileId, state, updatedAt }</code></td></tr>
+        <tr><td><code>PUT /api/profiles/me</code></td><td>bearer</td><td><code>{ state }</code></td><td><code>200 { profileId, state, updatedAt }</code>, merged</td></tr>
+        <tr><td><code>POST /api/profiles/recover</code></td><td>none, tightly throttled</td><td><code>{ builderKey }</code></td><td><code>200 { profileId, token, builderKey, state, updatedAt }</code></td></tr>
+        <tr><td><code>POST /api/shares</code></td><td>none, throttled</td><td><code>{ code }</code></td><td><code>201 { id }</code></td></tr>
+        <tr><td><code>GET /api/shares/{id}</code></td><td>none</td><td>–</td><td><code>200 { id, code }</code></td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="note">Errors return <code>{ "error": "&lt;code&gt;", "message": "&lt;short, kid-safe text&gt;" }</code> with <code>bad_request</code> 400, <code>unauthorized</code> 401, <code>forbidden</code> 403, <code>not_found</code> 404, <code>payload_too_large</code> 413 (bodies over 64 KB, codes over 16 KB) or <code>internal</code> 500. API Gateway's own 429 is treated like a network failure.</p>
+  <div class="cols">
+    <div>
+      <h3>DynamoDB items (one table per stage)</h3>
+      <div class="table-wrap">
+        <table class="t-mid">
+          <thead><tr><th>pk</th><th>sk</th><th>Attributes</th></tr></thead>
+          <tbody>
+            <tr><td><code>PROFILE#&lt;profileId&gt;</code></td><td><code>META</code></td><td><code>tokenHash</code>, <code>keyHash</code>, <code>state</code> (JSON), <code>createdAt</code>, <code>updatedAt</code>, <code>ttl</code> = now + 2 years, refreshed on every write</td></tr>
+            <tr><td><code>KEY#&lt;keyHash&gt;</code></td><td><code>META</code></td><td><code>profileId</code>, <code>createdAt</code></td></tr>
+            <tr><td><code>SHARE#&lt;id&gt;</code></td><td><code>META</code></td><td><code>code</code>, <code>createdAt</code>, <code>ttl</code> = now + 2 years</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="note">On-demand capacity, string keys <code>pk</code> and <code>sk</code>, TTL attribute <code>ttl</code> in epoch seconds.</p>
+    </div>
+    <div>
+      <h3>Progress state (closed schema)</h3>
+<pre class="code"><code>interface ProgressState {
+  band: Band | null;
+  completed: string[];       // ≤ 500 level ids, /^[a-z0-9-]+$/, ≤ 32 chars
+  playground: string | null; // an encodeDesign() code, ≤ 16 KB
+  unlockAll: boolean;
+}</code></pre>
+      <p class="note">Any unknown field anywhere in a body, or a wrong type, gets 400. Tokens are 32 random bytes (base64url). Share ids are 10 characters from <code>[A-Za-z0-9]</code>.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ───────────────────────── CI/CD ───────────────────────── -->
+<section id="cicd">
+  <div class="sec-head">
+    <h2>CI/CD</h2>
+    <p>GitHub Actions deploys both stages. Pull requests only build and test; a merge to <code>main</code> deploys dev, smoke-tests it, and waits for the owner's one-click approval before prod.</p>
+  </div>
+  <figure class="diagram">
+    <p class="scroll-hint">Scroll sideways to see the whole diagram.</p>
+    <div class="scroll">
+<svg class="dg" viewBox="0 0 1076 462" role="img" aria-label="A pull request runs ci.yml: npm ci, typecheck, tests, vite build and cdk synth for dev and prod, with no AWS credentials. After review and merge, deploy.yml runs job dev, a smoke test, an approval by the owner, then job prod. Each job sends a GitHub OIDC token to the AWS account, where the IAM OIDC provider lets it assume that stage's deploy role, which may only assume the CDK bootstrap roles that run CloudFormation. setup_initial.sh is run once per account by hand.">
+  <defs>
+    <marker id="c-ink" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" class="ah-ink"/></marker>
+    <marker id="c-ink-sm" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" class="ah-ink"/></marker>
+  </defs>
+
+  <!-- row 1: pull request -->
+  <rect x="16" y="20" width="180" height="80" rx="12" class="n"/>
+  <text x="106" y="50" class="t" text-anchor="middle">Pull request</text>
+  <text x="106" y="68" class="s" text-anchor="middle">into main</text>
+  <text x="106" y="84" class="s sm" text-anchor="middle">from a branch or a fork</text>
+  <line x1="196" y1="60" x2="230" y2="60" class="e" marker-end="url(#c-ink)"/>
+  <rect x="232" y="20" width="828" height="80" rx="12" class="n"/>
+  <text x="248" y="45" class="mb">ci.yml</text>
+  <text x="302" y="45" class="s">on pull_request · Node 24 from .nvmrc</text>
+  <rect x="822" y="30" width="226" height="22" rx="11" class="pill-ok"/>
+  <text x="935" y="45" class="s okc" text-anchor="middle">no AWS credentials, fork-safe</text>
+  <rect x="248" y="60" width="60" height="24" rx="12" class="chip"/>
+  <text x="278" y="76" class="m" text-anchor="middle" style="fill:var(--ink)">npm ci</text>
+  <line x1="311" y1="72" x2="327" y2="72" class="e" marker-end="url(#c-ink-sm)"/>
+  <rect x="330" y="60" width="79" height="24" rx="12" class="chip"/>
+  <text x="369.5" y="76" class="m" text-anchor="middle" style="fill:var(--ink)">typecheck</text>
+  <line x1="412" y1="72" x2="428" y2="72" class="e" marker-end="url(#c-ink-sm)"/>
+  <rect x="431" y="60" width="225" height="24" rx="12" class="chip"/>
+  <text x="543.5" y="76" class="m" text-anchor="middle" style="fill:var(--ink)">tests: frontend, backend, infra</text>
+  <line x1="659" y1="72" x2="675" y2="72" class="e" marker-end="url(#c-ink-sm)"/>
+  <rect x="678" y="60" width="86" height="24" rx="12" class="chip"/>
+  <text x="721" y="76" class="m" text-anchor="middle" style="fill:var(--ink)">vite build</text>
+  <line x1="767" y1="72" x2="783" y2="72" class="e" marker-end="url(#c-ink-sm)"/>
+  <rect x="786" y="60" width="152" height="24" rx="12" class="chip"/>
+  <text x="862" y="76" class="m" text-anchor="middle" style="fill:var(--ink)">cdk synth dev + prod</text>
+
+  <!-- review + merge -->
+  <line x1="106" y1="100" x2="106" y2="168" class="e" marker-end="url(#c-ink)"/>
+  <text x="116" y="130" class="s">review, merge</text>
+  <text x="116" y="145" class="m sm">Mainline_shield</text>
+
+  <!-- row 2: deploy.yml -->
+  <rect x="16" y="170" width="180" height="90" rx="12" class="n"/>
+  <text x="106" y="197" class="t" text-anchor="middle">Push to main</text>
+  <text x="106" y="215" class="m" text-anchor="middle">deploy.yml</text>
+  <text x="106" y="232" class="m sm" text-anchor="middle">concurrency: deploy</text>
+  <text x="106" y="248" class="s sm" text-anchor="middle">no cancel-in-progress</text>
+  <line x1="196" y1="215" x2="230" y2="215" class="e" marker-end="url(#c-ink)"/>
+
+  <rect x="232" y="170" width="180" height="90" rx="12" class="n"/>
+  <text x="322" y="197" class="mb" text-anchor="middle">job dev</text>
+  <text x="322" y="215" class="s" text-anchor="middle">environment: dev</text>
+  <text x="322" y="232" class="m sm" text-anchor="middle">cdk deploy --all</text>
+  <text x="322" y="248" class="m sm" text-anchor="middle">app-config-dev.json</text>
+  <line x1="412" y1="215" x2="446" y2="215" class="e" marker-end="url(#c-ink)"/>
+
+  <rect x="448" y="170" width="180" height="90" rx="12" class="n"/>
+  <text x="538" y="197" class="t" text-anchor="middle">Smoke test</text>
+  <text x="538" y="215" class="m" text-anchor="middle">GET /api/health</text>
+  <text x="538" y="232" class="m" text-anchor="middle">GET /</text>
+  <text x="538" y="248" class="s sm" text-anchor="middle">on the dev CloudFront URL</text>
+  <line x1="628" y1="215" x2="662" y2="215" class="e" marker-end="url(#c-ink)"/>
+
+  <rect x="664" y="170" width="180" height="90" rx="12" class="n n-sun"/>
+  <text x="754" y="197" class="t" text-anchor="middle">Approval</text>
+  <text x="754" y="215" class="s" text-anchor="middle">one click by the owner</text>
+  <text x="754" y="232" class="s sm" text-anchor="middle">required reviewer rule</text>
+  <text x="754" y="248" class="s sm" text-anchor="middle">branch policy: main only</text>
+  <line x1="844" y1="215" x2="878" y2="215" class="e" marker-end="url(#c-ink)"/>
+
+  <rect x="880" y="170" width="180" height="90" rx="12" class="n"/>
+  <text x="970" y="197" class="mb" text-anchor="middle">job prod</text>
+  <text x="970" y="215" class="s" text-anchor="middle">environment: prod</text>
+  <text x="970" y="232" class="m sm" text-anchor="middle">cdk deploy --all + smoke</text>
+  <text x="970" y="248" class="m sm" text-anchor="middle">app-config-prod.json</text>
+
+  <!-- oidc bus -->
+  <path d="M970 260 V290 H322" class="e"/>
+  <line x1="322" y1="260" x2="322" y2="336" class="e" marker-end="url(#c-ink)"/>
+  <circle cx="322" cy="290" r="3.5" class="dot"/>
+  <text x="646" y="283" class="m sm" text-anchor="middle">OIDC token · sub = repo:Njones27/AWS_Spark:environment:&lt;stage&gt;</text>
+
+  <!-- account panel -->
+  <rect x="220" y="304" width="852" height="146" rx="14" class="panel"/>
+  <text x="1058" y="324" class="cap" text-anchor="end">AWS ACCOUNT · US-EAST-1</text>
+  <rect x="232" y="338" width="180" height="96" rx="10" class="n"/>
+  <text x="322" y="362" class="t2" text-anchor="middle">IAM OIDC provider</text>
+  <text x="322" y="380" class="m sm" text-anchor="middle">token.actions.</text>
+  <text x="322" y="394" class="m sm" text-anchor="middle">githubusercontent.com</text>
+  <text x="322" y="414" class="m sm" text-anchor="middle">aud = sts.amazonaws.com</text>
+  <line x1="412" y1="386" x2="446" y2="386" class="e" marker-end="url(#c-ink)"/>
+  <rect x="448" y="338" width="180" height="96" rx="10" class="n"/>
+  <text x="538" y="362" class="t2" text-anchor="middle">IAM deploy role</text>
+  <text x="538" y="380" class="m sm" text-anchor="middle">Spark-Dev-GitHubDeploy</text>
+  <text x="538" y="394" class="m sm" text-anchor="middle">Spark-Prod-GitHubDeploy</text>
+  <text x="538" y="414" class="s sm" text-anchor="middle">trust: repo + environment</text>
+  <line x1="628" y1="386" x2="662" y2="386" class="e" marker-end="url(#c-ink)"/>
+  <rect x="664" y="338" width="180" height="96" rx="10" class="n"/>
+  <text x="754" y="362" class="t2" text-anchor="middle">CDK bootstrap roles</text>
+  <text x="754" y="380" class="m sm" text-anchor="middle">cdk-hnb659fds-*</text>
+  <text x="754" y="397" class="s sm" text-anchor="middle">deploy, lookup,</text>
+  <text x="754" y="412" class="s sm" text-anchor="middle">file + image publishing</text>
+  <line x1="844" y1="386" x2="878" y2="386" class="e" marker-end="url(#c-ink)"/>
+  <rect x="880" y="338" width="180" height="96" rx="10" class="n"/>
+  <text x="970" y="362" class="t2" text-anchor="middle">AWS CloudFormation</text>
+  <text x="970" y="380" class="m sm" text-anchor="middle">Spark-&lt;Stage&gt;-*</text>
+  <text x="970" y="397" class="s sm" text-anchor="middle">Data, Api, Web, Ops</text>
+  <text x="970" y="412" class="s sm" text-anchor="middle">(Cicd is never run by CI)</text>
+
+  <!-- one-time bootstrap -->
+  <rect x="16" y="304" width="180" height="146" rx="12" class="n n-opt"/>
+  <text x="106" y="326" class="mb" text-anchor="middle">setup_initial.sh</text>
+  <text x="106" y="342" class="s sm sunc" text-anchor="middle">once per account, by hand</text>
+  <text x="30" y="362" class="s sm">1  cdk bootstrap</text>
+  <text x="30" y="377" class="s sm">2  GitHubOidc + Budget</text>
+  <text x="30" y="392" class="s sm">3  Cicd stack per stage</text>
+  <text x="30" y="407" class="s sm">4  OriginVerifySecret</text>
+  <text x="30" y="422" class="s sm">5  Lambda quota check</text>
+  <text x="30" y="437" class="s sm">6  GitHub env variables</text>
+  <line x1="196" y1="377" x2="218" y2="377" class="e e-opt" marker-end="url(#c-ink)"/>
+</svg>
+    </div>
+    <figcaption>Each job trades a short-lived GitHub OIDC token for its environment's deploy role. That role's only permissions are <code>sts:AssumeRole</code> on the four CDK bootstrap roles and <code>ssm:GetParameter</code> on <code>/cdk-bootstrap/hnb659fds/version</code>, so GitHub holds no AWS keys and cannot act outside CDK. <code>setup_initial.sh</code> is the only manual step, once per account; the Cicd stacks it deploys are never touched by CI.</figcaption>
+  </figure>
+  <div class="cols">
+    <div>
+      <h3><code>ci.yml</code>, on pull requests to <code>main</code></h3>
+      <ul class="plain">
+        <li><code>actions/setup-node</code> reads <code>.nvmrc</code> (Node 24), then <code>npm ci</code>, <code>typecheck</code>, frontend + backend + infra tests, <code>vite build</code>, <code>cdk synth</code> for dev and prod.</li>
+        <li>No AWS credentials and no lookups in stacks, so PRs from forks of the public repo are safe.</li>
+        <li>Later: <code>cdk diff</code> against dev posted as a PR comment.</li>
+      </ul>
+    </div>
+    <div>
+      <h3><code>deploy.yml</code>, on push to <code>main</code> or <code>workflow_dispatch</code></h3>
+      <ul class="plain">
+        <li><code>permissions: id-token: write, contents: read</code>; <code>concurrency: deploy</code> without cancel-in-progress.</li>
+        <li><code>aws-actions/configure-aws-credentials@v4</code> with <code>vars.AWS_DEPLOY_ROLE_ARN</code> and <code>vars.AWS_REGION</code>, then <code>cdk deploy --all --require-approval never --context APP_CONFIG=config/app-config-dev.json</code>.</li>
+        <li>Prod: environment <code>prod</code>, <code>needs: dev</code>, required reviewer = owner, deployment branch policy <code>main</code> (available on public repos on the Free plan).</li>
+        <li>The <code>Mainline_shield</code> ruleset already forces PR + review onto <code>main</code>, so deploy never commits. <code>script/deploy_stacks.sh</code> mirrors the workflow for break-glass use.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ───────────────────────── CDK ───────────────────────── -->
+<section id="cdk">
+  <div class="sec-head">
+    <h2>CDK stacks</h2>
+    <p>Project <code>Spark</code>, stack names <code>&lt;Name&gt;-&lt;Stage&gt;-&lt;StackName&gt;</code>: <code>Spark-Dev-Web</code>, <code>Spark-Prod-Api</code>, <code>Spark-Account-GitHubOidc</code>. One account-level stack, then five per stage.</p>
+  </div>
+  <figure class="diagram">
+    <p class="scroll-hint">Scroll sideways to see the whole diagram.</p>
+    <div class="scroll">
+<svg class="dg" viewBox="0 0 1080 384" role="img" aria-label="Account level: Spark-Account-GitHubOidc holds the OIDC provider and AWS Budget, deployed once by hand. Per stage, five stacks deploy in order: Cicd, Data, Api, Web, Ops. Data writes TableName and TableArn to SSM Parameter Store, Api writes ApiId and ApiDomain, Web writes WebBucketName, DistributionId and DistributionDomain. setup_initial.sh writes OriginVerifySecret. Api reads TableName and the secret; Web reads ApiDomain and the secret.">
+  <defs>
+    <marker id="k-ink" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" class="ah-ink"/></marker>
+  </defs>
+
+  <text x="8" y="26" class="cap">PER STAGE · DEPLOY ORDER (addDependency)</text>
+  <text x="8" y="46" class="s">app-config-dev.json or app-config-prod.json, passed as the APP_CONFIG context</text>
+
+  <rect x="668" y="6" width="404" height="74" rx="12" class="n n-opt"/>
+  <text x="684" y="30" class="mb">Spark-Account-GitHubOidc</text>
+  <text x="684" y="50" class="s">IAM OIDC provider + AWS Budget ($10 and $25 alerts)</text>
+  <text x="684" y="68" class="m sm">app-config-account.json · once per account, by hand</text>
+
+  <!-- stacks -->
+  <rect x="8" y="100" width="184" height="112" rx="12" class="n n-opt"/>
+  <text x="100" y="126" class="mb" text-anchor="middle">Spark-&lt;Stage&gt;-Cicd</text>
+  <text x="100" y="148" class="s" text-anchor="middle">GitHubDeploy IAM role</text>
+  <text x="100" y="164" class="s" text-anchor="middle">trust: repo + environment</text>
+  <text x="100" y="180" class="s" text-anchor="middle">assumes CDK roles only</text>
+  <text x="100" y="198" class="s sunc" text-anchor="middle">by hand, never by CI</text>
+  <line x1="192" y1="156" x2="226" y2="156" class="e" marker-end="url(#k-ink)"/>
+
+  <rect x="228" y="100" width="184" height="112" rx="12" class="n n-api"/>
+  <text x="320" y="126" class="mb" text-anchor="middle">Spark-&lt;Stage&gt;-Data</text>
+  <text x="320" y="148" class="s" text-anchor="middle">DynamoDB table, on-demand</text>
+  <text x="320" y="164" class="s" text-anchor="middle">prod: RETAIN, PITR,</text>
+  <text x="320" y="180" class="s" text-anchor="middle">deletion protection</text>
+  <text x="320" y="198" class="s" text-anchor="middle">dev: DESTROY</text>
+  <line x1="412" y1="156" x2="446" y2="156" class="e" marker-end="url(#k-ink)"/>
+
+  <rect x="448" y="100" width="184" height="112" rx="12" class="n n-api"/>
+  <text x="540" y="126" class="mb" text-anchor="middle">Spark-&lt;Stage&gt;-Api</text>
+  <text x="540" y="148" class="s" text-anchor="middle">NodejsFunction + HTTP API</text>
+  <text x="540" y="164" class="s" text-anchor="middle">stage + route throttles</text>
+  <text x="540" y="180" class="s" text-anchor="middle">reserved concurrency</text>
+  <text x="540" y="198" class="s" text-anchor="middle">access logs</text>
+  <line x1="632" y1="156" x2="666" y2="156" class="e" marker-end="url(#k-ink)"/>
+
+  <rect x="668" y="100" width="184" height="112" rx="12" class="n n-edge"/>
+  <text x="760" y="126" class="mb" text-anchor="middle">Spark-&lt;Stage&gt;-Web</text>
+  <text x="760" y="148" class="s" text-anchor="middle">S3 bucket + CloudFront</text>
+  <text x="760" y="164" class="s" text-anchor="middle">response headers policy</text>
+  <text x="760" y="180" class="s" text-anchor="middle">2 BucketDeployments</text>
+  <text x="760" y="198" class="s" text-anchor="middle">Route 53 + ACM if domain</text>
+  <line x1="852" y1="156" x2="886" y2="156" class="e" marker-end="url(#k-ink)"/>
+
+  <rect x="888" y="100" width="184" height="112" rx="12" class="n"/>
+  <text x="980" y="126" class="mb" text-anchor="middle">Spark-&lt;Stage&gt;-Ops</text>
+  <text x="980" y="148" class="s" text-anchor="middle">CloudWatch alarms</text>
+  <text x="980" y="164" class="s" text-anchor="middle">SNS email + dashboard</text>
+  <text x="980" y="180" class="s" text-anchor="middle">log retention</text>
+  <text x="980" y="198" class="s" text-anchor="middle">14 d dev, 30 d prod</text>
+
+  <!-- writes (solid, down) and reads (dashed, up) -->
+  <line x1="320" y1="212" x2="320" y2="262" class="e" marker-end="url(#k-ink)"/>
+  <line x1="560" y1="212" x2="560" y2="262" class="e" marker-end="url(#k-ink)"/>
+  <line x1="780" y1="212" x2="780" y2="262" class="e" marker-end="url(#k-ink)"/>
+  <line x1="508" y1="264" x2="508" y2="214" class="e e-opt" marker-end="url(#k-ink)"/>
+  <text x="500" y="244" class="s sm" text-anchor="end">reads TableName, secret</text>
+  <line x1="728" y1="264" x2="728" y2="214" class="e e-opt" marker-end="url(#k-ink)"/>
+  <text x="720" y="244" class="s sm" text-anchor="end">reads ApiDomain, secret</text>
+
+  <!-- ssm band -->
+  <rect x="8" y="264" width="1064" height="112" rx="12" class="panel"/>
+  <text x="24" y="284" class="cap">SSM PARAMETER STORE · Spark-&lt;Stage&gt;-&lt;Key&gt; · RESOLVED AT DEPLOY TIME</text>
+
+  <rect x="36" y="298" width="129" height="22" rx="11" class="chip"/>
+  <text x="100.5" y="313" class="m" text-anchor="middle" style="fill:var(--ink)">OriginVerifySecret</text>
+  <text x="100" y="340" class="s sm" text-anchor="middle">written by setup_initial.sh</text>
+  <text x="100" y="355" class="s sm" text-anchor="middle">plain String, 32 random bytes</text>
+
+  <rect x="247" y="298" width="73" height="22" rx="11" class="chip"/>
+  <text x="283.5" y="313" class="m" text-anchor="middle" style="fill:var(--ink)">TableName</text>
+  <rect x="327" y="298" width="66" height="22" rx="11" class="chip"/>
+  <text x="360" y="313" class="m" text-anchor="middle" style="fill:var(--ink)">TableArn</text>
+
+  <rect x="476" y="298" width="48" height="22" rx="11" class="chip"/>
+  <text x="500" y="313" class="m" text-anchor="middle" style="fill:var(--ink)">ApiId</text>
+  <rect x="532" y="298" width="73" height="22" rx="11" class="chip"/>
+  <text x="568.5" y="313" class="m" text-anchor="middle" style="fill:var(--ink)">ApiDomain</text>
+
+  <rect x="655" y="298" width="98" height="22" rx="11" class="chip"/>
+  <text x="704" y="313" class="m" text-anchor="middle" style="fill:var(--ink)">WebBucketName</text>
+  <rect x="761" y="298" width="104" height="22" rx="11" class="chip"/>
+  <text x="813" y="313" class="m" text-anchor="middle" style="fill:var(--ink)">DistributionId</text>
+  <rect x="695" y="328" width="129" height="22" rx="11" class="chip"/>
+  <text x="759.5" y="343" class="m" text-anchor="middle" style="fill:var(--ink)">DistributionDomain</text>
+
+  <line x1="904" y1="311" x2="938" y2="311" class="e" marker-end="url(#k-ink)"/>
+  <text x="946" y="315" class="s sm">stack writes</text>
+  <line x1="904" y1="339" x2="938" y2="339" class="e e-opt" marker-end="url(#k-ink)"/>
+  <text x="946" y="343" class="s sm">stack reads</text>
+</svg>
+    </div>
+    <figcaption>Stacks deploy in order with explicit <code>addDependency</code> and share values through SSM parameters resolved at deploy time. <code>OriginVerifySecret</code> is a plain <code>String</code> (free): its value is already visible in the CloudFront and Lambda configs, so a SecureString would buy nothing. The Api stack bundles <code>backend/src/handler.ts</code> with <code>Runtime.NODEJS_24_X</code>, arm64, 512 MB, 10 s timeout and <code>externalModules: ['@aws-sdk/*']</code> so the runtime's SDK v3 is used.</figcaption>
+  </figure>
+
+  <div class="cols">
+    <div>
+      <h3>One JSON file per stage</h3>
+      <p>Everything that differs between stages, or between accounts, lives in <code>infra/config/</code>. The frontend build has no per-stage env, because the API is always same-origin <code>/api</code>.</p>
+<pre class="code"><code>// app-config-dev.json, abridged from CONTRACT.md
+{
+  "Project": { "Name": "Spark", "Stage": "Dev",
+    "Account": "000000000000", "Region": "us-east-1" },
+  "Stack": {
+    "Cicd": { "GitHubRepo": "Njones27/AWS_Spark",
+              "GitHubEnvironment": "dev" },
+    "Data": { "PointInTimeRecovery": false,
+              "RetainOnDelete": false },
+    "Api":  { "ThrottleRateLimit": 20,
+              "ThrottleBurstLimit": 50,
+              "CreateProfileRateLimit": 5,
+              "RecoverRateLimit": 5,
+              "ReservedConcurrency": 10,
+              "LogRetentionDays": 14 },
+    "Web":  { "DomainName": "", "HostedZoneId": "",
+              "CspReportOnly": true },
+    "Ops":  { "AlarmEmail": "" }
+  }
+}</code></pre>
+      <div class="table-wrap">
+        <table class="mini">
+          <thead><tr><th>Setting</th><th>dev</th><th>prod</th></tr></thead>
+          <tbody>
+            <tr><td><code>Project.Stage</code></td><td>Dev</td><td>Prod</td></tr>
+            <tr><td>Stage throttle (rate / burst)</td><td>20 / 50 rps</td><td>500 / 1,000 rps</td></tr>
+            <tr><td><code>ReservedConcurrency</code></td><td>10</td><td>100</td></tr>
+            <tr><td><code>LogRetentionDays</code></td><td>14</td><td>30</td></tr>
+            <tr><td>Table on delete</td><td>DESTROY</td><td>RETAIN + PITR + deletion protection</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <div>
+      <h3>Template being adopted</h3>
+      <p><a href="https://github.com/aws-samples/aws-cdk-project-template-for-devops">aws-samples/aws-cdk-project-template-for-devops</a>, for its structure: config per target, <code>AppContext</code>, <code>BaseStack</code>, SSM <code>StringParameter</code> sharing resolved at deploy time, and the scripts. It runs on current <code>aws-cdk-lib</code> (2.275.0 today), <code>constructs</code> ^10.5, TypeScript 5.9 and Node 24, not the template's 2023 pins (aws-cdk-lib 2.80, TypeScript 3.9). <code>lib/template/</code> is copied in under MIT-0.</p>
+<pre class="code"><code>infra/
+├── app-main.ts    reads APP_CONFIG, builds the stacks
+├── config/        app-config-{account,dev,prod}.json
+├── lib/template/  AppContext, AppConfig, BaseStack,
+│                  CommonHelper
+├── stack/         github-oidc, cicd, data, api, web, ops
+├── script/        setup_initial.sh, deploy_stacks.sh,
+│                  destroy_stacks.sh
+└── test/          aws-cdk-lib/assertions</code></pre>
+      <p class="note">The root <code>package.json</code> gains <code>"workspaces": ["backend", "infra"]</code>, so one <code>npm ci</code> and one lockfile cover CI. Node 24 is pinned by <code>.nvmrc</code> and <code>engines</code> (the lockfile needs 24.12+ on Linux CI).</p>
+    </div>
+  </div>
+</section>
+
+<!-- ───────────────────────── Account move ───────────────────────── -->
+<section id="move">
+  <div class="sec-head">
+    <h2>Moving to another AWS account</h2>
+    <p>No code changes. Account IDs live only in <code>infra/config/*.json</code> and the GitHub environment variables.</p>
+  </div>
+  <ol class="move">
+    <li><div><strong>Bootstrap the new account.</strong> Run <code>setup_initial.sh</code> with the new profile: CDK bootstrap, OIDC provider, Cicd roles, the SSM parameter and the Lambda quota check.</div></li>
+    <li><div><strong>Point config at it.</strong> A PR edits <code>Project.Account</code> (and <code>Region</code> if wanted) in <code>app-config-prod.json</code>, plus <code>GitHub.Repo</code> in the account config if the repo changes owner.</div></li>
+    <li><div><strong>Swap the GitHub variables.</strong> In environment <code>prod</code>, update <code>AWS_DEPLOY_ROLE_ARN</code> and <code>AWS_ACCOUNT_ID</code>. The trust-policy <code>sub</code> claims do not change. Run <code>deploy.yml</code>.</div></li>
+    <li><div><strong>Copy the data.</strong> A short scan-then-batch-write script between the two profiles (kilobytes per profile), or a PITR export to S3 plus <code>ImportTable</code> if the table has grown.</div></li>
+    <li><div><strong>Move the hostname.</strong> Without a domain the <code>*.cloudfront.net</code> name changes, so keep the old distribution for 90 days with a CloudFront Function that 301s to the new host (browsers keep the <code>#</code> fragment). With a domain, create the hosted zone in the new account, lower TTLs a day early, flip the alias and repoint the registrar's nameservers.</div></li>
+    <li><div><strong>Retire the old account.</strong> Run <code>destroy_stacks.sh</code> there once everything is verified, and delete the retained prod table after 30 days.</div></li>
+  </ol>
+</section>
+
+<!-- ───────────────────────── Cost, scale, latency ───────────────────────── -->
+<section id="cost">
+  <div class="sec-head">
+    <h2>Cost, scale, latency</h2>
+    <p>Monthly at expected use, from AWS pricing pages, with both stages in one account.</p>
+  </div>
+  <div class="cols">
+    <div>
+      <div class="table-wrap">
+        <table class="t-mid">
+          <thead><tr><th>Item</th><th>Prod</th><th>Dev</th></tr></thead>
+          <tbody>
+            <tr><td>CloudFront, S3</td><td>~$0 (always-free tier: 1 TB, 10M requests)</td><td>~$0</td></tr>
+            <tr><td>HTTP API ($1/M requests)</td><td>&lt; $1</td><td>~$0</td></tr>
+            <tr><td>Lambda</td><td>within the always-free tier</td><td>same</td></tr>
+            <tr><td>DynamoDB (on-demand, PITR)</td><td>$1 to 3</td><td>&lt; $0.50</td></tr>
+            <tr><td>CloudWatch logs and alarms</td><td>&lt; $1</td><td>&lt; $0.50</td></tr>
+            <tr><td>Route 53 (when a domain exists)</td><td>$0.50/zone + ~$12/yr registration</td><td>shares the zone</td></tr>
+            <tr class="total"><td>Total</td><td>≈ $2 to 5</td><td>≈ $1</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="note">AWS Budgets emails the owner at $10 and $25 of actual spend. The target is under $5 after the first month.</p>
+    </div>
+    <div>
+      <h3>Headroom at 10× expected load</h3>
+      <div class="table-wrap">
+        <table class="t-mid">
+          <thead><tr><th></th><th>Needed at 10×</th><th>Prod cap (config)</th><th>Account quota</th></tr></thead>
+          <tbody>
+            <tr><td>API requests/s</td><td>150 to 300</td><td>500, burst 1,000</td><td>10,000, burst 5,000</td></tr>
+            <tr><td>Concurrent Lambdas</td><td>10 to 20</td><td>100 reserved</td><td>1,000 (fresh accounts often 10)</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>All serverless, and static traffic never touches the account's compute. DynamoDB on-demand scales to twice its previous peak instantly. Ten times 1,000 concurrent students at a few calls a minute is 150 to 300 rps and 10 to 20 concurrent Lambdas. The stage throttles and reserved concurrency are the cost guardrails; raise them in config if alarms show 429s.</p>
+    </div>
+  </div>
+  <h3>Latency</h3>
+  <div class="lat" role="img" aria-label="Latency ranges on a 0 to 400 millisecond scale: static file from the nearest edge 20 to 50 ms; API call on a warm container 60 to 120 ms; API call on a cold container 250 to 400 ms.">
+    <div class="lat-row"><span class="lat-label">Static file from the nearest edge (TTFB)</span><div class="lat-track"><span class="lat-bar edge" style="--from:20;--to:50"></span></div><span class="lat-val">20–50 ms</span></div>
+    <div class="lat-row"><span class="lat-label">API call, warm container</span><div class="lat-track"><span class="lat-bar api" style="--from:60;--to:120"></span></div><span class="lat-val">60–120 ms</span></div>
+    <div class="lat-row"><span class="lat-label">API call, cold container</span><div class="lat-track"><span class="lat-bar cold" style="--from:250;--to:400"></span></div><span class="lat-val">250–400 ms</span></div>
+    <div class="lat-row" aria-hidden="true"><span class="spacer"></span><div class="lat-axis"><span style="left:0">0</span><span style="left:25%">100</span><span style="left:50%">200</span><span style="left:75%">300</span><span style="left:100%">400 ms</span></div><span class="spacer"></span></div>
+  </div>
+  <p class="note">API calls traverse CloudFront to us-east-1. With one function, a cold container happens a few times an hour. Sync is background and share and recover are the only API waits a student sees, so the UI never blocks on the API.</p>
+</section>
+
+<!-- ───────────────────────── Risks ───────────────────────── -->
+<section id="risks">
+  <div class="sec-head">
+    <h2>Top risks and mitigations</h2>
+  </div>
+  <div class="table-wrap">
+    <table class="t-mid">
+      <thead><tr><th></th><th style="width:48%">Risk</th><th>Mitigation</th></tr></thead>
+      <tbody>
+        <tr><td class="rk">1</td><td>Share links and bookmarks bake in the <code>*.cloudfront.net</code> hostname, so the account move or a later domain breaks every link in the wild.</td><td>Register the domain before any public launch. Until then, the 90-day 301 bridge from the old distribution.</td></tr>
+        <tr><td class="rk">2</td><td>A deploy white-screens a student mid-session.</td><td><code>prune: false</code>, <code>s-maxage</code> plus invalidation, and a <code>vite:preloadError</code> handler that reloads once.</td></tr>
+        <tr><td class="rk">3</td><td>A fresh account's Lambda concurrency quota (often 10) throttles the first classroom.</td><td>Checked and raised in <code>setup_initial.sh</code>; alarm on throttles.</td></tr>
+        <tr><td class="rk">4</td><td>COPPA drift: adding nicknames or free text turns a PII-free system into one that needs consent.</td><td>Closed schema. Adult-only data in coordinator features.</td></tr>
+        <tr><td class="rk">5</td><td>A caller bypasses CloudFront and hits the API directly.</td><td>Origin-verify header check now. Swap to a Function URL with OAC if it ever needs to be IAM-strong.</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ───────────────────────── Sources ───────────────────────── -->
+<section id="sources">
+  <div class="sec-head"><h2>Sources</h2></div>
+  <ul class="sources">
+    <li><a href="https://docs.aws.amazon.com/prescriptive-guidance/latest/patterns/deploy-a-react-based-single-page-application-to-amazon-s3-and-cloudfront.html">AWS Prescriptive Guidance: React SPA on S3 + CloudFront</a><span class="src-what">API Gateway behind CloudFront to avoid CORS</span></li>
+    <li><a href="https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/using-managed-origin-request-policies.html">CloudFront managed origin request policies</a><span class="src-what"><code>AllViewerExceptHostHeader</code> for API Gateway origins</span></li>
+    <li><a href="https://aws.amazon.com/cloudfront/pricing/pay-as-you-go/">CloudFront pricing</a><span class="src-what">Always-free tier: 1 TB, 10M requests, 2M Functions</span></li>
+    <li><a href="https://docs.aws.amazon.com/apigateway/latest/developerguide/http-api-throttling.html">HTTP API throttling</a><span class="src-what">Stage and route throttles, account quotas</span></li>
+    <li><a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/id_roles_create_for-idp_oidc.html">IAM role for GitHub OIDC</a><span class="src-what"><code>sub</code> condition requirements</span></li>
+    <li><a href="https://docs.github.com/en/actions/how-tos/deploy/configure-and-manage-deployments/manage-environments">GitHub environments and protection rules</a><span class="src-what">Required reviewers on public repos on Free</span></li>
+    <li><a href="https://docs.aws.amazon.com/cdk/api/v2/docs/aws-cdk-lib.aws_iam.OidcProviderNative.html">CDK <code>iam.OidcProviderNative</code></a><span class="src-what">Native <code>AWS::IAM::OIDCProvider</code>, no thumbprint</span></li>
+    <li><a href="https://constructs.dev/packages/aws-cdk-lib/v/2.275.0?submodule=aws_lambda_nodejs&amp;lang=typescript">CDK <code>NodejsFunction</code></a><span class="src-what">Bundling and <code>externalModules</code></span></li>
+    <li><a href="https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/private-content-restricting-access-to-lambda.html">CloudFront OAC for Lambda function URLs</a><span class="src-what">The alternative kept in reserve</span></li>
+    <li><a href="https://aws.amazon.com/dynamodb/pricing/">DynamoDB pricing</a><span class="src-what">On-demand capacity</span></li>
+    <li><a href="https://github.com/aws-samples/aws-cdk-project-template-for-devops">aws-cdk-project-template-for-devops</a><span class="src-what">The CDK template being adopted</span></li>
+    <li><a href="https://github.com/aws-samples/serverless-patterns/tree/main/s3-cloudfront-oac-cdk-python">S3 + CloudFront OAC in CDK</a><span class="src-what"><code>S3BucketOrigin.withOriginAccessControl</code></span></li>
+  </ul>
+</section>
+
+</main>
+
+<footer class="foot">
+  <p>Built from the approved plan (2026-10-30) and <code>docs/aws/CONTRACT.md</code> v1. When the design changes, change the contract first, then the code.</p>
+</footer>
+</div>

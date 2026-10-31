@@ -1,5 +1,6 @@
 import { MapScene } from '../components/art/Scenery';
 import { Sparky } from '../components/art/Sparky';
+import { BuilderKeyButton } from '../components/BuilderKey';
 import { TopBar } from '../components/Chrome';
 import { STORY } from '../data/chapters';
 import type { Chapter } from '../data/levels';
@@ -157,6 +158,7 @@ export function LevelMap({ chapter }: { chapter: Chapter }) {
             <input type="checkbox" checked={unlockAll} onChange={(e) => setUnlockAll(e.target.checked)} />
             Teacher mode: unlock every level
           </label>
+          <BuilderKeyButton variant="row" />
         </aside>
       </main>
     </div>

@@ -1,0 +1,50 @@
+# Pull-request checks. No AWS credentials and no context lookups in the CDK app, so PRs from forks are safe.
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    name: Typecheck, test, build, synth
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - run: npm ci
+
+      - name: Typecheck (frontend, backend, infra)
+        run: npm run typecheck:all
+
+      - name: Test (frontend, backend, infra)
+        run: npm run test:all
+
+      - name: Build frontend
+        run: npm run build
+
+      # Synth bundles the Lambda with esbuild and stages dist/ for the Web stack, so it needs the build above.
+      - name: cdk synth (account, dev, prod)
+        working-directory: infra
+        run: |
+          for config in account dev prod; do
+            echo "::group::cdk synth config/app-config-$config.json"
+            npx cdk synth --quiet -c APP_CONFIG="config/app-config-$config.json"
+            echo "::endgroup::"
+          done

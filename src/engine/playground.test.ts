@@ -5,7 +5,7 @@ import { alternativesOf, PICK_WHEN } from '../data/alternatives';
 import { findRule } from '../data/rules';
 import { STARTERS } from '../data/starters';
 import { planText, summarizePlan } from '../components/playground/PlanExport';
-import { migrateSaved, type SavedDiagram } from '../store';
+import { EMPTY_PROFILE, migrateSaved, type SavedDiagram } from '../store';
 import { judgeQuestions, type JudgeEdge, type JudgeNode } from './judge';
 import { decodeDesign, encodeDesign } from './share';
 import { simulate } from './simulate';
@@ -81,9 +81,13 @@ describe('saved playground', () => {
     expect(pieces[0].data).toMatchObject({ service: 'users', label: 'Townsfolk', source: { demand: 50 } });
   });
 
-  it('keeps version 1 saves when the store moves to version 2', () => {
+  it('keeps version 1 and 2 saves, adding only an empty Builder Key profile at version 3', () => {
     const v1 = { band: 'builder', completed: ['l1'], playground: { nodes: [], edges: [] }, unlockAll: false };
-    expect(migrateSaved(v1)).toEqual(v1);
+    expect(migrateSaved(v1, 1)).toEqual({ ...v1, profile: EMPTY_PROFILE });
+    const v2 = { ...v1, playground: { nodes: [], edges: [], plan: { title: 'Park Cleanup', uses: {} } } };
+    expect(migrateSaved(v2, 2)).toEqual({ ...v2, profile: EMPTY_PROFILE });
+    const v3 = { ...v2, profile: { profileId: 'p', token: 't', builderKey: 'MAPLE-OTTER-4821', lastSyncedAt: null } };
+    expect(migrateSaved(v3, 3)).toEqual(v3);
   });
 });
 
