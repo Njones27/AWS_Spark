@@ -1,0 +1,43 @@
+{
+  "Project": {
+    "Name": "Spark",
+    "Stage": "Prod",
+    "Account": "179326015123",
+    "Region": "us-east-1",
+    "Profile": "walkworthy"
+  },
+  "Stack": {
+    "Cicd": {
+      "Name": "Cicd",
+      "GitHubRepo": "Njones27/AWS_Spark",
+      "GitHubEnvironment": "prod"
+    },
+    "Data": {
+      "Name": "Data",
+      "PointInTimeRecovery": true,
+      "RetainOnDelete": true
+    },
+    "Api": {
+      "Name": "Api",
+      "ThrottleRateLimit": 500,
+      "ThrottleBurstLimit": 1000,
+      "CreateProfileRateLimit": 20,
+      "RecoverRateLimit": 5,
+      "ShareRateLimit": 10,
+      "SaveRateLimit": 200,
+      "ReservedConcurrency": 0,
+      "LogRetentionDays": 30
+    },
+    "Web": {
+      "Name": "Web",
+      "DomainName": "",
+      "HostedZoneId": "",
+      "CspReportOnly": true
+    },
+    "Ops": {
+      "Name": "Ops",
+      "AlarmEmail": "",
+      "Api5xxThreshold": 1
+    }
+  }
+}

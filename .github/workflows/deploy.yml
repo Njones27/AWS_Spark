@@ -1,0 +1,34 @@
+# Every push to main deploys dev, smoke-tests it, then waits for approval on the `prod` environment
+# (required reviewer) and deploys prod. Manual runs can stop after dev.
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      stage:
+        description: How far to deploy (prod still needs its environment approval)
+        type: choice
+        options: [dev, prod]
+        default: dev
+
+permissions:
+  id-token: write
+  contents: read
+
+# Concurrency is per environment (see deploy-stage.yml), so a prod deploy waiting for approval never holds
+# up the next dev deploy.
+
+jobs:
+  dev:
+    uses: ./.github/workflows/deploy-stage.yml
+    with:
+      environment: dev
+
+  prod:
+    needs: dev
+    if: github.event_name == 'push' || inputs.stage == 'prod'
+    uses: ./.github/workflows/deploy-stage.yml
+    with:
+      environment: prod
