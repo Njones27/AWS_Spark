@@ -1,101 +1,125 @@
 # Spark: Cloud Builders
 
-A visual, game-like web app that teaches K–12 students how AWS services fit together.
+A visual, game-like web app that teaches students how AWS services fit together. Drag real AWS services onto a
+map, connect them, and press **Run** to watch requests flow. Overloaded pieces turn red, queued work waits in
+line, and bots get blocked.
 
-![Spark home screen: Story Mode and Playground over a cartoon town connected to the AWS cloud](docs/screens/home.png)
+![Spark home screen: Story Mode, Advanced Track, and Playground over a cartoon town connected to the AWS cloud](docs/screens/home.png)
 
-- **Story Mode**: 9 levels where Baker Rosa's bakery, Crumb & Co., goes online. Each level gives you a few
-  pieces. You connect them and press **Run** to watch requests flow along the arrows. Overloaded pieces
-  turn red; queued work waits in line; gremlin bots get blocked.
-  **Chapter 2: Maple Hollow Helps** opens after that: 6 levels where the whole town needs help with the kinds of
-  problems STLP teams pick (a library events site, park cleanup sign-ups, late-bus alerts, an AI school helper, notes
-  in every language, and a photo lost-and-found), using CloudFront, S3, API Gateway, Lambda, DynamoDB, SNS, Bedrock,
-  Translate, Polly, and Rekognition.
-- **Advanced Track (college & up)**: 7 on-call tickets two years later, when Crumb & Co. has grown into a national
-  delivery platform and you're its first cloud engineer. Tickets add constraints beyond "everyone is happy": a monthly
-  **budget**, **required arrows** (an IAM role, a KMS key, a Cognito authorizer, a CloudWatch alarm), and queues that
-  must **drain**. Topics: least privilege, cost-aware scaling, queue backlogs and containers, edge security, SNS/SQS
-  fan-out, an S3 + Athena data lake, and a grounded Bedrock AgentCore agent. Always uses real AWS names and numbers.
-- **Playground**: build anything with 48 pieces, from S3 and Lambda to IAM, containers, data tools, and Bedrock AgentCore. Only connections that make sense snap together. Try one
-  that doesn't, and Sparky explains why and suggests what to connect instead.
-- **Challenge tools** (in the Playground), for K–12 teams pitching an AWS solution to a community problem:
-  - **Starters**: pick your kind of problem (share information, collect sign-ups, send alerts, AI answers, understand
-    photos, more languages) and start from a plan that already works.
-  - **Your project's words and a goal**: rename any piece ("Sign-up checker"), with the AWS name kept underneath, and set a
-    goal like "80 volunteers can sign up". **Run** checks it.
-  - **Why we chose it**: a note on each piece, plus other services that could do the same job and when to pick each.
-  - **Our AWS plan**: a pitch-ready card with a picture of the map, what each service does, how it works, and the
-    sources to cite. Copy it as text or save it as a picture.
-  - **Judge practice**: questions a judge might ask, checked against your map: a 10× crowd, who can read your data,
-    how you'd know something broke, and why you picked each main service.
-  - **Share**: a link that carries the whole design, so teammates, coaches, and mentors can open it. No server or account.
-- **Grade bands**: Explorer (K–5), Builder (6–8), and Architect (9–12). Every band uses the real AWS service
-  names. Each band changes the explanations, numbers, and hints.
-- **Hover to learn**: point at any piece, tray item, or service chip to see what that service does, explained
-  for your grade band. Tap a piece on a touch screen to open its info card.
+## What's inside
 
-| Story Mode level map | A level running: one server is overloaded |
+### Story Mode (K–12)
+
+Two chapters, 15 levels. Each level gives you a few pieces and a goal. Connect them, press **Run**, and Sparky
+explains what happened.
+
+| Chapter 1: Crumb & Co. Goes Online | Chapter 2: Maple Hollow Helps |
 |---|---|
-| ![Chapter 1 level map with four levels complete](docs/screens/level-map.png) | ![Level 6: 150 visitors reach a server that can handle 50, so it turns red](docs/screens/level6-overload.png) |
-| **Sparky explains a connection that doesn't fit** | **Playground with IAM and KMS badges** |
-| ![Connecting customers straight to DynamoDB, and Sparky suggesting API Gateway instead](docs/screens/invalid-connection.png) | ![Playground: CloudFront, S3, API Gateway, Lambda, DynamoDB, and Bedrock, with IAM and KMS badge arrows](docs/screens/playground.png) |
+| ![Chapter 1 map: nine levels, four done](docs/screens/level-map.png) | ![Chapter 2 map: six levels, two done](docs/screens/chapter2-map.png) |
+| Baker Rosa's bakery goes online in 9 levels: storage, DNS, CDN, serverless, fan-out, scaling, caching, queues, and security. | The whole town needs help in 6 levels: a library events site, park cleanup sign-ups, late-bus alerts, an AI school helper, notes in every language, and a photo lost-and-found. |
+
+| A level running: one server is overloaded | Sparky explains a connection that doesn't fit |
+|---|---|
+| ![Level 6: 150 visitors reach a server that can handle 50, so it turns red](docs/screens/level6-overload.png) | ![Connecting customers straight to DynamoDB, and Sparky suggesting API Gateway instead](docs/screens/invalid-connection.png) |
+
+### Advanced Track (college & up)
+
+Seven on-call tickets, two years later. Crumb & Co. is now a national delivery platform and you're its first
+cloud engineer. Tickets add constraints beyond "everyone is happy": a monthly **budget**, **required arrows**
+(an IAM role, a KMS key, a Cognito authorizer, a CloudWatch alarm), and queues that must **drain**.
+
+| Advanced Track map | A ticket with a budget and security constraints |
+|---|---|
+| ![Advanced Track map: seven tickets across a night-time city](docs/screens/advanced-map.png) | ![Ticket 1: a $300 budget, a least-privilege IAM role, a customer managed KMS key, and a Cognito authorizer](docs/screens/advanced-ticket.png) |
+
+Topics: least privilege, cost-aware scaling, queue backlogs and containers, edge security, SNS/SQS fan-out, an
+S3 + Athena data lake, and a grounded Bedrock AgentCore agent. Every ticket uses real AWS names and numbers.
+
+### Playground
+
+Build anything with 48 pieces, from S3 and Lambda to IAM, containers, data tools, and Bedrock AgentCore. Only
+connections that make sense snap together. Try one that doesn't, and Sparky explains why and suggests what to
+connect instead.
+
+| Pick a starter plan | A finished design with a goal, IAM, and KMS |
+|---|---|
+| ![Starters: six kinds of problem, each with a plan that already works](docs/screens/starters.png) | ![Playground: CloudFront, S3, API Gateway, Lambda, DynamoDB, and Bedrock, with IAM and KMS badge arrows and a met goal](docs/screens/playground.png) |
+
+The Playground also has **challenge tools** for teams pitching an AWS solution to a community problem:
+
+- **Starters**: pick your kind of problem (share information, collect sign-ups, send alerts, AI answers,
+  understand photos, more languages) and start from a plan that already works.
+- **Your project's words and a goal**: rename any piece ("Sign-up checker") with the AWS name kept underneath,
+  and set a goal like "80 volunteers can sign up". **Run** checks it.
+- **Why we chose it**: a note on each piece, plus other services that could do the same job and when to pick each.
+- **Our AWS plan**: a pitch-ready card with a picture of the map, what each service does, and sources to cite.
+  Copy it as text or save it as a picture.
+- **Judge practice**: questions a judge might ask, checked against your map: a 10× crowd, who can read your
+  data, how you'd know something broke, and why you picked each main service.
+- **Share**: a link that carries the whole design. No server or account needed.
+
+### Grade bands
+
+Explorer (K–5), Builder (6–8), Architect (9–12), and Advanced (college & up). Every band uses the real AWS
+service names. The band changes the explanations, numbers, and hints. Point at any piece, tray item, or service
+chip to see what it does, explained for your band. On a touch screen, tap a piece to open its info card.
+
+![Explorer band: faces instead of numbers, and automatic hints](docs/screens/explorer-band.png)
 
 ## Run it
 
 ```bash
 npm install
 npm run dev        # http://localhost:5173
-npm test           # engine + data tests (every level is solvable, every preset is a valid connection)
-npm run build      # static site in dist/ — host on S3 + CloudFront, Amplify, GitHub Pages…
+npm test           # every level is solvable, every preset is a valid connection
+npm run build      # static site in dist/
 ```
 
-The app uses hash routing and a relative base, so `dist/` works from any static host or sub-path.
-Progress is saved in the browser (localStorage). Nothing is sent to a server.
+The build is a static site with hash routing and a relative base, so `dist/` works from S3 + CloudFront,
+Amplify, GitHub Pages, or any sub-path. Progress is saved in the browser. Nothing is sent to a server.
 
-## How it works
+## How it's built
 
 | Path | What lives there |
 |---|---|
-| `src/data/services.ts` | The 48 pieces: real name, per-band blurbs (shown on hover and in the info card), capacity, and how traffic leaves each one |
-| `src/data/rules.ts` | Directional allow-list of connections (`from → to`), with a verb plus simple and technical "why" text, and hand-written explanations for common mistakes |
-| `src/data/levels.ts` | Chapter 1 story, goals, pre-placed pieces, tray palette, hints, lesson, and the intended solution |
-| `src/data/advanced.ts` | Advanced Track tickets, with budgets, required arrows, and backlog limits |
-| `src/data/costs.ts` | Rough monthly cost of each piece, used by budget tickets |
-| `src/engine/objectives.ts` | Checks a ticket's budget, required arrows, and queue backlog |
-| `src/data/starters.ts`, `src/data/alternatives.ts` | Playground starter plans, and which services can do the same job (with "pick it when…") |
-| `src/engine/judge.ts`, `src/engine/share.ts` | Judge-practice questions checked against a map, and share-link encoding (validated on open) |
+| `src/data/services.ts` | The 48 pieces: name, per-band blurbs, capacity, and how traffic leaves each one |
+| `src/data/rules.ts` | Which connections are allowed (`from → to`), with a "why" for each, and explanations for common mistakes |
+| `src/data/levels.ts`, `src/data/chapter2.ts` | Story Mode chapters: story, goals, pre-placed pieces, tray, hints, lesson, and solution |
+| `src/data/advanced.ts`, `src/data/costs.ts` | Advanced Track tickets (budgets, required arrows, backlog limits) and rough monthly costs |
+| `src/data/starters.ts`, `src/data/alternatives.ts` | Playground starter plans, and which services can do the same job |
+| `src/engine/simulate.ts` | Traffic model: a forward pass computes load, a backward pass works out why each request did or didn't finish |
+| `src/engine/validate.ts`, `src/engine/objectives.ts` | Connection checks (rule, duplicate, self, loop) and ticket constraints (budget, required arrows, backlog) |
+| `src/engine/judge.ts`, `src/engine/share.ts` | Judge-practice questions and share-link encoding |
+| `src/components/canvas/` | React Flow canvas, pieces, flowing arrows, the tray, and the "why" bubble |
 | `src/components/playground/` | Starters, goal card, project notes, plan export, judge panel, share dialog |
-| `src/engine/simulate.ts` | Traffic model. A forward pass computes the load on every piece; a backward pass works out why each request did or didn't finish |
-| `src/engine/validate.ts` | Connection checks: rule, duplicate, self, and loop |
-| `src/components/canvas/` | React Flow canvas, pieces, flowing dashed edges with request dots, the tray (drag or tap), and the "why" bubble |
-| `src/screens/` | Home, Level map, Level play, Playground, Style guide (`#/styleguide`) |
+| `src/screens/` | Home, level map, level play, Playground, style guide (`#/styleguide`) |
 
-### Simulation rules (kid version)
+### Simulation rules
+
 - Townsfolk send *N* visitors. Every piece can handle a set number at once. Anything over that is dropped.
 - Front doors (Route 53, API Gateway, load balancer, WAF, SQS) **share** visitors between their arrows.
   Workers (Lambda, EC2, SNS, EventBridge…) **copy** each request to every arrow.
-- CloudFront answers ~80% from its copies. ElastiCache answers ~80% of database reads. Auto Scaling
+- CloudFront answers about 80% from its copies. ElastiCache answers about 80% of database reads. Auto Scaling
   gives EC2 4× capacity. WAF removes bots. Work coming out of SQS waits instead of being dropped.
-- **Badges**: IAM, KMS, Secrets Manager, Shield, Fargate, and Auto Scaling don't carry requests. Their arrows pin
-  a badge on the piece they point at (for example, IAM → Lambda gives Lambda a permission badge). Apart from Auto
-  Scaling's extra capacity, badges never make requests fail.
-- SQS hands messages to its readers in proportion to their capacity, because readers pull work when they have room.
+- **Badges**: IAM, KMS, Secrets Manager, Shield, Fargate, and Auto Scaling don't carry requests. Their arrows
+  pin a badge on the piece they point at. Apart from Auto Scaling's extra capacity, badges never make requests fail.
 - Pieces that need somewhere to send work (AgentCore, Firehose, Athena, Glue, AppSync) fail as a dead end without it.
 
 ### Add a level
-Append to `LEVELS` in `src/data/levels.ts`, including a `solution`. `npm test` fails if the starting
-setup already passes, if the solution doesn't, or if any arrow isn't an allowed connection.
 
-Advanced tickets go in `ADVANCED_LEVELS` in `src/data/advanced.ts` and can also set `budget`, `requires`, and
-`maxBacklog`. The same test checks that the start fails and the solution passes every constraint.
+Append to the chapter's level list (`src/data/levels.ts`, `src/data/chapter2.ts`, or `src/data/advanced.ts`),
+including a `solution`. Advanced tickets can also set `budget`, `requires`, and `maxBacklog`. `npm test` fails if
+the starting setup already passes, if the solution doesn't, or if any arrow isn't an allowed connection.
 
 ### Add a service
+
 1. Add its icon mapping to `scripts/import-icons.mjs`, then run
    `npm run icons -- "/path/to/Icon-package_XXXX"` to copy it into `public/icons/`.
 2. Add the service to `src/data/services.ts` and its connections to `src/data/rules.ts`.
 
 ## Notes
-- AWS Architecture Icons © Amazon Web Services, used here to teach architecture.
-  This project is not affiliated with or endorsed by AWS.
-- Fonts (Fredoka, Lexend) are bundled via Fontsource, so the app works on school networks that block Google Fonts.
+
+- AWS Architecture Icons © Amazon Web Services, used here to teach architecture. This project is not
+  affiliated with or endorsed by AWS.
+- Fonts (Fredoka, Lexend) are bundled, so the app works on school networks that block Google Fonts.
 - Teacher mode (on the level map) unlocks every level.
