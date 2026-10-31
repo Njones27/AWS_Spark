@@ -6,6 +6,7 @@ import { isPiece, makeEdge, makePiece, toSim, zoneNodes, displayName, type AppNo
 import { PieceDock, type DockItemSpec } from '../components/canvas/PieceDock';
 import { useDiagram, useDropPiece } from '../components/canvas/useDiagram';
 import { TopBar } from '../components/Chrome';
+import { Sheet, TurnTip } from '../components/PhoneChrome';
 import { ServiceCard } from '../components/ServiceCard';
 import { ServiceChip } from '../components/ServiceTip';
 import { topProblem } from '../data/feedback';
@@ -15,6 +16,7 @@ import { iconUrl, SERVICES } from '../data/services';
 import { bt } from '../data/text';
 import type { ServiceId } from '../data/types';
 import { checkObjectives, firstFailed } from '../engine/objectives';
+import { useDevice } from '../device';
 import { simulate, type SimResult } from '../engine/simulate';
 import { go, href } from '../router';
 import { BandOverride, useApp, useBand } from '../store';
@@ -78,6 +80,9 @@ function LevelInner({ level }: { level: Level }) {
   const [sim, setSim] = useState<SimResult | null>(null);
   const [hints, setHints] = useState(level.number === 1 || band === 'explorer' ? 1 : 0);
   const [selected, setSelected] = useState<string | null>(null);
+  const phone = useDevice().device === 'phone';
+  const [sheet, setSheet] = useState<'mission' | 'pieces' | null>(null);
+  const [dragging, setDragging] = useState(false);
   const raf = useRef(0);
   const timer = useRef(0);
 
@@ -172,6 +177,122 @@ function LevelInner({ level }: { level: Level }) {
     sparkyText = advanced ? 'Every request served and every check green. Ticket resolved!' : 'Everyone got what they needed. You did it!';
   }
 
+  const restart = () => {
+    stop();
+    d.reset(buildLevel(level));
+    setSelected(null);
+  };
+  const sourceState = (id: string) => {
+    const res = sim?.sources[id];
+    const ok = res && res.ok >= res.demand * 0.999 && res.demand > 0;
+    return { res, state: !res ? 'pending' : phase === 'running' ? 'live' : ok ? 'ok' : 'bad' };
+  };
+
+  const panel = (
+    <>
+      <div className={`speech speech-${sparkyMood}`} aria-live={phone ? undefined : 'polite'}>
+        <Sparky mood={sparkyMood} size={78} />
+        <p>{sparkyText}</p>
+      </div>
+
+      <section className="goals" aria-label="Goals">
+        <h3>Goals</h3>
+        {sources.map((n) => {
+          const { res, state } = sourceState(n.id);
+          return (
+            <div key={n.id} className={`goal goal-${state}`}>
+              <span className="goal-mark" aria-hidden="true">
+                {state === 'ok' ? '✓' : state === 'bad' ? '!' : '○'}
+              </span>
+              <div className="goal-body">
+                <strong>{n.data.label}</strong>
+                <span className="goal-line">
+                  {res ? `${Math.round(res.ok)} of ${Math.round(res.demand)} happy` : `${n.data.source!.demand} ${band === 'architect' ? 'req/s' : 'visitors'}`}
+                  {!!n.data.source!.bots && !res && <> + {n.data.source!.bots} gremlin bots</>}
+                </span>
+                {!!n.data.source!.needs?.length && (
+                  <span className="goal-needs">
+                    must reach
+                    {n.data.source!.needs.map((need) => {
+                      const svc = (need in SERVICES ? need : pieces.find((p) => p.id === need)?.data.service) as ServiceId;
+                      const label = need in SERVICES ? displayName({ service: svc }).main : nameOf(need)?.name;
+                      return (
+                        <span key={need} className="chip chip-sm" title={label}>
+                          <img src={iconUrl(svc)} alt="" />
+                          {label}
+                        </span>
+                      );
+                    })}
+                  </span>
+                )}
+              </div>
+            </div>
+          );
+        })}
+      </section>
+
+      {objectives.length > 0 && (
+        <section className="goals constraints" aria-label="Constraints">
+          <h3>Constraints</h3>
+          {objectives.map((o) => {
+            // Going over budget shows at once; a missing arrow only counts as a miss after a run.
+            const state = o.ok === null ? 'pending' : o.ok ? 'ok' : phase === 'fail' || o.id === 'budget' ? 'bad' : 'pending';
+            return (
+              <div key={o.id} className={`goal goal-${state}`}>
+                <span className="goal-mark" aria-hidden="true">
+                  {state === 'ok' ? '✓' : state === 'bad' ? '!' : '○'}
+                </span>
+                <div className="goal-body">
+                  <strong>{o.label}</strong>
+                  {o.detail && <span className="goal-line">{o.detail}</span>}
+                </div>
+              </div>
+            );
+          })}
+        </section>
+      )}
+
+      <section className="hints" aria-label="Hints">
+        {level.hints.slice(0, hints).map((h, i) => (
+          <p key={i} className="hint">
+            <span aria-hidden="true">💡</span> {bt(h, band)}
+          </p>
+        ))}
+        {hints < level.hints.length && (
+          <button className="btn btn-ghost btn-sm" onClick={() => setHints((h) => h + 1)}>
+            💡 {hints ? 'Another hint' : 'Need a hint?'}
+          </button>
+        )}
+      </section>
+    </>
+  );
+
+  const serviceCard = selectedNode && (
+    <ServiceCard
+      service={selectedNode.data.service}
+      label={selectedNode.data.label}
+      available={available}
+      onClose={() => setSelected(null)}
+    />
+  );
+  const runButton =
+    phase === 'running' || phase === 'fail' ? (
+      <button className="btn btn-run is-stop" onClick={stop}>
+        ■ {phase === 'fail' ? 'Keep building' : 'Stop'}
+      </button>
+    ) : (
+      <button className="btn btn-run" onClick={run} disabled={phase === 'intro' || phase === 'win'}>
+        ▶ Run
+      </button>
+    );
+
+  // Phone: the mission bar counts every goal, and the Pieces tab shows how many pieces are still in the tray.
+  const goalsMet = sources.filter((n) => sourceState(n.id).state === 'ok').length + objectives.filter((o) => o.ok).length;
+  const goalsTotal = sources.length + objectives.length;
+  const budget = objectives.find((o) => o.id === 'budget');
+  const piecesLeft = dock.reduce((n, p) => n + (p.left ?? 0), 0);
+  const toggle = (s: 'mission' | 'pieces') => setSheet((cur) => (cur === s ? null : s));
+
   return (
     <div className={`screen level-screen phase-${phase}`}>
       <TopBar
@@ -186,108 +307,19 @@ function LevelInner({ level }: { level: Level }) {
         }
         hideBand={advanced}
       >
-        <button
-          className="btn btn-ghost"
-          onClick={() => {
-            stop();
-            d.reset(buildLevel(level));
-            setSelected(null);
-          }}
-          title="Start this level over"
-        >
+        <button className="btn btn-ghost" onClick={restart} title="Start this level over">
           ↺ Restart
         </button>
         {advanced && <AdvancedChip />}
       </TopBar>
 
       <div className="level-body">
-        <aside className="story-panel">
-          <div className={`speech speech-${sparkyMood}`} aria-live="polite">
-            <Sparky mood={sparkyMood} size={78} />
-            <p>{sparkyText}</p>
-          </div>
-
-          <section className="goals" aria-label="Goals">
-            <h3>Goals</h3>
-            {sources.map((n) => {
-              const res = sim?.sources[n.id];
-              const ok = res && res.ok >= res.demand * 0.999 && res.demand > 0;
-              const state = !res ? 'pending' : phase === 'running' ? 'live' : ok ? 'ok' : 'bad';
-              return (
-                <div key={n.id} className={`goal goal-${state}`}>
-                  <span className="goal-mark" aria-hidden="true">
-                    {state === 'ok' ? '✓' : state === 'bad' ? '!' : '○'}
-                  </span>
-                  <div className="goal-body">
-                    <strong>{n.data.label}</strong>
-                    <span className="goal-line">
-                      {res ? `${Math.round(res.ok)} of ${Math.round(res.demand)} happy` : `${n.data.source!.demand} ${band === 'architect' ? 'req/s' : 'visitors'}`}
-                      {!!n.data.source!.bots && !res && <> + {n.data.source!.bots} gremlin bots</>}
-                    </span>
-                    {!!n.data.source!.needs?.length && (
-                      <span className="goal-needs">
-                        must reach
-                        {n.data.source!.needs.map((need) => {
-                          const svc = (need in SERVICES ? need : pieces.find((p) => p.id === need)?.data.service) as ServiceId;
-                          const label = need in SERVICES ? displayName({ service: svc }).main : nameOf(need)?.name;
-                          return (
-                            <span key={need} className="chip chip-sm" title={label}>
-                              <img src={iconUrl(svc)} alt="" />
-                              {label}
-                            </span>
-                          );
-                        })}
-                      </span>
-                    )}
-                  </div>
-                </div>
-              );
-            })}
-          </section>
-
-          {objectives.length > 0 && (
-            <section className="goals constraints" aria-label="Constraints">
-              <h3>Constraints</h3>
-              {objectives.map((o) => {
-                // Going over budget shows at once; a missing arrow only counts as a miss after a run.
-                const state = o.ok === null ? 'pending' : o.ok ? 'ok' : phase === 'fail' || o.id === 'budget' ? 'bad' : 'pending';
-                return (
-                  <div key={o.id} className={`goal goal-${state}`}>
-                    <span className="goal-mark" aria-hidden="true">
-                      {state === 'ok' ? '✓' : state === 'bad' ? '!' : '○'}
-                    </span>
-                    <div className="goal-body">
-                      <strong>{o.label}</strong>
-                      {o.detail && <span className="goal-line">{o.detail}</span>}
-                    </div>
-                  </div>
-                );
-              })}
-            </section>
-          )}
-
-          <section className="hints" aria-label="Hints">
-            {level.hints.slice(0, hints).map((h, i) => (
-              <p key={i} className="hint">
-                <span aria-hidden="true">💡</span> {bt(h, band)}
-              </p>
-            ))}
-            {hints < level.hints.length && (
-              <button className="btn btn-ghost btn-sm" onClick={() => setHints((h) => h + 1)}>
-                💡 {hints ? 'Another hint' : 'Need a hint?'}
-              </button>
-            )}
-          </section>
-
-          {selectedNode && (
-            <ServiceCard
-              service={selectedNode.data.service}
-              label={selectedNode.data.label}
-              available={available}
-              onClose={() => setSelected(null)}
-            />
-          )}
-        </aside>
+        {!phone && (
+          <aside className="story-panel">
+            {panel}
+            {serviceCard}
+          </aside>
+        )}
 
         <BuilderCanvas
           nodes={d.nodes}
@@ -300,18 +332,50 @@ function LevelInner({ level }: { level: Level }) {
           onSelect={setSelected}
           available={available}
         >
-          <div className="canvas-dock">
-            <PieceDock items={dock} onDrop={(service, at) => drop(service, at)} />
-            {phase === 'running' || phase === 'fail' ? (
-              <button className="btn btn-run is-stop" onClick={stop}>
-                ■ {phase === 'fail' ? 'Keep building' : 'Stop'}
+          {phone ? (
+            <>
+              <button className={`mission-bar mission-${sparkyMood}`} onClick={() => toggle('mission')} aria-live="polite">
+                <Sparky mood={sparkyMood} size={44} bob={false} />
+                <span className="mission-bar-body">
+                  <span className="mission-bar-text">{sparkyText}</span>
+                  <span className="mission-bar-meta">
+                    <span>
+                      Goals {goalsMet} of {goalsTotal}
+                    </span>
+                    {budget?.detail && <span className={budget.ok ? 'is-ok' : 'is-bad'}>{budget.detail}</span>}
+                  </span>
+                </span>
               </button>
-            ) : (
-              <button className="btn btn-run" onClick={run} disabled={phase === 'intro' || phase === 'win'}>
-                ▶ Run
-              </button>
-            )}
-          </div>
+              {serviceCard && !sheet && <div className="phone-info">{serviceCard}</div>}
+              {!serviceCard && !sheet && <TurnTip />}
+              {sheet === 'mission' && (
+                <Sheet title="Mission" onClose={() => setSheet(null)}>
+                  <div className="sheet-body story-sheet">{panel}</div>
+                </Sheet>
+              )}
+              {sheet === 'pieces' && (
+                <Sheet
+                  title="Pieces"
+                  hint="Tap a piece to drop it on the map, or drag it where you want it."
+                  hidden={dragging}
+                  onClose={() => setSheet(null)}
+                >
+                  <div className="sheet-body">
+                    <PieceDock
+                      items={dock}
+                      onDrop={(service, at) => drop(service, at) && setSheet(null)}
+                      onDragChange={setDragging}
+                    />
+                  </div>
+                </Sheet>
+              )}
+            </>
+          ) : (
+            <div className="canvas-dock">
+              <PieceDock items={dock} onDrop={(service, at) => drop(service, at)} />
+              {runButton}
+            </div>
+          )}
 
           {phase === 'intro' && (
             <StoryIntro
@@ -361,6 +425,19 @@ function LevelInner({ level }: { level: Level }) {
           )}
         </BuilderCanvas>
       </div>
+
+      {phone && (
+        <nav className="phone-bar" aria-label="Level tools" inert={phase === 'intro' || phase === 'win' ? true : undefined}>
+          <button className="phone-tab" aria-pressed={sheet === 'mission'} onClick={() => toggle('mission')}>
+            <span aria-hidden="true">🎯</span> Mission
+          </button>
+          <button className="phone-tab" aria-pressed={sheet === 'pieces'} onClick={() => toggle('pieces')}>
+            <span aria-hidden="true">🧩</span> Pieces
+            {piecesLeft > 0 && <span className="phone-tab-count">{piecesLeft}</span>}
+          </button>
+          {runButton}
+        </nav>
+      )}
     </div>
   );
 }

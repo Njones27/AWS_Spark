@@ -9,6 +9,7 @@ import { PieceDock } from '../components/canvas/PieceDock';
 import { DEFAULT_SOURCE, DEFAULT_TOWN_LABEL, fromSaved, isBlank, PLAY_CLOUD, toSaved } from '../components/canvas/saved';
 import { useDiagram, useDropPiece } from '../components/canvas/useDiagram';
 import { TopBar } from '../components/Chrome';
+import { Sheet } from '../components/PhoneChrome';
 import { GoalCard } from '../components/playground/GoalCard';
 import { JudgePanel } from '../components/playground/JudgePanel';
 import { PlanExport } from '../components/playground/PlanExport';
@@ -19,6 +20,7 @@ import { ServiceCard } from '../components/ServiceCard';
 import { topProblem } from '../data/feedback';
 import { CATEGORIES, SERVICE_LIST } from '../data/services';
 import type { SourceSpec } from '../data/types';
+import { useDevice } from '../device';
 import { judgeQuestions } from '../engine/judge';
 import { decodeDesign } from '../engine/share';
 import { simulate } from '../engine/simulate';
@@ -95,6 +97,9 @@ function PlaygroundInner({ share, shareId }: { share?: string; shareId?: string 
   const [running, setRunning] = useState(false);
   const [selected, setSelected] = useState<string | null>(null);
   const [query, setQuery] = useState('');
+  const phone = useDevice().device === 'phone';
+  const [piecesOpen, setPiecesOpen] = useState(false);
+  const [dragging, setDragging] = useState(false);
   const drop = useDropPiece(d.setNodes, PLAY_CLOUD);
 
   // Save (debounced) whenever the diagram, plan, or goal changes.
@@ -183,6 +188,48 @@ function PlaygroundInner({ share, shareId }: { share?: string; shareId?: string 
       ns.map((n) => (n.id === id && isPiece(n) ? { ...n, data: { ...n.data, source: { ...(n.data.source ?? DEFAULT_SOURCE), ...patch } } } : n)),
     );
 
+  const openPlan = () => {
+    // Clear the selection so the map picture doesn't show a highlighted piece and its ✕ button.
+    setSelected(null);
+    d.setNodes((ns) => ns.map((n) => (n.selected ? { ...n, selected: false } : n)));
+    setShowPlan(true);
+  };
+  const runButton = (
+    <button className={`btn btn-run ${running ? 'is-stop' : ''}`} onClick={() => setRunning((r) => !r)}>
+      {running ? '■ Stop' : '▶ Run'}
+    </button>
+  );
+  const pieceList = (
+    <>
+      <input
+        className="search"
+        type="search"
+        placeholder={band === 'explorer' ? 'Find a piece…' : 'Search services…'}
+        value={query}
+        onChange={(e) => setQuery(e.target.value)}
+      />
+      <p className="muted small">Drag a piece onto the map, or tap it to drop it in.</p>
+      {CATEGORIES.map((c) => {
+        const items = visible.filter((s) => s.category === c.id);
+        if (!items.length) return null;
+        return (
+          <section key={c.id} className={`catalog-group cat-${c.id}`}>
+            <h4>{c.label}</h4>
+            <PieceDock
+              size="sm"
+              items={items.map((s) => ({ service: s.id }))}
+              onDrop={(service, at) =>
+                drop(service, at, service === 'users' ? { label: DEFAULT_TOWN_LABEL, source: DEFAULT_SOURCE } : undefined) &&
+                setPiecesOpen(false)
+              }
+              onDragChange={setDragging}
+            />
+          </section>
+        );
+      })}
+    </>
+  );
+
   return (
     <div className="screen playground-screen">
       <TopBar back={{ href: href.home, label: 'Home' }} title="Playground">
@@ -220,49 +267,20 @@ function PlaygroundInner({ share, shareId }: { share?: string; shareId?: string 
           <span aria-hidden="true">🔗</span>
           <span className="btn-label">Share</span>
         </button>
-        <button
-          className="btn btn-primary"
-          title="Our AWS plan"
-          aria-label="Our AWS plan"
-          onClick={() => {
-            // Clear the selection so the map picture doesn't show a highlighted piece and its ✕ button.
-            setSelected(null);
-            d.setNodes((ns) => ns.map((n) => (n.selected ? { ...n, selected: false } : n)));
-            setShowPlan(true);
-          }}
-        >
-          <span aria-hidden="true">📄</span>
-          <span className="btn-label btn-label-main">Our AWS plan</span>
-        </button>
+        {!phone && (
+          <button className="btn btn-primary" title="Our AWS plan" aria-label="Our AWS plan" onClick={openPlan}>
+            <span aria-hidden="true">📄</span>
+            <span className="btn-label btn-label-main">Our AWS plan</span>
+          </button>
+        )}
       </TopBar>
 
       <div className="play-body">
-        <aside className="catalog" aria-label="Pieces">
-          <input
-            className="search"
-            type="search"
-            placeholder={band === 'explorer' ? 'Find a piece…' : 'Search services…'}
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-          />
-          <p className="muted small">Drag a piece onto the map, or tap it to drop it in.</p>
-          {CATEGORIES.map((c) => {
-            const items = visible.filter((s) => s.category === c.id);
-            if (!items.length) return null;
-            return (
-              <section key={c.id} className={`catalog-group cat-${c.id}`}>
-                <h4>{c.label}</h4>
-                <PieceDock
-                  size="sm"
-                  items={items.map((s) => ({ service: s.id }))}
-                  onDrop={(service, at) =>
-                    drop(service, at, service === 'users' ? { label: DEFAULT_TOWN_LABEL, source: DEFAULT_SOURCE } : undefined)
-                  }
-                />
-              </section>
-            );
-          })}
-        </aside>
+        {!phone && (
+          <aside className="catalog" aria-label="Pieces">
+            {pieceList}
+          </aside>
+        )}
 
         <BuilderCanvas
           nodes={d.nodes}
@@ -298,10 +316,13 @@ function PlaygroundInner({ share, shareId }: { share?: string; shareId?: string 
                 </div>
               </div>
             )}
-            <button className={`btn btn-run ${running ? 'is-stop' : ''}`} onClick={() => setRunning((r) => !r)}>
-              {running ? '■ Stop' : '▶ Run'}
-            </button>
+            {!phone && runButton}
           </div>
+          {piecesOpen && (
+            <Sheet title="Pieces" hidden={dragging} onClose={() => setPiecesOpen(false)}>
+              <div className="sheet-body catalog-sheet">{pieceList}</div>
+            </Sheet>
+          )}
         </BuilderCanvas>
 
         {showJudge && !selectedNode && (
@@ -350,6 +371,18 @@ function PlaygroundInner({ share, shareId }: { share?: string; shareId?: string 
           </aside>
         )}
       </div>
+
+      {phone && (
+        <nav className="phone-bar" aria-label="Playground tools">
+          <button className="phone-tab" aria-pressed={piecesOpen} onClick={() => setPiecesOpen((o) => !o)}>
+            <span aria-hidden="true">🧩</span> Pieces
+          </button>
+          <button className="phone-tab" onClick={openPlan}>
+            <span aria-hidden="true">📄</span> Our plan
+          </button>
+          {runButton}
+        </nav>
+      )}
 
       {showPlan && (
         <PlanExport
