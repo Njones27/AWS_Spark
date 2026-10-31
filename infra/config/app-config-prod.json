@@ -10,7 +10,8 @@
     "Cicd": {
       "Name": "Cicd",
       "GitHubRepo": "Njones27/AWS_Spark",
-      "GitHubEnvironment": "prod"
+      "GitHubEnvironment": "prod",
+      "GitHubSubjectPrefix": "repo:Njones27@153565100/AWS_Spark@1437703955"
     },
     "Data": {
       "Name": "Data",

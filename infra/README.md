@@ -308,5 +308,12 @@ no code changes.
   the account quota is below that stage's reservation plus 100. Request the quota increase that
   `setup_initial.sh` prints, or set `Api.ReservedConcurrency` to 0 for that stage until it is granted.
 - **`[web] .../dist has no index.html or assets/`**: run `npm run build` at the repo root first.
+- **`Could not assume role with OIDC: Not authorized to perform sts:AssumeRoleWithWebIdentity`**: the role's trusted
+  `sub` doesn't match GitHub's token. Newer repos use GitHub's immutable subject format
+  (`repo:<owner>@<ownerId>/<repo>@<repoId>:environment:<env>`). Read the prefix with
+  `gh api repos/<owner>/<repo>/actions/oidc/customization/sub` (`sub_claim_prefix`), put it in `Cicd.GitHubSubjectPrefix`
+  in each stage config, and redeploy the Cicd stacks by hand (`npx cdk deploy Spark-Dev-Cicd -c APP_CONFIG=config/app-config-dev.json`,
+  same for prod). This repo's prefix is `repo:Njones27@153565100/AWS_Spark@1437703955`. If the repo moves to a new owner,
+  the prefix changes too.
 - **`No valid AWS credentials`** from the scripts: run `aws sso login --profile walkworthy`.
 - **CI: `Variable X is not set on the 'dev' environment`**: add it under **Settings → Environments**.

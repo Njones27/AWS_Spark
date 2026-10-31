@@ -116,7 +116,8 @@ Names are `<Project>-<Stage>-<Key>`, e.g. `Spark-Dev-TableName` (the template's 
 {
   "Project": { "Name": "Spark", "Stage": "Dev", "Account": "000000000000", "Region": "us-east-1", "Profile": "" },
   "Stack": {
-    "Cicd": { "Name": "Cicd", "GitHubRepo": "Njones27/AWS_Spark", "GitHubEnvironment": "dev" },
+    "Cicd": { "Name": "Cicd", "GitHubRepo": "Njones27/AWS_Spark", "GitHubEnvironment": "dev",
+              "GitHubSubjectPrefix": "repo:Njones27@153565100/AWS_Spark@1437703955" },  // immutable OIDC sub format
     "Data": { "Name": "Data", "PointInTimeRecovery": false, "RetainOnDelete": false },
     "Api":  { "Name": "Api", "ThrottleRateLimit": 20, "ThrottleBurstLimit": 50, "CreateProfileRateLimit": 5,
               "RecoverRateLimit": 5, "ShareRateLimit": 2, "SaveRateLimit": 10,

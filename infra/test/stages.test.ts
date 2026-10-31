@@ -34,6 +34,7 @@ describe.each(Object.entries(expectations))('%s config', (stage, want) => {
         const template = templateOf(stacks.cicd);
 
         it('trusts only this repo and GitHub environment through the account OIDC provider', () => {
+            // Exact subject in GitHub's immutable format (owner and repo ids), no wildcard.
             template.hasResourceProperties('AWS::IAM::Role', {
                 RoleName: `${want.prefix}-GitHubDeploy`,
                 MaxSessionDuration: 7200,
@@ -42,8 +43,10 @@ describe.each(Object.entries(expectations))('%s config', (stage, want) => {
                         Action: 'sts:AssumeRoleWithWebIdentity',
                         Principal: { Federated: 'arn:aws:iam::179326015123:oidc-provider/token.actions.githubusercontent.com' },
                         Condition: {
-                            StringEquals: { 'token.actions.githubusercontent.com:aud': 'sts.amazonaws.com' },
-                            StringLike: { 'token.actions.githubusercontent.com:sub': `repo:Njones27/AWS_Spark:environment:${stage}` },
+                            StringEquals: {
+                                'token.actions.githubusercontent.com:aud': 'sts.amazonaws.com',
+                                'token.actions.githubusercontent.com:sub': `repo:Njones27@153565100/AWS_Spark@1437703955:environment:${stage}`,
+                            },
                         },
                     })],
                 },

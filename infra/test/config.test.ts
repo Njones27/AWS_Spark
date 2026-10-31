@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { AppContext, AppContextError, ProjectPrefixType } from '../lib/template/app-context';
-import { configPath, synthConfig, writeConfigCopy } from './helpers';
+import { configPath, synthConfig, templateOf, writeConfigCopy } from './helpers';
 
 describe('AppContext and config validation', () => {
     afterEach(() => {
@@ -52,5 +52,15 @@ describe('AppContext and config validation', () => {
     it('rejects a log retention CloudWatch does not offer', () => {
         const file = writeConfigCopy('dev', (config) => { config.Stack.Api.LogRetentionDays = 15; });
         expect(() => synthConfig(file)).toThrow(/LogRetentionDays must be one of/);
+    });
+
+    it('defaults the OIDC subject prefix to repo:<owner>/<name> and rejects one without repo:', () => {
+        const legacy = writeConfigCopy('dev', (config) => { delete config.Stack.Cicd.GitHubSubjectPrefix; });
+        const role = templateOf(synthConfig(legacy).stacks.cicd).findResources('AWS::IAM::Role');
+        const doc = JSON.stringify(Object.values(role)[0]);
+        expect(doc).toContain('repo:Njones27/AWS_Spark:environment:dev');
+
+        const bad = writeConfigCopy('dev', (config) => { config.Stack.Cicd.GitHubSubjectPrefix = 'Njones27/AWS_Spark'; });
+        expect(() => synthConfig(bad)).toThrow(/GitHubSubjectPrefix must start with repo:/);
     });
 });
