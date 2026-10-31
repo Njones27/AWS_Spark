@@ -2187,6 +2187,10 @@ img {
   outline: 3px solid var(--flow);
   outline-offset: 2px;
 }
+/* The picker takes focus when it opens so keyboard users start inside it; it needs no ring of its own. */
+.starter-picker:focus {
+  outline: none;
+}
 .starter-card strong {
   font-family: var(--font-display);
   font-weight: 600;

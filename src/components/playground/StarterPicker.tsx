@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { iconUrl, SERVICES } from '../../data/services';
 import { STARTERS, type Starter } from '../../data/starters';
 import { Sparky } from '../art/Sparky';
@@ -15,10 +15,20 @@ export function StarterPicker({ onPick, onClose }: Props) {
   const starter = STARTERS.find((s) => s.id === picked)!;
 
   useEscape(onClose);
+  // Focus the dialog, not a card: Safari rings a card focused on open as if it were tabbed to.
+  const dialog = useRef<HTMLDivElement>(null);
+  useEffect(() => dialog.current?.focus(), []);
 
   return (
     <div className="modal-backdrop" onClick={(e) => e.target === e.currentTarget && onClose()}>
-      <div className="modal starter-picker" role="dialog" aria-modal="true" aria-labelledby="starter-title">
+      <div
+        className="modal starter-picker"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="starter-title"
+        tabIndex={-1}
+        ref={dialog}
+      >
         <div className="modal-scroll">
           <div className="starter-head">
             <Sparky mood="happy" size={64} bob={false} />
@@ -40,7 +50,6 @@ export function StarterPicker({ onPick, onClose }: Props) {
                 className={`starter-card ${s.id === picked ? 'is-picked' : ''}`}
                 onClick={() => setPicked(s.id)}
                 onDoubleClick={() => onPick(s)}
-                autoFocus={s.id === picked}
               >
                 <strong>{s.title}</strong>
                 <small>{s.examples}</small>
