@@ -12,6 +12,8 @@ export type PieceData = {
   capacity?: number;
   locked?: boolean;
   source?: SourceSpec;
+  /** Why the team chose this piece (Playground only). */
+  note?: string;
 };
 export type ZoneData = { width: number; height: number };
 

@@ -165,6 +165,8 @@ img {
 .screen {
   display: grid;
   grid-template-rows: auto 1fr;
+  /* Never wider than the screen, so a wide top bar wraps instead of stretching the page on narrow devices. */
+  grid-template-columns: minmax(0, 1fr);
   height: 100dvh;
   min-height: 0;
 }
@@ -699,6 +701,9 @@ img {
   display: grid;
   grid-template-columns: 330px 1fr;
   min-height: 0;
+}
+.story-panel .service-card {
+  box-shadow: var(--shadow-sm);
 }
 .story-panel {
   display: flex;
@@ -1531,14 +1536,23 @@ img {
 }
 .inspector {
   position: absolute;
-  top: 12px;
-  right: 64px;
-  width: 310px;
-  max-height: calc(100% - 110px);
+  top: 0;
+  right: 40px;
+  /* A scroll box clips whatever spills out of it, shadows included. The padding gives each card's soft shadow room to
+     fade out inside the box, so it never ends in a hard square edge. The cards sit 16px down and 64px from the right. */
+  padding: 16px 24px 32px;
+  width: 358px;
+  max-height: calc(100% - 62px);
   overflow-y: auto;
   z-index: 15;
+  /* The padding is see-through, so let clicks there reach the map. The cards themselves stay clickable, and wheel
+     and touch scrolling over a card still scroll the panel. */
+  pointer-events: none;
   display: grid;
   gap: 10px;
+}
+.inspector > * {
+  pointer-events: auto;
 }
 .source-controls {
   background: var(--card);
@@ -1985,4 +1999,565 @@ img {
   font-family: var(--font-display);
   font-size: 14px;
   font-weight: 600;
+}
+
+/* ── playground challenge tools ──────────────────────────── */
+.field {
+  display: grid;
+  gap: 6px;
+  font-size: 14px;
+}
+.field > span {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--ink-soft);
+}
+.field input,
+.field textarea {
+  width: 100%;
+  border: 2px solid var(--paper-3);
+  border-radius: var(--r-sm);
+  padding: 8px 10px;
+  background: #fff;
+  color: var(--ink);
+  font: inherit;
+  font-size: 14px;
+  line-height: 1.4;
+  resize: vertical;
+}
+.field input:focus-visible,
+.field textarea:focus-visible {
+  outline: none;
+  border-color: var(--flow);
+}
+.project-notes {
+  display: grid;
+  gap: 12px;
+  padding: 12px 0 4px;
+  border-top: 1px solid var(--paper-2);
+}
+.alternative {
+  display: grid;
+  grid-template-columns: 30px 1fr;
+  gap: 8px;
+  align-items: start;
+  background: var(--paper);
+  border-radius: var(--r-sm);
+  padding: 8px;
+  font-size: 13px;
+  line-height: 1.4;
+}
+.alternative img {
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+}
+.alternative strong {
+  font-weight: 600;
+}
+
+.goal-card {
+  position: absolute;
+  left: 26px;
+  bottom: 14px;
+  z-index: 10;
+  width: min(340px, calc(100% - 28px));
+  background: var(--card);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-md);
+  padding: 12px 14px;
+  display: grid;
+  gap: 8px;
+  border: 2px solid transparent;
+}
+.goal-card.is-met {
+  border-color: var(--ok);
+}
+.goal-card.is-missed {
+  border-color: var(--warn);
+}
+.goal-line {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 6px;
+  font-size: 14.5px;
+}
+.goal-line strong {
+  font-family: var(--font-display);
+  font-weight: 600;
+}
+.goal-line input {
+  flex: 1 1 150px;
+  min-width: 0;
+  border: 0;
+  border-bottom: 2px dashed var(--paper-3);
+  background: transparent;
+  padding: 2px 2px;
+  font: inherit;
+  color: var(--ink);
+}
+.goal-line input:focus-visible {
+  outline: none;
+  border-bottom-color: var(--flow);
+}
+.goal-hint {
+  font-size: 12.5px;
+  color: var(--ink-soft);
+}
+.goal-bar {
+  height: 10px;
+  border-radius: 5px;
+  background: var(--paper-2);
+  overflow: hidden;
+}
+.goal-bar i {
+  display: block;
+  height: 100%;
+  background: var(--ok);
+  transition: width 0.4s var(--ease-out);
+}
+.is-missed .goal-bar i {
+  background: var(--warn);
+}
+.goal-result {
+  font-size: 13.5px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.is-met .goal-result {
+  color: var(--ok);
+}
+
+.starter-picker,
+.share-dialog,
+.plan-export {
+  max-height: calc(100dvh - 32px);
+  display: flex;
+  flex-direction: column;
+}
+.modal-scroll {
+  min-height: 0;
+  overflow-y: auto;
+}
+.starter-picker {
+  max-width: 880px;
+}
+.starter-head {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.starter-head h2 {
+  margin: 2px 0 0;
+}
+.starter-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 14px;
+}
+.starter-card {
+  display: grid;
+  gap: 6px;
+  align-content: start;
+  text-align: left;
+  padding: 12px;
+  border-radius: var(--r-md);
+  border: 3px solid var(--paper-2);
+  background: var(--paper);
+  color: var(--ink);
+  font: inherit;
+  cursor: pointer;
+  transition: border-color 0.15s, transform 0.2s var(--ease-bounce);
+}
+.starter-card:hover {
+  transform: translateY(-2px);
+  border-color: var(--paper-3);
+}
+.starter-card.is-picked {
+  border-color: var(--coral);
+  background: var(--card);
+}
+.starter-card:focus-visible {
+  outline: 3px solid var(--flow);
+  outline-offset: 2px;
+}
+.starter-card strong {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 16px;
+}
+.starter-card small {
+  color: var(--ink-soft);
+  font-size: 12.5px;
+  line-height: 1.35;
+}
+.starter-chain {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+  margin-top: 2px;
+}
+.starter-step {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.starter-step img {
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+}
+.starter-step i {
+  font-style: normal;
+  font-weight: 700;
+  color: var(--flow);
+}
+@media (max-width: 760px) {
+  .starter-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.plan-export {
+  max-width: 820px;
+  padding: 0;
+}
+/* Keep the scrollbar clear of the rounded top corner. */
+.plan-export .modal-scroll {
+  margin: 14px 8px 0 0;
+}
+.plan-close {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  z-index: 1;
+}
+.plan-card {
+  padding: 24px 28px 16px;
+  background: var(--card);
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 10px;
+}
+.plan-heading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0 10px;
+  font-size: 26px;
+  margin: 0;
+  padding-right: 40px;
+}
+.plan-heading input {
+  flex: 1 1 220px;
+  min-width: 0;
+  border: 0;
+  border-bottom: 2px dashed var(--paper-3);
+  background: transparent;
+  font: inherit;
+  color: var(--ink);
+  padding: 0 2px;
+}
+.plan-heading input:focus-visible,
+.plan-table input:focus-visible {
+  outline: none;
+  border-color: var(--flow);
+}
+.plan-map {
+  background: var(--paper);
+  border-radius: var(--r-md);
+  min-height: 120px;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+}
+.plan-map img {
+  width: 100%;
+  height: auto;
+}
+.plan-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+.plan-table th,
+.plan-table td {
+  text-align: left;
+  vertical-align: top;
+  padding: 8px 6px;
+  border-bottom: 1px solid var(--paper-2);
+}
+.plan-table th {
+  font-size: 12px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--ink-soft);
+}
+.plan-service {
+  white-space: nowrap;
+  font-weight: 500;
+}
+.plan-service img {
+  display: inline-block;
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  vertical-align: -7px;
+  margin-right: 8px;
+}
+.plan-table input {
+  width: 100%;
+  border: 1.5px dashed var(--paper-3);
+  border-radius: 8px;
+  padding: 5px 8px;
+  background: #fff;
+  font: inherit;
+  color: var(--ink);
+}
+.plan-why {
+  font-size: 13px;
+  color: var(--ink-soft);
+  margin-top: 6px;
+}
+.plan-why strong {
+  font-weight: 600;
+  color: var(--ink);
+}
+.plan-sub {
+  font-size: 17px;
+  margin-top: 4px;
+}
+.plan-steps {
+  margin: 0;
+  padding-left: 22px;
+  display: grid;
+  gap: 2px;
+  font-size: 14px;
+}
+.plan-sources {
+  font-size: 12.5px;
+  color: var(--ink-soft);
+  border-top: 1px solid var(--paper-2);
+  padding-top: 8px;
+}
+.plan-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 12px 28px 18px;
+  background: var(--card);
+  border-top: 1px solid var(--paper-2);
+}
+.plan-actions p {
+  margin-right: auto;
+}
+@media (max-width: 600px) {
+  .plan-service {
+    white-space: normal;
+  }
+}
+
+.share-dialog {
+  max-width: 560px;
+}
+.share-dialog h2 {
+  font-size: 26px;
+}
+.share-link {
+  width: 100%;
+  margin-top: 14px;
+  border: 2px solid var(--paper-3);
+  border-radius: var(--r-sm);
+  padding: 8px 10px;
+  background: var(--paper);
+  color: var(--ink);
+  font: 500 13px ui-monospace, Menlo, monospace;
+  resize: none;
+  overflow-wrap: anywhere;
+}
+.share-warn {
+  margin-top: 8px;
+  font-size: 13px;
+  color: var(--ink-soft);
+}
+.share-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 16px;
+}
+.share-actions p {
+  margin-right: auto;
+}
+
+.judge-panel {
+  width: 388px;
+}
+.judge-card {
+  background: var(--card);
+  border-radius: var(--r-lg);
+  padding: 14px;
+  box-shadow: var(--shadow-md);
+  display: grid;
+  gap: 10px;
+  font-size: 14px;
+}
+.judge-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.judge-head > div {
+  flex: 1;
+  min-width: 0;
+}
+.judge-head h3 {
+  font-size: 18px;
+}
+.judge-q {
+  background: var(--paper);
+  border-radius: var(--r-md);
+  padding: 10px 12px;
+  display: grid;
+  gap: 8px;
+  justify-items: start;
+}
+.judge-q > strong {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 15px;
+}
+.judge-q textarea {
+  width: 100%;
+  border: 2px solid var(--paper-3);
+  border-radius: var(--r-sm);
+  padding: 7px 9px;
+  background: #fff;
+  color: var(--ink);
+  font: inherit;
+  font-size: 13.5px;
+  resize: vertical;
+}
+.judge-answer {
+  font-size: 13.5px;
+  line-height: 1.45;
+  border-radius: 10px;
+  padding: 8px 10px;
+  background: var(--card);
+}
+.is-good .judge-answer {
+  background: var(--ok-soft);
+}
+.is-fix .judge-answer {
+  background: var(--warn-soft);
+}
+.judge-answer b {
+  font-weight: 600;
+}
+
+/* The Playground's top bar shrinks to icons on narrower screens (iPad portrait, phones). */
+@media (max-width: 1180px) {
+  .playground-screen .btn-label:not(.btn-label-main) {
+    display: none;
+  }
+}
+@media (max-width: 600px) {
+  .playground-screen .btn-label-main {
+    display: none;
+  }
+  .playground-screen .topbar {
+    flex-wrap: wrap;
+    row-gap: 6px;
+  }
+  .playground-screen .topbar-actions {
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 6px;
+  }
+  .starter-grid {
+    grid-template-columns: 1fr;
+  }
+  .starter-picker,
+  .share-dialog {
+    padding: 20px 18px;
+  }
+  /* The goal sits at the top of the map so it never covers the run summary next to the Run button. */
+  .goal-card {
+    top: 10px;
+    bottom: auto;
+    left: 10px;
+    width: calc(100% - 72px);
+    padding: 8px 10px;
+  }
+  .canvas-dock-right .run-summary {
+    max-width: calc(100vw - 180px);
+    padding: 6px 10px;
+  }
+  .canvas-dock-right .run-summary .sparky {
+    display: none;
+  }
+  .goal-hint {
+    display: none;
+  }
+  /* Phones: the piece list sits above the map instead of beside it, and side panels use the full width. */
+  .play-body {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: 120px minmax(0, 1fr);
+  }
+  .catalog {
+    border-right: none;
+    border-bottom: 2px solid var(--paper-2);
+  }
+  .inspector {
+    left: 0;
+    right: 0;
+    width: auto;
+    padding: 12px 12px 32px;
+  }
+  .plan-card {
+    padding: 18px 16px 12px;
+  }
+  .plan-actions {
+    padding: 10px 16px 14px;
+  }
+  /* Each service becomes its own block: the name, then what it does. */
+  .plan-table thead {
+    display: none;
+  }
+  .plan-table,
+  .plan-table tbody,
+  .plan-table tr,
+  .plan-table td {
+    display: block;
+    width: 100%;
+  }
+  .plan-table td {
+    border-bottom: none;
+    padding: 4px 0;
+  }
+  .plan-table tr {
+    padding: 6px 0;
+    border-bottom: 1px solid var(--paper-2);
+  }
+  .plan-heading {
+    font-size: 22px;
+  }
+}
+
+/* Scrollbars: a thin thumb on a clear track, so no square strip shows beside rounded cards. */
+.inspector,
+.story-panel,
+.catalog,
+.modal-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: var(--paper-3) transparent;
 }

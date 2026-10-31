@@ -6,11 +6,13 @@ export type Route =
   | { name: 'map' }
   | { name: 'advanced' }
   | { name: 'level'; id: string }
-  | { name: 'playground' }
+  /** `share` is a teammate's design from a share link: #/playground?d=… */
+  | { name: 'playground'; share?: string }
   | { name: 'styleguide' };
 
 function parse(hash: string): Route {
-  const parts = hash.replace(/^#\/?/, '').split('/').filter(Boolean);
+  const [path, query = ''] = hash.replace(/^#\/?/, '').split('?');
+  const parts = path.split('/').filter(Boolean);
   switch (parts[0]) {
     case 'levels':
       return { name: 'map' };
@@ -19,7 +21,7 @@ function parse(hash: string): Route {
     case 'level':
       return parts[1] ? { name: 'level', id: parts[1] } : { name: 'map' };
     case 'playground':
-      return { name: 'playground' };
+      return { name: 'playground', share: new URLSearchParams(query).get('d') ?? undefined };
     case 'styleguide':
       return { name: 'styleguide' };
     default:
