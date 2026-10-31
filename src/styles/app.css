@@ -2013,10 +2013,19 @@ img {
   border: 0;
   background: none;
   text-align: inherit;
+  cursor: help;
+}
+.term,
+.term-sample {
   text-decoration: underline dotted var(--pond-deep);
   text-decoration-thickness: 2px;
   text-underline-offset: 3px;
-  cursor: help;
+}
+/* The Advanced map's note on what the dotted words do. */
+.term-hint {
+  margin-top: 10px;
+  font-size: 13px;
+  color: var(--ink-soft);
 }
 .term[aria-expanded='true'] {
   border-radius: 3px;

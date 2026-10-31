@@ -36,6 +36,10 @@ export const ADVANCED_LEVELS: Level[] = [
       },
       {
         who: 'sparky',
+        text: 'Quick tip before we dig in: when a word has a dotted line under it, tap it to see what it means in plain words. Try one on the next line!',
+      },
+      {
+        who: 'sparky',
         mood: 'think',
         text: 'Right now the Checkout function has no role of its own, the orders table uses no key we control, and anyone with the URL can call the API. Let’s fix all three and add an audit trail, without blowing the budget.',
       },

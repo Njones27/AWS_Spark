@@ -133,6 +133,12 @@ function ChapterMap({ chapter }: { chapter: Chapter }) {
               />
             </p>
           </div>
+          {advanced && (
+            <p className="term-hint">
+              <span aria-hidden="true">📖</span> Tap any <span className="term-sample">dotted word</span> to see what it means
+              in plain words.
+            </p>
+          )}
           {nextIndex >= 0 && (
             <a className="btn btn-primary btn-lg" href={href.level(levels[nextIndex].id)}>
               {progress ? 'Keep going' : advanced ? 'Start your first shift' : chapter === STORY[0] ? 'Start the story' : `Start ${chapter.eyebrow}`} ▶
