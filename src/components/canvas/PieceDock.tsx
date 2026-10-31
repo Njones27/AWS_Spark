@@ -1,4 +1,4 @@
-import { useRef, useState, type PointerEvent } from 'react';
+import { useEffect, useRef, useState, type PointerEvent } from 'react';
 import { createPortal } from 'react-dom';
 import { iconUrl, SERVICES, shortName } from '../../data/services';
 import type { ServiceId } from '../../data/types';
@@ -32,6 +32,10 @@ function DockItem({
   const start = useRef<{ x: number; y: number } | null>(null);
   const [ghost, setGhost] = useState<{ x: number; y: number } | null>(null);
   const empty = item.left === 0;
+  // If the tray closes mid-drag (another tab, Run), still report the drag over, or a phone sheet would stay hidden.
+  const dragEnd = useRef<(() => void) | null>(null);
+  dragEnd.current = ghost ? () => onDragChange?.(false) : null;
+  useEffect(() => () => dragEnd.current?.(), []);
 
   const down = (e: PointerEvent<HTMLButtonElement>) => {
     tipProps.onPointerDown();

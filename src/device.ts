@@ -87,12 +87,13 @@ export function setLayoutChoice(next: LayoutChoice) {
   update();
 }
 
+function subscribe(cb: () => void) {
+  listeners.add(cb);
+  return () => {
+    listeners.delete(cb);
+  };
+}
+
 export function useDevice(): DeviceInfo {
-  return useSyncExternalStore(
-    (cb) => {
-      listeners.add(cb);
-      return () => listeners.delete(cb);
-    },
-    () => info,
-  );
+  return useSyncExternalStore(subscribe, () => info);
 }

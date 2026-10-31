@@ -340,12 +340,19 @@ function LevelInner({ level }: { level: Level }) {
         >
           {phone ? (
             <>
-              <button className={`mission-bar mission-${sparkyMood}`} onClick={() => toggle('mission')}>
+              {/* Outside the button: some screen readers skip live updates inside a button's label. */}
+              <span className="sr-only" aria-live="polite">
+                {sparkyText}
+              </span>
+              <button
+                className={`mission-bar mission-${sparkyMood}`}
+                onClick={() => toggle('mission')}
+                aria-haspopup="dialog"
+                aria-expanded={sheet === 'mission'}
+              >
                 <Sparky mood={sparkyMood} size={44} bob={false} />
                 <span className="mission-bar-body">
-                  <span className="mission-bar-text" aria-live="polite">
-                    {sparkyText}
-                  </span>
+                  <span className="mission-bar-text">{sparkyText}</span>
                   <span className="mission-bar-meta">
                     <span>
                       Goals {goalsMet} of {goalsTotal}

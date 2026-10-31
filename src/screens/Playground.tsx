@@ -219,7 +219,10 @@ function PlaygroundInner({ share, shareId }: { share?: string; shareId?: string 
         value={query}
         onChange={(e) => setQuery(e.target.value)}
       />
-      <p className="muted small">Drag a piece onto the map, or tap it to drop it in.</p>
+      <p className="muted small">
+        {/* On a phone the catalog scrolls up and down, so a drag up to the map would scroll it instead. */}
+        {phone ? 'Tap a piece to drop it on the map.' : 'Drag a piece onto the map, or tap it to drop it in.'}
+      </p>
       {CATEGORIES.map((c) => {
         const items = visible.filter((s) => s.category === c.id);
         if (!items.length) return null;

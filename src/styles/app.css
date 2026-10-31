@@ -2829,8 +2829,17 @@ img {
   grid-template-columns: minmax(0, 1fr);
   grid-template-rows: minmax(0, 1fr);
 }
-[data-device='phone'] .canvas .react-flow__controls {
+/* Clear of the mission bar, which only the level screen has. */
+[data-device='phone'] .level-screen .canvas .react-flow__controls {
   margin-top: 104px;
+}
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
 }
 .mission-bar {
   position: absolute;
@@ -3219,7 +3228,7 @@ html[data-device='phone'] body {
 [data-sideways] .mission-bar-text {
   -webkit-line-clamp: 1;
 }
-[data-sideways] .canvas .react-flow__controls {
+[data-sideways] .level-screen .canvas .react-flow__controls {
   margin-top: 15px;
 }
 /* Sideways, a sheet slides in beside the tool rail so the map stays in view. */

@@ -89,14 +89,16 @@ export function BuilderCanvas({
   const { device, sideways } = useDevice();
   const phone = device === 'phone';
   const { getNode, getEdges, getInternalNode, flowToScreenPosition, fitView } = useReactFlow<AppNode, AppEdge>();
-  // Turning a phone changes the map's shape completely, so fit the map again (the first fit happens on mount).
-  const shape = useRef(sideways);
+  // Turning a phone, or switching between the phone and laptop layouts, changes the map's shape completely, so fit the
+  // map again (the first fit happens on mount).
+  const padding = sideways ? PHONE_WIDE_FIT : phone ? PHONE_FIT : LAPTOP_FIT;
+  const shape = useRef(padding);
   useEffect(() => {
-    if (!phone || shape.current === sideways) return;
-    shape.current = sideways;
-    const timer = window.setTimeout(() => fitView({ padding: sideways ? PHONE_WIDE_FIT : PHONE_FIT, duration: 200 }), 150);
+    if (shape.current === padding) return;
+    shape.current = padding;
+    const timer = window.setTimeout(() => fitView({ padding, duration: 200 }), 150);
     return () => window.clearTimeout(timer);
-  }, [phone, sideways, fitView]);
+  }, [padding, fitView]);
   const wrap = useRef<HTMLDivElement>(null);
   const [bubble, setBubble] = useState<Bubble | null>(null);
   const [wiggleId, setWiggleId] = useState<string | null>(null);
@@ -254,7 +256,7 @@ export function BuilderCanvas({
             onEdgesDelete={() => onStructureChange?.()}
             onMoveStart={() => setBubble(null)}
             fitView
-            fitViewOptions={{ padding: sideways ? PHONE_WIDE_FIT : phone ? PHONE_FIT : LAPTOP_FIT }}
+            fitViewOptions={{ padding }}
             minZoom={0.3}
             maxZoom={1.8}
             connectionRadius={44}
