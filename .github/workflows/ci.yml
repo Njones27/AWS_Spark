@@ -44,10 +44,10 @@ jobs:
         run: npm run build
 
       # Synth bundles the Lambda with esbuild and stages dist/ for the Web stack, so it needs the build above.
-      - name: cdk synth (account, dev, prod)
+      - name: cdk synth (account-dev, account-prod, dev, prod)
         working-directory: infra
         run: |
-          for config in account dev prod; do
+          for config in account-dev account-prod dev prod; do
             echo "::group::cdk synth config/app-config-$config.json"
             npx cdk synth --quiet -c APP_CONFIG="config/app-config-$config.json"
             echo "::endgroup::"

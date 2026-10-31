@@ -1,0 +1,21 @@
+{
+  "Project": {
+    "Name": "Spark",
+    "Stage": "Account",
+    "Account": "166147842278",
+    "Region": "us-east-1",
+    "Profile": "spark-dev"
+  },
+  "Stack": {
+    "GitHubOidc": {
+      "Name": "GitHubOidc",
+      "CreateProvider": true,
+      "ExistingProviderArn": "",
+      "BudgetEmail": "",
+      "BudgetLimitsUsd": [
+        10,
+        25
+      ]
+    }
+  }
+}

@@ -3,16 +3,16 @@ import { Match } from 'aws-cdk-lib/assertions';
 
 import { API_ROUTES } from '../stack/api-stack';
 import { CONTENT_SECURITY_POLICY } from '../stack/web-stack';
-import { configPath, onlyResource, stackIds, synthConfig, templateOf, writeConfigCopy } from './helpers';
+import { ACCOUNTS, configPath, onlyResource, stackIds, synthConfig, templateOf, writeConfigCopy } from './helpers';
 
 const expectations = {
     dev: {
-        prefix: 'Spark-Dev', namespace: 'Spark/Dev', rate: 20, burst: 50,
+        account: ACCOUNTS.dev, prefix: 'Spark-Dev', namespace: 'Spark/Dev', rate: 20, burst: 50,
         routeRates: { 'POST /api/profiles': 5, 'POST /api/profiles/recover': 5, 'POST /api/shares': 2, 'PUT /api/profiles/me': 10 },
         reserved: undefined, retention: 14, pitr: false, retain: false, api5xx: 5,
     },
     prod: {
-        prefix: 'Spark-Prod', namespace: 'Spark/Prod', rate: 500, burst: 1000,
+        account: ACCOUNTS.prod, prefix: 'Spark-Prod', namespace: 'Spark/Prod', rate: 500, burst: 1000,
         routeRates: { 'POST /api/profiles': 20, 'POST /api/profiles/recover': 5, 'POST /api/shares': 10, 'PUT /api/profiles/me': 200 },
         reserved: 0, retention: 30, pitr: true, retain: true, api5xx: 1,
     },
@@ -34,31 +34,36 @@ describe.each(Object.entries(expectations))('%s config', (stage, want) => {
         const template = templateOf(stacks.cicd);
 
         it('trusts only this repo and GitHub environment through the account OIDC provider', () => {
+            // Exact subject in GitHub's immutable format (owner and repo ids), no wildcard.
             template.hasResourceProperties('AWS::IAM::Role', {
                 RoleName: `${want.prefix}-GitHubDeploy`,
                 MaxSessionDuration: 7200,
                 AssumeRolePolicyDocument: {
                     Statement: [Match.objectLike({
                         Action: 'sts:AssumeRoleWithWebIdentity',
-                        Principal: { Federated: 'arn:aws:iam::179326015123:oidc-provider/token.actions.githubusercontent.com' },
+                        Principal: { Federated: `arn:aws:iam::${want.account}:oidc-provider/token.actions.githubusercontent.com` },
                         Condition: {
-                            StringEquals: { 'token.actions.githubusercontent.com:aud': 'sts.amazonaws.com' },
-                            StringLike: { 'token.actions.githubusercontent.com:sub': `repo:Njones27/AWS_Spark:environment:${stage}` },
+                            StringEquals: {
+                                'token.actions.githubusercontent.com:aud': 'sts.amazonaws.com',
+                                'token.actions.githubusercontent.com:sub': `repo:Njones27@153565100/AWS_Spark@1437703955:environment:${stage}`,
+                            },
                         },
                     })],
                 },
             });
         });
 
-        it('may only assume the CDK bootstrap roles and read two SSM parameters', () => {
+        it('may only assume the CDK deploy and file-publishing roles and read two SSM parameters', () => {
             const role = onlyResource(template, 'AWS::IAM::Role');
             expect(role.Properties.ManagedPolicyArns).toBeUndefined();
             const statements = role.Properties.Policies[0].PolicyDocument.Statement;
             expect(statements.map((s: { Action: string }) => s.Action)).toEqual(['sts:AssumeRole', 'ssm:GetParameter', 'ssm:GetParameter']);
-            expect(statements[0].Resource).toHaveLength(4);
-            for (const arn of statements[0].Resource) expect(arn).toMatch(/^arn:aws:iam::179326015123:role\/cdk-hnb659fds-[a-z-]+-role-179326015123-us-east-1$/);
-            expect(statements[1].Resource).toBe('arn:aws:ssm:us-east-1:179326015123:parameter/cdk-bootstrap/hnb659fds/version');
-            expect(statements[2].Resource).toBe(`arn:aws:ssm:us-east-1:179326015123:parameter/${want.prefix}-DistributionDomain`);
+            // Only the deploy and file-publishing bootstrap roles: no lookups, no Docker assets.
+            expect(statements[0].Resource).toEqual(['deploy', 'file-publishing'].map(
+                (kind) => `arn:aws:iam::${want.account}:role/cdk-hnb659fds-${kind}-role-${want.account}-us-east-1`,
+            ));
+            expect(statements[1].Resource).toBe(`arn:aws:ssm:us-east-1:${want.account}:parameter/cdk-bootstrap/hnb659fds/version`);
+            expect(statements[2].Resource).toBe(`arn:aws:ssm:us-east-1:${want.account}:parameter/${want.prefix}-DistributionDomain`);
         });
     });
 

@@ -107,6 +107,21 @@ Names are `<Project>-<Stage>-<Key>`, e.g. `Spark-Dev-TableName` (the template's 
 
 ## Config files (`infra/config/`)
 
+Dev and prod live in separate AWS accounts, each with an account config and a stage config. A stage config and its
+account config must name the same `Project.Account`, `Region` and `Profile` (`setup_initial.sh` checks this).
+
+| File | `Project.Stage` | `Project.Account` | `Project.Profile` |
+|---|---|---|---|
+| `app-config-account-dev.json` | `Account` | `166147842278` | `spark-dev` |
+| `app-config-dev.json` | `Dev` | `166147842278` | `spark-dev` |
+| `app-config-account-prod.json` | `Account` | `027729116436` | `spark-prod` |
+| `app-config-prod.json` | `Prod` | `027729116436` | `spark-prod` |
+
+Every IAM role the app creates has a name starting with `Spark-` and carries the permissions boundary
+`arn:aws:iam::<account>:policy/Spark-RoleBoundary`, except `Spark-<Stage>-GitHubDeploy`, which carries
+`Spark-DeployRoleBoundary` and, like `Spark-Account-GitHubOidc`, is deployed only with admin credentials
+(`CliCredentialsStackSynthesizer`). See `infra/policies/` and `infra/README.md` "Least-privilege bootstrap".
+
 ```jsonc
 // app-config-dev.json. Prod: throttles 500/1000, CreateProfile 20, Recover 5, Share 10, Save 200, ReservedConcurrency 0 for now (100 once the Lambda quota increase is granted)
 // (0 or missing = no reservation; Lambda needs the account's unreserved concurrency to stay >= 100), LogRetentionDays 30,
@@ -114,9 +129,10 @@ Names are `<Project>-<Stage>-<Key>`, e.g. `Spark-Dev-TableName` (the template's 
 // Route throttles (burst = 2x rate) apply to POST /api/profiles, POST /api/profiles/recover, POST /api/shares, PUT /api/profiles/me.
 // The Lambda uses JSON log format; a metric filter on level ERROR/error feeds the Spark/<Stage> ApiLoggedErrors alarm.
 {
-  "Project": { "Name": "Spark", "Stage": "Dev", "Account": "000000000000", "Region": "us-east-1", "Profile": "" },
+  "Project": { "Name": "Spark", "Stage": "Dev", "Account": "166147842278", "Region": "us-east-1", "Profile": "spark-dev" },
   "Stack": {
-    "Cicd": { "Name": "Cicd", "GitHubRepo": "Njones27/AWS_Spark", "GitHubEnvironment": "dev" },
+    "Cicd": { "Name": "Cicd", "GitHubRepo": "Njones27/AWS_Spark", "GitHubEnvironment": "dev",
+              "GitHubSubjectPrefix": "repo:Njones27@153565100/AWS_Spark@1437703955" },  // immutable OIDC sub format
     "Data": { "Name": "Data", "PointInTimeRecovery": false, "RetainOnDelete": false },
     "Api":  { "Name": "Api", "ThrottleRateLimit": 20, "ThrottleBurstLimit": 50, "CreateProfileRateLimit": 5,
               "RecoverRateLimit": 5, "ShareRateLimit": 2, "SaveRateLimit": 10,
@@ -125,9 +141,10 @@ Names are `<Project>-<Stage>-<Key>`, e.g. `Spark-Dev-TableName` (the template's 
     "Ops":  { "Name": "Ops", "AlarmEmail": "", "Api5xxThreshold": 5 }
   }
 }
-// app-config-account.json
+// app-config-account-dev.json (app-config-account-prod.json: Account 027729116436, Profile spark-prod).
+// New accounts have no GitHub OIDC provider, so both create one; set CreateProvider false + ExistingProviderArn to import.
 {
-  "Project": { "Name": "Spark", "Stage": "Account", "Account": "000000000000", "Region": "us-east-1", "Profile": "" },
+  "Project": { "Name": "Spark", "Stage": "Account", "Account": "166147842278", "Region": "us-east-1", "Profile": "spark-dev" },
   "Stack": {
     "GitHubOidc": { "Name": "GitHubOidc", "CreateProvider": true, "ExistingProviderArn": "",
                     "BudgetEmail": "", "BudgetLimitsUsd": [10, 25] }
@@ -135,7 +152,7 @@ Names are `<Project>-<Stage>-<Key>`, e.g. `Spark-Dev-TableName` (the template's 
 }
 ```
 
-Stack names follow the template: `<Name>-<Stage>-<StackName>`, e.g. `Spark-Dev-Web`, `Spark-Account-GitHubOidc`.
+Stack names follow the template: `<Name>-<Stage>-<StackName>`, e.g. `Spark-Dev-Web`, `Spark-Account-GitHubOidc` (one per account).
 
 ## Frontend
 

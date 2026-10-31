@@ -1,8 +1,23 @@
 {
-  "Project": { "Name": "Spark", "Stage": "Dev", "Account": "179326015123", "Region": "us-east-1", "Profile": "walkworthy" },
+  "Project": {
+    "Name": "Spark",
+    "Stage": "Dev",
+    "Account": "166147842278",
+    "Region": "us-east-1",
+    "Profile": "spark-dev"
+  },
   "Stack": {
-    "Cicd": { "Name": "Cicd", "GitHubRepo": "Njones27/AWS_Spark", "GitHubEnvironment": "dev" },
-    "Data": { "Name": "Data", "PointInTimeRecovery": false, "RetainOnDelete": false },
+    "Cicd": {
+      "Name": "Cicd",
+      "GitHubRepo": "Njones27/AWS_Spark",
+      "GitHubEnvironment": "dev",
+      "GitHubSubjectPrefix": "repo:Njones27@153565100/AWS_Spark@1437703955"
+    },
+    "Data": {
+      "Name": "Data",
+      "PointInTimeRecovery": false,
+      "RetainOnDelete": false
+    },
     "Api": {
       "Name": "Api",
       "ThrottleRateLimit": 20,
@@ -14,7 +29,16 @@
       "ReservedConcurrency": 0,
       "LogRetentionDays": 14
     },
-    "Web": { "Name": "Web", "DomainName": "", "HostedZoneId": "", "CspReportOnly": true },
-    "Ops": { "Name": "Ops", "AlarmEmail": "", "Api5xxThreshold": 5 }
+    "Web": {
+      "Name": "Web",
+      "DomainName": "",
+      "HostedZoneId": "",
+      "CspReportOnly": true
+    },
+    "Ops": {
+      "Name": "Ops",
+      "AlarmEmail": "",
+      "Api5xxThreshold": 5
+    }
   }
 }

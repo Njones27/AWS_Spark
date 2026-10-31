@@ -2,15 +2,15 @@
   "Project": {
     "Name": "Spark",
     "Stage": "Account",
-    "Account": "179326015123",
+    "Account": "027729116436",
     "Region": "us-east-1",
-    "Profile": "walkworthy"
+    "Profile": "spark-prod"
   },
   "Stack": {
     "GitHubOidc": {
       "Name": "GitHubOidc",
-      "CreateProvider": false,
-      "ExistingProviderArn": "arn:aws:iam::179326015123:oidc-provider/token.actions.githubusercontent.com",
+      "CreateProvider": true,
+      "ExistingProviderArn": "",
       "BudgetEmail": "",
       "BudgetLimitsUsd": [
         10,

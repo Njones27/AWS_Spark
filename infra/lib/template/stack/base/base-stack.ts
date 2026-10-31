@@ -17,7 +17,8 @@
  */
 
 // Adapted for Spark from aws-samples/aws-cdk-project-template-for-devops (lib/template/stack/base/base-stack.ts):
-// strict TypeScript, typed `variables`, the no-op `@Override` decorator removed.
+// strict TypeScript, typed `variables`, the no-op `@Override` decorator removed, optional `overrides` for stack props
+// such as the synthesizer.
 
 import * as cdk from 'aws-cdk-lib';
 import * as s3 from 'aws-cdk-lib/aws-s3';
@@ -43,9 +44,9 @@ export class BaseStack extends cdk.Stack implements ICommonHelper, ICommonGuardi
     private commonHelper: ICommonHelper;
     private commonGuardian: ICommonGuardian;
 
-    constructor(appContext: AppContext, stackConfig: StackConfig) {
+    constructor(appContext: AppContext, stackConfig: StackConfig, overrides: Pick<cdk.StackProps, 'synthesizer'> = {}) {
         const newProps = BaseStack.getStackCommonProps(appContext, stackConfig);
-        super(appContext.cdkApp, stackConfig.Name, newProps);
+        super(appContext.cdkApp, stackConfig.Name, { ...newProps, ...overrides });
 
         this.stackConfig = stackConfig;
         this.commonProps = newProps;
