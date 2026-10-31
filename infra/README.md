@@ -57,7 +57,7 @@ The shapes are in `docs/aws/CONTRACT.md`. Settings that differ by stage:
 | `Api.RecoverRateLimit` (`POST /api/profiles/recover`, rps) | 5 | 5 |
 | `Api.ShareRateLimit` (`POST /api/shares`, rps) | 2 | 10 |
 | `Api.SaveRateLimit` (`PUT /api/profiles/me`, rps) | 10 | 200 |
-| `Api.ReservedConcurrency` (hard cap on Lambda spend; `0` or missing = none) | 0 | 100 |
+| `Api.ReservedConcurrency` (hard cap on Lambda spend; `0` or missing = none) | 0 | 0 for now; set to 100 once the Lambda quota increase is granted |
 | `Api.LogRetentionDays` | 14 | 30 |
 | `Web.CspReportOnly` | true | true for the first deploys (see [Enforcing the CSP](#enforcing-the-csp)) |
 | `Web.DomainName`, `Web.HostedZoneId` | "" | "" (see [Adding a domain](#adding-a-domain-later)) |
@@ -69,8 +69,9 @@ The write routes are what fill the table and invoke the Lambda most.
 
 **Reserved concurrency.** Lambda accepts a reservation only if at least 100 concurrency stays unreserved in
 the account. A fresh account's quota is often 10, which leaves no room for any reservation, so dev reserves
-nothing. Prod reserves 100, which needs an account quota of at least 200. Confirm the
-quota before the first prod deploy (`setup_initial.sh` prints it).
+nothing, and prod reserves nothing either until the account's quota increase (10 → 1000, requested 2026-10-31) is
+granted. Then set prod to 100, which needs an account quota of at least 200, and redeploy. Confirm the quota before
+the first prod deploy (`setup_initial.sh` prints it).
 
 `Web.DistPath` is optional and defaults to `../dist`, relative to `infra/`. You can override it without
 editing a file: `-c Stack.Web.DistPath=/some/dir`.

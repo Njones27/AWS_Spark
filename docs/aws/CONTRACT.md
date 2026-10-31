@@ -108,7 +108,7 @@ Names are `<Project>-<Stage>-<Key>`, e.g. `Spark-Dev-TableName` (the template's 
 ## Config files (`infra/config/`)
 
 ```jsonc
-// app-config-dev.json. Prod: throttles 500/1000, CreateProfile 20, Recover 5, Share 10, Save 200, ReservedConcurrency 100
+// app-config-dev.json. Prod: throttles 500/1000, CreateProfile 20, Recover 5, Share 10, Save 200, ReservedConcurrency 0 for now (100 once the Lambda quota increase is granted)
 // (0 or missing = no reservation; Lambda needs the account's unreserved concurrency to stay >= 100), LogRetentionDays 30,
 // PITR + RetainOnDelete true, CspReportOnly true until the report-only soak is done, Api5xxThreshold 1.
 // Route throttles (burst = 2x rate) apply to POST /api/profiles, POST /api/profiles/recover, POST /api/shares, PUT /api/profiles/me.
