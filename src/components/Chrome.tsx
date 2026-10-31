@@ -77,10 +77,11 @@ export function BandSwitch() {
   );
 }
 
+// Every band sees the real name. The explanation is what changes.
 const SAMPLE: Record<Band, { main: string; sub?: string }> = {
-  explorer: { main: 'Storage Bucket', sub: 'S3' },
-  builder: { main: 'Storage Bucket', sub: 'Amazon S3' },
-  architect: { main: 'Amazon S3' },
+  explorer: { main: 'Amazon S3', sub: 'A giant toy box for files' },
+  builder: { main: 'Amazon S3', sub: 'Stores files like photos and pages' },
+  architect: { main: 'Amazon S3', sub: 'Object storage with 11 nines of durability' },
 };
 
 /** First-run picker: "Who's building today?" */

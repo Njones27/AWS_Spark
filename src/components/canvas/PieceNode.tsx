@@ -5,6 +5,7 @@ import { iconUrl, SERVICES } from '../../data/services';
 import type { Band } from '../../data/types';
 import type { NodeResult } from '../../engine/simulate';
 import { useBand } from '../../store';
+import { useServiceTip } from '../ServiceTip';
 import { displayName, useSim, useUi, type PieceNode as PieceNodeType } from './model';
 
 const fmt = (n: number) => (n >= 100 ? Math.round(n).toString() : n >= 10 ? Math.round(n).toString() : n.toFixed(n % 1 ? 1 : 0));
@@ -44,7 +45,8 @@ function PieceNodeView({ id, data, selected }: NodeProps<PieceNodeType>) {
   const { wiggleId, badges } = useUi();
   const { deleteElements } = useReactFlow();
   const def = SERVICES[data.service];
-  const names = displayName(data, band);
+  const names = displayName(data);
+  const { props: tipProps, tip } = useServiceTip(data.service);
   const r = result?.nodes[id];
   const status = r?.status ?? 'idle';
   const canSend = data.service !== 'phone';
@@ -60,6 +62,7 @@ function PieceNodeView({ id, data, selected }: NodeProps<PieceNodeType>) {
         selected ? 'is-selected' : '',
         wiggleId === id ? 'wiggle' : '',
       ].join(' ')}
+      {...tipProps}
     >
       <Handle type="target" position={Position.Left} className="target-cover" isConnectableStart={false} />
       <div className="piece-tile">
@@ -68,7 +71,7 @@ function PieceNodeView({ id, data, selected }: NodeProps<PieceNodeType>) {
         {badges[id] && (
           <span className="piece-badges">
             {badges[id].map((b) => {
-              const giver = displayName({ service: b }, band).main;
+              const giver = displayName({ service: b }).main;
               const label = `${giver} ${findRule(b, data.service)?.verb ?? 'helps'} this piece`;
               return <img key={b} src={iconUrl(b)} alt={label} title={label} draggable={false} />;
             })}
@@ -98,6 +101,7 @@ function PieceNodeView({ id, data, selected }: NodeProps<PieceNodeType>) {
         </button>
       )}
       {data.locked && <span className="piece-pin" title="Part of the level">📌</span>}
+      {tip}
       {canSend && (
         <Handle type="source" position={Position.Right} className="nub" aria-label="Drag to connect">
           <span className="nub-plus">+</span>

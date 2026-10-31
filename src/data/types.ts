@@ -71,8 +71,6 @@ export interface ServiceDef {
   id: ServiceId;
   /** Real name, e.g. "Amazon S3". */
   name: string;
-  /** Kid-friendly nickname, e.g. "Storage Bucket". */
-  nickname: string;
   category: Category;
   /** Short phrase used in generated sentences: "S3 {job}". */
   job: string;

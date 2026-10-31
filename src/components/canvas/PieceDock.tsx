@@ -1,8 +1,8 @@
 import { useRef, useState, type PointerEvent } from 'react';
 import { createPortal } from 'react-dom';
-import { iconUrl, SERVICES } from '../../data/services';
+import { iconUrl, SERVICES, shortName } from '../../data/services';
 import type { ServiceId } from '../../data/types';
-import { useBand } from '../../store';
+import { useServiceTip } from '../ServiceTip';
 
 export interface DockItemSpec {
   service: ServiceId;
@@ -15,14 +15,14 @@ type Drop = (service: ServiceId, at: { x: number; y: number } | null) => void;
 
 /** A tray piece. Drag it onto the map (mouse or touch), or tap/Enter to drop it in a free spot. */
 function DockItem({ item, onDrop, size }: { item: DockItemSpec; onDrop: Drop; size: 'lg' | 'sm' }) {
-  const band = useBand();
   const def = SERVICES[item.service];
+  const { props: tipProps, tip } = useServiceTip(item.service);
   const start = useRef<{ x: number; y: number } | null>(null);
   const [ghost, setGhost] = useState<{ x: number; y: number } | null>(null);
   const empty = item.left === 0;
-  const name = band === 'architect' ? def.name.replace(/^(Amazon|AWS) /, '') : def.nickname;
 
   const down = (e: PointerEvent<HTMLButtonElement>) => {
+    tipProps.onPointerDown();
     if (empty || e.button > 0) return;
     start.current = { x: e.clientX, y: e.clientY };
     e.currentTarget.setPointerCapture(e.pointerId);
@@ -54,14 +54,19 @@ function DockItem({ item, onDrop, size }: { item: DockItemSpec; onDrop: Drop; si
         onPointerCancel={cancel}
         // Keyboard activation (pointer clicks are handled on pointer-up).
         onClick={(e) => e.detail === 0 && !empty && onDrop(item.service, null)}
-        title={`${def.nickname}: ${def.name}`}
-        aria-label={`Add ${def.nickname} (${def.name})${item.left !== undefined ? `, ${item.left} left` : ''}`}
+        aria-label={`Add ${def.name}${item.left !== undefined ? `, ${item.left} left` : ''}`}
+        aria-describedby={tipProps['aria-describedby']}
+        onPointerEnter={tipProps.onPointerEnter}
+        onPointerLeave={tipProps.onPointerLeave}
+        onFocus={tipProps.onFocus}
+        onBlur={tipProps.onBlur}
       >
         <img src={iconUrl(item.service)} alt="" draggable={false} />
-        <span className="dock-name">{name}</span>
+        <span className="dock-name">{shortName(item.service)}</span>
         {item.left !== undefined && <span className="dock-count">×{item.left}</span>}
         {item.isNew && <span className="dock-new">new</span>}
       </button>
+      {tip}
       {ghost &&
         createPortal(
           <div className="drag-ghost" style={{ left: ghost.x, top: ghost.y }}>

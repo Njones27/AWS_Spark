@@ -1,5 +1,6 @@
 import { targetsOf } from '../data/rules';
 import { iconUrl, SERVICES } from '../data/services';
+import { ServiceChip } from './ServiceTip';
 import type { ServiceId } from '../data/types';
 import { useBand } from '../store';
 
@@ -18,14 +19,13 @@ export function ServiceCard({ service, label, available, onClose }: Props) {
   const all = targetsOf(service, band === 'architect');
   const to = available ? all.filter((t) => available.includes(t)) : all;
   const more = all.length - to.length;
-  const short = (id: ServiceId) => (band === 'architect' ? SERVICES[id].name.replace(/^(Amazon|AWS) /, '') : SERVICES[id].nickname);
   return (
-    <section className={`service-card cat-${def.category}`} aria-label={`${def.nickname} info`}>
+    <section className={`service-card cat-${def.category}`} aria-label={`${def.name} info`}>
       <header>
         <img src={iconUrl(service)} alt="" />
         <div>
-          <h3>{label ?? (band === 'architect' ? def.name : def.nickname)}</h3>
-          <p className="service-card-real">{band === 'architect' ? def.nickname : def.name}</p>
+          <h3>{label ?? def.name}</h3>
+          {label && <p className="service-card-real">{def.name}</p>}
         </div>
         {onClose && (
           <button className="icon-btn" aria-label="Close" onClick={onClose}>
@@ -44,10 +44,7 @@ export function ServiceCard({ service, label, available, onClose }: Props) {
           <span>Can send arrows to</span>
           <div>
             {to.map((t) => (
-              <span key={t} className="chip">
-                <img src={iconUrl(t)} alt="" />
-                {short(t)}
-              </span>
+              <ServiceChip key={t} service={t} />
             ))}
             {more > 0 && <span className="chip chip-more">+{more} more</span>}
           </div>

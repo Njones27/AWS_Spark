@@ -5,7 +5,7 @@ const INF = Number.POSITIVE_INFINITY;
 const list: ServiceDef[] = [
   // ── Town (not AWS) ──────────────────────────────────────────
   {
-    id: 'users', name: 'Users', nickname: 'Townsfolk', category: 'town', basic: true,
+    id: 'users', name: 'Users', category: 'town', basic: true,
     job: 'are the people using the app',
     blurb: {
       explorer: 'People in town who want to use the website.',
@@ -15,7 +15,7 @@ const list: ServiceDef[] = [
     capacity: INF, forward: 'split', answers: false, source: true,
   },
   {
-    id: 'phone', name: 'Mobile devices', nickname: 'Phones', category: 'town', basic: true,
+    id: 'phone', name: 'Mobile devices', category: 'town', basic: true,
     job: 'receive messages',
     blurb: {
       explorer: 'Phones that can get a "ding!" message.',
@@ -27,7 +27,7 @@ const list: ServiceDef[] = [
 
   // ── Networking ──────────────────────────────────────────────
   {
-    id: 'route53', name: 'Amazon Route 53', nickname: 'Address Book', category: 'networking', basic: true,
+    id: 'route53', name: 'Amazon Route 53', category: 'networking', basic: true,
     job: 'gives out website addresses',
     blurb: {
       explorer: 'Turns a website name into the address computers use, like a phone book.',
@@ -37,7 +37,7 @@ const list: ServiceDef[] = [
     capacity: INF, forward: 'split', answers: false,
   },
   {
-    id: 'cloudfront', name: 'Amazon CloudFront', nickname: 'Copy Shop', category: 'networking', basic: true,
+    id: 'cloudfront', name: 'Amazon CloudFront', category: 'networking', basic: true,
     job: 'keeps copies of files close to people',
     blurb: {
       explorer: 'Keeps copies of the website near everyone so it loads fast.',
@@ -47,17 +47,17 @@ const list: ServiceDef[] = [
     capacity: 3000, forward: 'split', answers: false, cdnHitRate: 0.8,
   },
   {
-    id: 'apigw', name: 'Amazon API Gateway', nickname: 'Front Desk', category: 'networking', basic: true,
-    job: 'takes requests at the front desk',
+    id: 'apigw', name: 'Amazon API Gateway', category: 'networking', basic: true,
+    job: 'takes requests and passes them on',
     blurb: {
-      explorer: 'The front desk. It takes requests and passes them to helpers.',
+      explorer: 'The front door for apps. It takes requests and passes them to Lambda or other services.',
       builder: 'The front door for apps. It takes requests and sends them to the right code.',
       architect: 'Managed REST/HTTP/WebSocket APIs with auth, throttling, and integrations to Lambda and AWS services.',
     },
     capacity: 1000, forward: 'split', answers: false,
   },
   {
-    id: 'elb', name: 'Elastic Load Balancing', nickname: 'Crossing Guard', category: 'networking', basic: true,
+    id: 'elb', name: 'Elastic Load Balancing', category: 'networking', basic: true,
     job: 'shares visitors between servers',
     blurb: {
       explorer: 'Sends each visitor to a computer that isn’t busy.',
@@ -69,7 +69,7 @@ const list: ServiceDef[] = [
 
   // ── Security ────────────────────────────────────────────────
   {
-    id: 'waf', name: 'AWS WAF', nickname: 'Gate Guard', category: 'security', basic: true,
+    id: 'waf', name: 'AWS WAF', category: 'security', basic: true,
     job: 'blocks bad bots at the gate',
     blurb: {
       explorer: 'A guard at the gate who keeps out gremlin bots.',
@@ -79,7 +79,7 @@ const list: ServiceDef[] = [
     capacity: INF, forward: 'split', answers: false, filtersBots: true,
   },
   {
-    id: 'cognito', name: 'Amazon Cognito', nickname: 'Name Tag Desk', category: 'security',
+    id: 'cognito', name: 'Amazon Cognito', category: 'security',
     job: 'handles signing in',
     blurb: {
       explorer: 'Gives people a name tag when they sign in.',
@@ -91,7 +91,7 @@ const list: ServiceDef[] = [
 
   // ── Compute ─────────────────────────────────────────────────
   {
-    id: 'lambda', name: 'AWS Lambda', nickname: 'Helper Robot', category: 'compute', basic: true,
+    id: 'lambda', name: 'AWS Lambda', category: 'compute', basic: true,
     job: 'runs little bits of code when asked',
     blurb: {
       explorer: 'A helper robot that wakes up, does one job, then naps.',
@@ -101,7 +101,7 @@ const list: ServiceDef[] = [
     capacity: 1000, forward: 'broadcast', answers: true,
   },
   {
-    id: 'ec2', name: 'Amazon EC2', nickname: 'Cloud Computer', category: 'compute', basic: true,
+    id: 'ec2', name: 'Amazon EC2', category: 'compute', basic: true,
     job: 'is a computer you rent in the cloud',
     blurb: {
       explorer: 'A computer you borrow in the cloud. It can only help so many people at once.',
@@ -111,10 +111,10 @@ const list: ServiceDef[] = [
     capacity: 50, forward: 'broadcast', answers: true,
   },
   {
-    id: 'autoscaling', name: 'Amazon EC2 Auto Scaling', nickname: 'Clone Machine', category: 'compute',
+    id: 'autoscaling', name: 'Amazon EC2 Auto Scaling', category: 'compute',
     job: 'adds or removes servers',
     blurb: {
-      explorer: 'Makes more Cloud Computers when it gets busy.',
+      explorer: 'Makes more EC2 servers when it gets busy.',
       builder: 'Adds servers when it’s busy and removes them when it’s quiet.',
       architect: 'Auto Scaling groups launch and terminate instances from a launch template using scaling policies.',
     },
@@ -123,7 +123,7 @@ const list: ServiceDef[] = [
 
   // ── Storage ─────────────────────────────────────────────────
   {
-    id: 's3', name: 'Amazon S3', nickname: 'Storage Bucket', category: 'storage', basic: true,
+    id: 's3', name: 'Amazon S3', category: 'storage', basic: true,
     job: 'stores files like pictures and web pages',
     blurb: {
       explorer: 'A giant toy box in the cloud for pictures and web pages.',
@@ -133,7 +133,7 @@ const list: ServiceDef[] = [
     capacity: 3000, forward: 'broadcast', answers: true,
   },
   {
-    id: 'glacier', name: 'Amazon S3 Glacier', nickname: 'Deep Freezer', category: 'storage',
+    id: 'glacier', name: 'Amazon S3 Glacier', category: 'storage',
     job: 'stores old files cheaply in the deep freeze',
     blurb: {
       explorer: 'Keeps old stuff frozen and safe for a long time.',
@@ -145,7 +145,7 @@ const list: ServiceDef[] = [
 
   // ── Databases ───────────────────────────────────────────────
   {
-    id: 'dynamodb', name: 'Amazon DynamoDB', nickname: 'Speedy Notebook', category: 'databases', basic: true,
+    id: 'dynamodb', name: 'Amazon DynamoDB', category: 'databases', basic: true,
     job: 'saves data super fast',
     blurb: {
       explorer: 'A super-fast notebook that never runs out of pages.',
@@ -155,7 +155,7 @@ const list: ServiceDef[] = [
     capacity: 1000, forward: 'broadcast', answers: true,
   },
   {
-    id: 'rds', name: 'Amazon RDS', nickname: 'Filing Cabinet', category: 'databases',
+    id: 'rds', name: 'Amazon RDS', category: 'databases',
     job: 'keeps data in neat tables',
     blurb: {
       explorer: 'A filing cabinet with neat folders. Looking things up takes a little time.',
@@ -165,7 +165,7 @@ const list: ServiceDef[] = [
     capacity: 60, forward: 'none', answers: true,
   },
   {
-    id: 'elasticache', name: 'Amazon ElastiCache', nickname: 'Sticky Notes', category: 'databases',
+    id: 'elasticache', name: 'Amazon ElastiCache', category: 'databases',
     job: 'remembers recent answers for a short time',
     blurb: {
       explorer: 'Sticky notes that remember popular answers.',
@@ -177,7 +177,7 @@ const list: ServiceDef[] = [
 
   // ── Application integration ─────────────────────────────────
   {
-    id: 'sqs', name: 'Amazon SQS', nickname: 'Ticket Line', category: 'integration', basic: true,
+    id: 'sqs', name: 'Amazon SQS', category: 'integration', basic: true,
     job: 'holds tickets in a waiting line',
     blurb: {
       explorer: 'A waiting line. Everyone gets a ticket and waits their turn.',
@@ -187,7 +187,7 @@ const list: ServiceDef[] = [
     capacity: INF, forward: 'split', answers: false, queue: true,
   },
   {
-    id: 'sns', name: 'Amazon SNS', nickname: 'Megaphone', category: 'integration', basic: true,
+    id: 'sns', name: 'Amazon SNS', category: 'integration', basic: true,
     job: 'sends one message to many places',
     blurb: {
       explorer: 'Say it once and everyone who signed up hears it!',
@@ -197,7 +197,7 @@ const list: ServiceDef[] = [
     capacity: INF, forward: 'broadcast', answers: false,
   },
   {
-    id: 'eventbridge', name: 'Amazon EventBridge', nickname: 'Mail Sorter', category: 'integration',
+    id: 'eventbridge', name: 'Amazon EventBridge', category: 'integration',
     job: 'sorts events and sends them where they belong',
     blurb: {
       explorer: 'Sorts news into the right mailboxes.',
@@ -207,7 +207,7 @@ const list: ServiceDef[] = [
     capacity: INF, forward: 'broadcast', answers: false,
   },
   {
-    id: 'stepfunctions', name: 'AWS Step Functions', nickname: 'Checklist', category: 'integration',
+    id: 'stepfunctions', name: 'AWS Step Functions', category: 'integration',
     job: 'runs steps in order like a checklist',
     blurb: {
       explorer: 'A checklist that does step 1, then step 2, then step 3.',
@@ -219,7 +219,7 @@ const list: ServiceDef[] = [
 
   // ── Management ──────────────────────────────────────────────
   {
-    id: 'cloudwatch', name: 'Amazon CloudWatch', nickname: 'Watchtower', category: 'management',
+    id: 'cloudwatch', name: 'Amazon CloudWatch', category: 'management',
     job: 'watches everything and keeps score',
     blurb: {
       explorer: 'A watchtower that keeps an eye on everything.',
@@ -231,7 +231,7 @@ const list: ServiceDef[] = [
 
   // ── Analytics ───────────────────────────────────────────────
   {
-    id: 'kinesis', name: 'Amazon Kinesis Data Streams', nickname: 'Conveyor Belt', category: 'analytics',
+    id: 'kinesis', name: 'Amazon Kinesis Data Streams', category: 'analytics',
     job: 'carries a nonstop stream of data',
     blurb: {
       explorer: 'A conveyor belt that never stops moving data along.',
@@ -243,7 +243,7 @@ const list: ServiceDef[] = [
 
   // ── AI ──────────────────────────────────────────────────────
   {
-    id: 'rekognition', name: 'Amazon Rekognition', nickname: 'Picture Detective', category: 'ai', basic: true,
+    id: 'rekognition', name: 'Amazon Rekognition', category: 'ai', basic: true,
     job: 'recognizes what’s in pictures',
     blurb: {
       explorer: 'Looks at a picture and says what’s in it: “A cat!”',
@@ -253,7 +253,7 @@ const list: ServiceDef[] = [
     capacity: 500, forward: 'none', answers: true,
   },
   {
-    id: 'polly', name: 'Amazon Polly', nickname: 'Talking Parrot', category: 'ai', basic: true,
+    id: 'polly', name: 'Amazon Polly', category: 'ai', basic: true,
     job: 'turns text into speech',
     blurb: {
       explorer: 'Reads words out loud, like a talking parrot.',
@@ -263,7 +263,7 @@ const list: ServiceDef[] = [
     capacity: 500, forward: 'none', answers: true,
   },
   {
-    id: 'translate', name: 'Amazon Translate', nickname: 'Translator', category: 'ai',
+    id: 'translate', name: 'Amazon Translate', category: 'ai',
     job: 'translates languages',
     blurb: {
       explorer: 'Changes words from one language to another.',
@@ -273,7 +273,7 @@ const list: ServiceDef[] = [
     capacity: 500, forward: 'none', answers: true,
   },
   {
-    id: 'bedrock', name: 'Amazon Bedrock', nickname: 'AI Brain', category: 'ai',
+    id: 'bedrock', name: 'Amazon Bedrock', category: 'ai',
     job: 'gives access to AI models that can write and answer questions',
     blurb: {
       explorer: 'A smart AI helper that can write and answer questions.',
@@ -283,17 +283,17 @@ const list: ServiceDef[] = [
     capacity: 500, forward: 'none', answers: true,
   },
   {
-    id: 'agentcore', name: 'Amazon Bedrock AgentCore', nickname: 'Agent Workshop', category: 'ai',
+    id: 'agentcore', name: 'Amazon Bedrock AgentCore', category: 'ai',
     job: 'runs AI agents that think and use tools',
     blurb: {
-      explorer: 'A workshop where AI helpers think with an AI Brain and use tools to get jobs done.',
-      builder: 'Runs AI agents: programs that use an AI model to decide what to do, then use tools (like a Lambda helper) to do it.',
+      explorer: 'A workshop where AI agents think with a Bedrock model and use tools to get jobs done.',
+      builder: 'Runs AI agents: programs that use an AI model to decide what to do, then use tools (like a Lambda function) to do it.',
       architect: 'Serverless runtime for AI agents, with memory, identity, a tool gateway (MCP), and observability. Works with any framework or model.',
     },
     capacity: 500, forward: 'broadcast', answers: false,
   },
   {
-    id: 'sagemaker', name: 'Amazon SageMaker AI', nickname: 'Model Lab', category: 'ai',
+    id: 'sagemaker', name: 'Amazon SageMaker AI', category: 'ai',
     job: 'trains and runs custom AI models',
     blurb: {
       explorer: 'A lab where people teach a computer to spot patterns.',
@@ -303,17 +303,17 @@ const list: ServiceDef[] = [
     capacity: 500, forward: 'none', answers: true,
   },
   {
-    id: 'lex', name: 'Amazon Lex', nickname: 'Chatbot', category: 'ai',
+    id: 'lex', name: 'Amazon Lex', category: 'ai',
     job: 'chats with people by text or voice',
     blurb: {
       explorer: 'A chatbot that answers questions in a chat window.',
-      builder: 'Builds chatbots that understand what people type or say, and can ask a Lambda helper to finish the job.',
+      builder: 'Builds chatbots that understand what people type or say, and can ask a Lambda function to finish the job.',
       architect: 'Conversational bots with intents, slots, and Lambda code hooks for fulfillment, over text or voice.',
     },
     capacity: 500, forward: 'broadcast', answers: true,
   },
   {
-    id: 'transcribe', name: 'Amazon Transcribe', nickname: 'Listening Ear', category: 'ai',
+    id: 'transcribe', name: 'Amazon Transcribe', category: 'ai',
     job: 'turns speech into text',
     blurb: {
       explorer: 'Listens to talking and writes down the words.',
@@ -323,7 +323,7 @@ const list: ServiceDef[] = [
     capacity: 500, forward: 'none', answers: true,
   },
   {
-    id: 'comprehend', name: 'Amazon Comprehend', nickname: 'Mood Reader', category: 'ai',
+    id: 'comprehend', name: 'Amazon Comprehend', category: 'ai',
     job: 'finds the meaning and mood in text',
     blurb: {
       explorer: 'Reads a message and tells if it sounds happy or sad.',
@@ -333,7 +333,7 @@ const list: ServiceDef[] = [
     capacity: 500, forward: 'none', answers: true,
   },
   {
-    id: 'textract', name: 'Amazon Textract', nickname: 'Page Reader', category: 'ai',
+    id: 'textract', name: 'Amazon Textract', category: 'ai',
     job: 'reads words and tables from documents',
     blurb: {
       explorer: 'Reads the words on a scanned page or a form.',
@@ -345,7 +345,7 @@ const list: ServiceDef[] = [
 
   // ── Security ────────────────────────────────────────────────
   {
-    id: 'iam', name: 'AWS IAM', nickname: 'Key Keeper', category: 'security',
+    id: 'iam', name: 'AWS IAM', category: 'security',
     job: 'gives out permission badges',
     blurb: {
       explorer: 'Gives each helper a badge that says what it is allowed to do.',
@@ -355,7 +355,7 @@ const list: ServiceDef[] = [
     capacity: INF, forward: 'none', answers: false, badge: true,
   },
   {
-    id: 'secrets', name: 'AWS Secrets Manager', nickname: 'Secret Safe', category: 'security',
+    id: 'secrets', name: 'AWS Secrets Manager', category: 'security',
     job: 'keeps passwords safe',
     blurb: {
       explorer: 'A safe for passwords, so nobody has to write them down.',
@@ -365,7 +365,7 @@ const list: ServiceDef[] = [
     capacity: INF, forward: 'none', answers: false, badge: true,
   },
   {
-    id: 'kms', name: 'AWS KMS', nickname: 'Lock Maker', category: 'security',
+    id: 'kms', name: 'AWS KMS', category: 'security',
     job: 'makes the keys that lock data',
     blurb: {
       explorer: 'Makes special locks so only allowed helpers can read the data.',
@@ -375,7 +375,7 @@ const list: ServiceDef[] = [
     capacity: INF, forward: 'none', answers: false, badge: true,
   },
   {
-    id: 'shield', name: 'AWS Shield', nickname: 'Flood Wall', category: 'security',
+    id: 'shield', name: 'AWS Shield', category: 'security',
     job: 'protects against giant floods of traffic',
     blurb: {
       explorer: 'A strong wall that keeps giant floods of fake traffic away.',
@@ -387,7 +387,7 @@ const list: ServiceDef[] = [
 
   // ── Management ──────────────────────────────────────────────
   {
-    id: 'cloudtrail', name: 'AWS CloudTrail', nickname: 'Logbook', category: 'management',
+    id: 'cloudtrail', name: 'AWS CloudTrail', category: 'management',
     job: 'writes down who did what',
     blurb: {
       explorer: 'A logbook that writes down every change anyone makes.',
@@ -399,7 +399,7 @@ const list: ServiceDef[] = [
 
   // ── Containers ──────────────────────────────────────────────
   {
-    id: 'ecs', name: 'Amazon ECS', nickname: 'Container Crew', category: 'containers',
+    id: 'ecs', name: 'Amazon ECS', category: 'containers',
     job: 'runs apps packed in containers',
     blurb: {
       explorer: 'Runs apps packed in boxes called containers, like lunchboxes with everything inside.',
@@ -409,7 +409,7 @@ const list: ServiceDef[] = [
     capacity: 100, forward: 'broadcast', answers: true,
   },
   {
-    id: 'eks', name: 'Amazon EKS', nickname: 'Container Captain', category: 'containers',
+    id: 'eks', name: 'Amazon EKS', category: 'containers',
     job: 'runs containers with Kubernetes',
     blurb: {
       explorer: 'A captain who keeps lots of containers working together.',
@@ -419,7 +419,7 @@ const list: ServiceDef[] = [
     capacity: 100, forward: 'broadcast', answers: true,
   },
   {
-    id: 'fargate', name: 'AWS Fargate', nickname: 'Engine Room', category: 'containers',
+    id: 'fargate', name: 'AWS Fargate', category: 'containers',
     job: 'runs containers with no servers to look after',
     blurb: {
       explorer: 'Runs the containers, so nobody has to look after the computers.',
@@ -431,7 +431,7 @@ const list: ServiceDef[] = [
 
   // ── Web apps ────────────────────────────────────────────────
   {
-    id: 'amplify', name: 'AWS Amplify', nickname: 'Website Kit', category: 'frontend',
+    id: 'amplify', name: 'AWS Amplify', category: 'frontend',
     job: 'hosts websites and web apps',
     blurb: {
       explorer: 'Puts a website online with just a few clicks.',
@@ -441,11 +441,11 @@ const list: ServiceDef[] = [
     capacity: 3000, forward: 'broadcast', answers: true,
   },
   {
-    id: 'appsync', name: 'AWS AppSync', nickname: 'Question Desk', category: 'frontend',
+    id: 'appsync', name: 'AWS AppSync', category: 'frontend',
     job: 'answers exactly the questions apps ask',
     blurb: {
-      explorer: 'A desk where apps ask for just the data they want.',
-      builder: 'A front desk where apps ask for exactly the data they need in one request (GraphQL), with live updates.',
+      explorer: 'A place where apps ask for just the data they want.',
+      builder: 'One place where apps ask for exactly the data they need in one request (GraphQL), with live updates.',
       architect: 'Managed GraphQL and Events APIs, with resolvers for Lambda, DynamoDB, Aurora, OpenSearch, EventBridge, Bedrock, and HTTP.',
     },
     capacity: 1000, forward: 'split', answers: false,
@@ -453,7 +453,7 @@ const list: ServiceDef[] = [
 
   // ── Data ────────────────────────────────────────────────────
   {
-    id: 'aurora', name: 'Amazon Aurora', nickname: 'Turbo Cabinet', category: 'databases',
+    id: 'aurora', name: 'Amazon Aurora', category: 'databases',
     job: 'keeps data in fast, tidy tables',
     blurb: {
       explorer: 'A super-fast filing cabinet that keeps extra copies, so nothing gets lost.',
@@ -463,7 +463,7 @@ const list: ServiceDef[] = [
     capacity: 150, forward: 'none', answers: true,
   },
   {
-    id: 'firehose', name: 'Amazon Data Firehose', nickname: 'Data Hose', category: 'analytics',
+    id: 'firehose', name: 'Amazon Data Firehose', category: 'analytics',
     job: 'delivers streams of data to storage',
     blurb: {
       explorer: 'A hose that carries lots of data into storage.',
@@ -473,7 +473,7 @@ const list: ServiceDef[] = [
     capacity: 3000, forward: 'split', answers: false,
   },
   {
-    id: 'athena', name: 'Amazon Athena', nickname: 'Fact Finder', category: 'analytics',
+    id: 'athena', name: 'Amazon Athena', category: 'analytics',
     job: 'answers questions about data stored in S3',
     blurb: {
       explorer: 'Asks questions about lots of files and finds the answers.',
@@ -483,7 +483,7 @@ const list: ServiceDef[] = [
     capacity: 500, forward: 'broadcast', answers: false,
   },
   {
-    id: 'glue', name: 'AWS Glue', nickname: 'Data Cleaner', category: 'analytics',
+    id: 'glue', name: 'AWS Glue', category: 'analytics',
     job: 'cleans and moves data',
     blurb: {
       explorer: 'Tidies up messy data and moves it where it belongs.',
@@ -493,7 +493,7 @@ const list: ServiceDef[] = [
     capacity: 1000, forward: 'broadcast', answers: false,
   },
   {
-    id: 'redshift', name: 'Amazon Redshift', nickname: 'Data Warehouse', category: 'analytics',
+    id: 'redshift', name: 'Amazon Redshift', category: 'analytics',
     job: 'answers big questions about huge amounts of data',
     blurb: {
       explorer: 'A giant warehouse of data for answering big questions.',
@@ -503,7 +503,7 @@ const list: ServiceDef[] = [
     capacity: 300, forward: 'none', answers: true,
   },
   {
-    id: 'opensearch', name: 'Amazon OpenSearch Service', nickname: 'Search Engine', category: 'analytics',
+    id: 'opensearch', name: 'Amazon OpenSearch Service', category: 'analytics',
     job: 'finds things fast with search',
     blurb: {
       explorer: 'Finds the right thing fast when you type a search.',
@@ -520,6 +520,9 @@ export const SERVICES: Record<ServiceId, ServiceDef> = Object.fromEntries(list.m
 >;
 
 export const SERVICE_LIST = list;
+
+/** The name without its "Amazon " or "AWS " prefix, e.g. "S3". */
+export const shortName = (id: ServiceId): string => SERVICES[id].name.replace(/^(Amazon|AWS) /, '');
 
 export const CATEGORIES: { id: Category; label: string; icon?: string }[] = [
   { id: 'town', label: 'Town' },

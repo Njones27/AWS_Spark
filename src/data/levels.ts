@@ -100,14 +100,14 @@ export const LEVELS: Level[] = [
         who: 'sparky',
         mood: 'happy',
         text: {
-          explorer: 'In a Storage Bucket! It’s like a giant toy box in the cloud.',
+          explorer: 'In Amazon S3! It’s like a giant toy box in the cloud.',
           builder: 'Amazon S3 is a giant storage bucket in the AWS Cloud. It can hold web pages and pictures.',
           architect: 'Amazon S3 is object storage. It can host a static website (HTML, CSS, and images) straight from a bucket.',
         },
       },
     ],
     goal: {
-      explorer: 'Put the Storage Bucket in the cloud. Then draw an arrow from the Townsfolk to it.',
+      explorer: 'Put S3 in the cloud. Then draw an arrow from the Townsfolk to it.',
       builder: 'Drag S3 into the AWS Cloud and connect the Townsfolk to it.',
       architect: 'Serve the bakery’s static site to 20 visitors from S3.',
     },
@@ -115,13 +115,13 @@ export const LEVELS: Level[] = [
     edges: [],
     palette: [{ service: 's3', count: 1 }],
     hints: [
-      'Drag the bucket from the tray at the bottom into the big cloud.',
-      'Now press the round ⊕ on the Townsfolk and drag the arrow onto the bucket.',
+      'Drag S3 from the tray at the bottom into the big cloud.',
+      'Now press the round ⊕ on the Townsfolk and drag the arrow onto S3.',
     ],
     lesson: {
       title: 'S3 stores files',
       text: {
-        explorer: 'The Storage Bucket keeps the bakery’s pictures and pages safe in the cloud.',
+        explorer: 'S3 keeps the bakery’s pictures and pages safe in the cloud.',
         builder: 'Amazon S3 stores files (called objects) in buckets. Websites, photos, and videos often live in S3.',
         architect: 'S3 is designed for 99.999999999% durability and can serve a static website directly. Objects are addressed by bucket and key.',
       },
@@ -140,14 +140,14 @@ export const LEVELS: Level[] = [
         who: 'sparky',
         mood: 'think',
         text: {
-          explorer: 'Computers find each other with number addresses. Route 53 is the Address Book that turns a name into a number!',
+          explorer: 'Computers find each other with number addresses. Route 53 is like an address book that turns a name into a number!',
           builder: 'Computers use number addresses, like 203.0.113.42. Route 53 is the internet’s address book: it turns crumbandco.town into the right number.',
           architect: 'Route 53 is AWS’s DNS service. It resolves the domain name to the endpoint that serves your site.',
         },
       },
     ],
     goal: {
-      explorer: 'Help the Townsfolk find the address in the Address Book, then go to the Storage Bucket.',
+      explorer: 'Help the Townsfolk look up the address in Route 53, then go to S3.',
       builder: 'Townsfolk need to look up the address in Route 53 before they reach the S3 website.',
       architect: 'Resolve crumbandco.town through Route 53 to the S3 website endpoint.',
     },
@@ -158,13 +158,13 @@ export const LEVELS: Level[] = [
     edges: [],
     palette: [{ service: 'route53', count: 1 }],
     hints: [
-      'The Townsfolk should ask the Address Book first.',
-      'Townsfolk → Address Book → Storage Bucket. Two arrows!',
+      'The Townsfolk should ask Route 53 first.',
+      'Townsfolk → Route 53 → S3. Two arrows!',
     ],
     lesson: {
       title: 'Route 53 is the address book',
       text: {
-        explorer: 'The Address Book helps people find a website by its name.',
+        explorer: 'Route 53 helps people find a website by its name.',
         builder: 'DNS turns names people can remember into addresses computers can use. Route 53 is AWS’s DNS.',
         architect: 'Alias records let Route 53 point an apex domain at AWS resources such as S3 website endpoints, CloudFront, or load balancers.',
       },
@@ -184,14 +184,14 @@ export const LEVELS: Level[] = [
         who: 'sparky',
         mood: 'think',
         text: {
-          explorer: 'Their village is far from the cloud. CloudFront is a Copy Shop that keeps copies of the website close to them, so it loads fast!',
+          explorer: 'Their village is far from the cloud. CloudFront keeps copies of the website close to them, so it loads fast!',
           builder: 'Far-away visitors have to wait longer. CloudFront keeps copies of your files all over the world, so pages load fast for everyone.',
           architect: 'CloudFront is a CDN. Edge locations cache content close to viewers, cutting latency and taking load off the origin.',
         },
       },
     ],
     goal: {
-      explorer: 'Send Faraway Village through the Copy Shop so the website is fast for them too.',
+      explorer: 'Send Faraway Village through CloudFront so the website is fast for them too.',
       builder: 'Make the website fast for Faraway Village by sending visitors through CloudFront.',
       architect: 'Front the S3 origin with CloudFront so far-away viewers get low latency.',
     },
@@ -208,13 +208,13 @@ export const LEVELS: Level[] = [
     ],
     palette: [{ service: 'cloudfront', count: 1 }],
     hints: [
-      'Faraway Village has to pass through the Copy Shop (CloudFront).',
-      'Make it Address Book → Copy Shop → Storage Bucket. Tap the old Address Book → Bucket arrow and snip it with ✂️.',
+      'Faraway Village has to pass through CloudFront.',
+      'Make it Route 53 → CloudFront → S3. Tap the old Route 53 → S3 arrow and snip it with ✂️.',
     ],
     lesson: {
       title: 'CloudFront keeps copies close',
       text: {
-        explorer: 'The Copy Shop keeps copies near everyone, so the website is fast even far away.',
+        explorer: 'CloudFront keeps copies near everyone, so the website is fast even far away.',
         builder: 'A CDN (content delivery network) keeps copies of files near people, so they load quickly everywhere. It also means fewer trips back to S3.',
         architect: 'Cache hits are served at the edge, and only misses go back to the origin. In this level about 80% are hits, so S3 sees only a fifth of the traffic.',
       },
@@ -237,14 +237,14 @@ export const LEVELS: Level[] = [
         who: 'sparky',
         mood: 'happy',
         text: {
-          explorer: 'Orders need three helpers: a Front Desk to take the order, a Helper Robot to do the work, and a Speedy Notebook to write it down.',
+          explorer: 'Orders need three helpers: API Gateway takes the order, Lambda does the work, and DynamoDB writes it down.',
           builder: 'Taking orders needs a little system: API Gateway takes the request, Lambda runs the code, and DynamoDB saves the order.',
           architect: 'Build a serverless API: API Gateway → Lambda → DynamoDB. There are no servers to manage, and it scales with demand.',
         },
       },
     ],
     goal: {
-      explorer: 'Get every order written down in the Speedy Notebook.',
+      explorer: 'Get every order written down in DynamoDB.',
       builder: 'Get all 50 orders from Hungry Customers saved in DynamoDB.',
       architect: 'Persist 50 orders/tick through API Gateway and Lambda into DynamoDB.',
     },
@@ -256,13 +256,13 @@ export const LEVELS: Level[] = [
       { service: 'dynamodb', count: 1 },
     ],
     hints: [
-      'Start with the customers: Hungry Customers → Front Desk.',
-      'Then Front Desk → Helper Robot → Speedy Notebook.',
+      'Start with the customers: Hungry Customers → API Gateway.',
+      'Then API Gateway → Lambda → DynamoDB.',
     ],
     lesson: {
       title: 'Serverless: no servers to babysit',
       text: {
-        explorer: 'The Helper Robot only wakes up when there’s an order. Then it naps!',
+        explorer: 'Lambda only wakes up when there’s an order. Then it naps!',
         builder: 'Lambda only runs when someone needs it, and you only pay when it runs. API Gateway is the front door, and DynamoDB remembers every order.',
         architect: 'This is the classic serverless pattern. Lambda scales concurrency automatically, and DynamoDB on-demand capacity follows the traffic.',
       },
@@ -288,7 +288,7 @@ export const LEVELS: Level[] = [
         who: 'sparky',
         mood: 'cheer',
         text: {
-          explorer: 'SNS is a Megaphone! Say it once, and everyone who signed up hears it.',
+          explorer: 'SNS works like a megaphone! Say it once, and everyone who signed up hears it.',
           builder: 'Let’s send them a message instead! SNS is a megaphone: one message goes out to lots of places at once.',
           architect: 'SNS is pub/sub messaging. Publish once to a topic, and it fans out to every subscriber, including SMS and mobile push.',
         },
@@ -314,13 +314,13 @@ export const LEVELS: Level[] = [
     ],
     palette: [{ service: 'sns', count: 1 }],
     hints: [
-      'The Helper Robot can tell the Megaphone, too.',
-      'Helper Robot → Megaphone. Then Megaphone → Customer Phones and Megaphone → Kitchen Tablet.',
+      'Lambda can tell SNS, too.',
+      'Lambda → SNS. Then SNS → Customer Phones and SNS → Kitchen Tablet.',
     ],
     lesson: {
       title: 'One message, many listeners',
       text: {
-        explorer: 'The Megaphone says it once, and everybody hears it.',
+        explorer: 'SNS says it once, and everybody hears it.',
         builder: 'With SNS, the helper says it once and SNS delivers it to every subscriber. That’s called fan-out.',
         architect: 'Pub/sub decouples publishers from subscribers. You can add email, SQS, or Lambda subscribers without changing the publisher.',
       },
@@ -337,12 +337,12 @@ export const LEVELS: Level[] = [
     concept: 'Scaling',
     teaches: ['ec2', 'elb', 'autoscaling'],
     intro: [
-      { who: 'rosa', text: 'My new Cake Designer app runs on one Cloud Computer. And today is the BIG birthday-cake sale!' },
+      { who: 'rosa', text: 'My new Cake Designer app runs on one EC2 server. And today is the BIG birthday-cake sale!' },
       {
         who: 'sparky',
         mood: 'worried',
         text: {
-          explorer: 'Uh-oh. 150 people are on the way, but one Cloud Computer can only help 50 at a time. Press Run to see what happens!',
+          explorer: 'Uh-oh. 150 people are on the way, but one EC2 server can only help 50 at a time. Press Run to see what happens!',
           builder: 'One EC2 server can handle about 50 visitors at a time, and 150 are on the way. Press Run and watch its meter!',
           architect: 'One EC2 instance tops out around 50 req/s for this app, and expected load is 150 req/s. Press Run, then scale out.',
         },
@@ -365,12 +365,12 @@ export const LEVELS: Level[] = [
     ],
     hints: [
       'One computer can’t do it alone. What if there were more computers?',
-      'Put the Crossing Guard between the crowd and the computers, and connect it to all 3. Or let the Clone Machine help the Cake Designer!',
+      'Put the load balancer between the crowd and the servers, and connect it to all 3. Or let Auto Scaling help the Cake Designer!',
     ],
     lesson: {
       title: 'Scale out: more helpers',
       text: {
-        explorer: 'When one computer is too busy, add more and let the Crossing Guard share the work.',
+        explorer: 'When one computer is too busy, add more and let the load balancer share the work.',
         builder: 'When one server is too busy, add more and let a load balancer share the work. Auto Scaling can even add servers automatically when it gets busy.',
         architect: 'Scaling horizontally behind an ALB, with an Auto Scaling group spread across Availability Zones, gives you both capacity and fault tolerance.',
       },
@@ -392,20 +392,20 @@ export const LEVELS: Level[] = [
     concept: 'Caching',
     teaches: ['rds', 'elasticache'],
     intro: [
-      { who: 'rosa', text: 'Everybody keeps checking today’s menu. The Filing Cabinet is getting crushed!' },
+      { who: 'rosa', text: 'Everybody keeps checking today’s menu. The RDS database is getting crushed!' },
       {
         who: 'sparky',
         mood: 'think',
         text: {
-          explorer: 'The menu is the same for everyone! Sticky Notes can remember the answer, so the Filing Cabinet doesn’t have to look it up every time.',
+          explorer: 'The menu is the same for everyone! ElastiCache can remember the answer, so RDS doesn’t have to look it up every time.',
           builder: 'Almost everyone asks the same question: “What’s on the menu?” ElastiCache remembers recent answers in super-fast memory, so the RDS database gets a break.',
           architect: 'It’s a read-heavy workload: 200 req/s against an RDS instance that handles about 60. Add a cache-aside layer with ElastiCache.',
         },
       },
     ],
     goal: {
-      explorer: 'Answer every menu check without the Filing Cabinet getting too busy.',
-      builder: 'Answer 200 menu checks without overloading the RDS filing cabinet.',
+      explorer: 'Answer every menu check without RDS getting too busy.',
+      builder: 'Answer 200 menu checks without overloading the RDS database.',
       architect: 'Serve 200 req/s of reads while keeping RDS under its ~60 req/s limit.',
     },
     nodes: [
@@ -421,13 +421,13 @@ export const LEVELS: Level[] = [
     ],
     palette: [{ service: 'elasticache', count: 1 }],
     hints: [
-      'Give the Helper Robot something to remember answers with.',
-      'Connect Helper Robot → Sticky Notes. The Robot will check the notes first!',
+      'Give Lambda something to remember answers with.',
+      'Connect Lambda → ElastiCache. Lambda will check the cache first!',
     ],
     lesson: {
       title: 'Caching means remembering answers',
       text: {
-        explorer: 'Sticky Notes remember popular answers, so nobody has to look them up again and again.',
+        explorer: 'ElastiCache remembers popular answers, so nobody has to look them up again and again.',
         builder: 'A cache keeps answers to popular questions in fast memory. Fewer trips to the database means everything is faster.',
         architect: 'Cache-aside with an ~80% hit ratio cut database load from 200 to 40 req/s. Set TTLs carefully to avoid serving stale data.',
       },
@@ -446,7 +446,7 @@ export const LEVELS: Level[] = [
         who: 'sparky',
         mood: 'happy',
         text: {
-          explorer: 'Let’s make a Ticket Line! Orders wait their turn, and the oven takes the next one when it’s ready. No order gets lost.',
+          explorer: 'Let’s use SQS to make a ticket line! Orders wait their turn, and the oven takes the next one when it’s ready. No order gets lost.',
           builder: 'SQS is a queue, like the ticket line at a deli. Orders wait safely in line, and the oven takes the next one when it’s ready.',
           architect: 'Decouple the API from the worker with SQS. The queue absorbs the burst, and the worker drains it at its own pace.',
         },
@@ -468,8 +468,8 @@ export const LEVELS: Level[] = [
     ],
     palette: [{ service: 'sqs', count: 1 }],
     hints: [
-      'Put the Ticket Line between the Front Desk and the oven.',
-      'Snip the old Front Desk → Oven arrow with ✂️, so every order goes through the line.',
+      'Put SQS between API Gateway and the oven.',
+      'Snip the old API Gateway → Oven arrow with ✂️, so every order goes through the line.',
     ],
     lesson: {
       title: 'Queues smooth out rushes',
@@ -497,7 +497,7 @@ export const LEVELS: Level[] = [
         who: 'sparky',
         mood: 'worried',
         text: {
-          explorer: 'Gremlin Bots! They’re fake visitors that clog everything up. A Gate Guard can spot them and keep them out.',
+          explorer: 'Gremlin Bots! They’re fake visitors that clog everything up. AWS WAF can spot them and keep them out.',
           builder: 'Those aren’t real customers. They’re bots! AWS WAF is a gate guard that checks every visitor and blocks the bad ones.',
           architect: 'It’s a bot flood: 70% of the traffic is malicious. Put AWS WAF in front to filter it with rate-based and Bot Control rules.',
         },
@@ -521,13 +521,13 @@ export const LEVELS: Level[] = [
     ],
     palette: [{ service: 'waf', count: 1 }],
     hints: [
-      'Every visitor should walk past the Gate Guard first.',
-      'Make it Visitors → Gate Guard → Crossing Guard, and snip the old Visitors → Crossing Guard arrow with ✂️.',
+      'Every visitor should pass through WAF first.',
+      'Make it Visitors → WAF → load balancer, and snip the old Visitors → load balancer arrow with ✂️.',
     ],
     lesson: {
       title: 'Security: check who’s at the door',
       text: {
-        explorer: 'The Gate Guard keeps gremlins out, so real customers can get in.',
+        explorer: 'WAF keeps gremlins out, so real customers can get in.',
         builder: 'WAF (web application firewall) looks at each request and blocks the bad ones, like bots, before they reach your servers.',
         architect: 'WAF web ACLs with managed rule groups, rate-based rules, and Bot Control protect CloudFront, ALB, and API Gateway. Pair WAF with Shield for DDoS protection.',
       },

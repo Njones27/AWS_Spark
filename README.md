@@ -14,14 +14,16 @@ A visual, game-like web app that teaches K–12 students how AWS services fit to
   fan-out, an S3 + Athena data lake, and a grounded Bedrock AgentCore agent. Always uses real AWS names and numbers.
 - **Playground**: build anything with 48 pieces, from S3 and Lambda to IAM, containers, data tools, and Bedrock AgentCore. Only connections that make sense snap together. Try one
   that doesn't, and Sparky explains why and suggests what to connect instead.
-- **Grade bands**: Explorer (K–5), Builder (6–8), and Architect (9–12). Each band changes the names,
-  explanations, numbers, and hints.
+- **Grade bands**: Explorer (K–5), Builder (6–8), and Architect (9–12). Every band uses the real AWS service
+  names. Each band changes the explanations, numbers, and hints.
+- **Hover to learn**: point at any piece, tray item, or service chip to see what that service does, explained
+  for your grade band. Tap a piece on a touch screen to open its info card.
 
 | Story Mode level map | A level running: one server is overloaded |
 |---|---|
 | ![Chapter 1 level map with four levels complete](docs/screens/level-map.png) | ![Level 6: 150 visitors reach a server that can handle 50, so it turns red](docs/screens/level6-overload.png) |
 | **Sparky explains a connection that doesn't fit** | **Playground with IAM and KMS badges** |
-| ![Connecting customers straight to DynamoDB, and Sparky suggesting the Front Desk instead](docs/screens/invalid-connection.png) | ![Playground: CloudFront, S3, API Gateway, Lambda, DynamoDB, and Bedrock, with IAM and KMS badge arrows](docs/screens/playground.png) |
+| ![Connecting customers straight to DynamoDB, and Sparky suggesting API Gateway instead](docs/screens/invalid-connection.png) | ![Playground: CloudFront, S3, API Gateway, Lambda, DynamoDB, and Bedrock, with IAM and KMS badge arrows](docs/screens/playground.png) |
 
 ## Run it
 
@@ -39,7 +41,7 @@ Progress is saved in the browser (localStorage). Nothing is sent to a server.
 
 | Path | What lives there |
 |---|---|
-| `src/data/services.ts` | The 48 pieces: real name, kid nickname, per-band blurbs, capacity, and how traffic leaves each one |
+| `src/data/services.ts` | The 48 pieces: real name, per-band blurbs (shown on hover and in the info card), capacity, and how traffic leaves each one |
 | `src/data/rules.ts` | Directional allow-list of connections (`from → to`), with a verb plus simple and technical "why" text, and hand-written explanations for common mistakes |
 | `src/data/levels.ts` | Chapter 1 story, goals, pre-placed pieces, tray palette, hints, lesson, and the intended solution |
 | `src/data/advanced.ts` | Advanced Track tickets, with budgets, required arrows, and backlog limits |

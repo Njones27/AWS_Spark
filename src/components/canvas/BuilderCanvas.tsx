@@ -14,7 +14,7 @@ import {
   type OnNodesChange,
 } from '@xyflow/react';
 import { useCallback, useMemo, useRef, useState, type Dispatch, type ReactNode, type SetStateAction } from 'react';
-import { iconUrl, SERVICES } from '../../data/services';
+import { ServiceChip } from '../ServiceTip';
 import type { ServiceId } from '../../data/types';
 import { badgesFor } from '../../engine/badges';
 import { checkConnection } from '../../engine/validate';
@@ -267,10 +267,7 @@ export function BuilderCanvas({
                 <div className="bubble-try">
                   <span>Try connecting it to:</span>
                   {bubble.suggestions.map((sid) => (
-                    <span key={sid} className="chip">
-                      <img src={iconUrl(sid)} alt="" />
-                      {band === 'architect' ? SERVICES[sid].name.replace(/^(Amazon|AWS) /, '') : SERVICES[sid].nickname}
-                    </span>
+                    <ServiceChip key={sid} service={sid} />
                   ))}
                 </div>
               )}

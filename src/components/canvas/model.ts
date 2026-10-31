@@ -1,8 +1,8 @@
 import { MarkerType, type Edge, type InternalNode, type Node, Position } from '@xyflow/react';
 import { createContext, useContext } from 'react';
 import { findRule } from '../../data/rules';
-import { SERVICES } from '../../data/services';
-import type { Band, EdgeKind, ServiceId, SourceSpec } from '../../data/types';
+import { shortName } from '../../data/services';
+import type { EdgeKind, ServiceId, SourceSpec } from '../../data/types';
 import { edgeId } from '../../engine/levelGraph';
 import type { SimEdge, SimNode, SimResult } from '../../engine/simulate';
 
@@ -79,11 +79,10 @@ export function toSim(nodes: AppNode[], edges: AppEdge[]): { nodes: SimNode[]; e
   };
 }
 
-export function displayName(data: PieceData, band: Band): { main: string; sub?: string } {
-  const def = SERVICES[data.service];
-  if (data.label) return { main: data.label, sub: band === 'architect' ? def.name : def.nickname };
-  if (band === 'architect') return { main: def.name.replace(/^(Amazon|AWS) /, ''), sub: undefined };
-  return { main: def.nickname, sub: def.name.replace(/^(Amazon|AWS) /, '') };
+/** A piece shows its service's name. Pieces with a story label (like "Townsfolk") show the service name under it. */
+export function displayName(data: PieceData): { main: string; sub?: string } {
+  const name = shortName(data.service);
+  return data.label ? { main: data.label, sub: name } : { main: name };
 }
 
 // ── shared contexts ───────────────────────────────────────────

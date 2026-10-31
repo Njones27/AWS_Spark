@@ -7,6 +7,7 @@ import { PieceDock, type DockItemSpec } from '../components/canvas/PieceDock';
 import { useDiagram, useDropPiece } from '../components/canvas/useDiagram';
 import { TopBar } from '../components/Chrome';
 import { ServiceCard } from '../components/ServiceCard';
+import { ServiceChip } from '../components/ServiceTip';
 import { topProblem } from '../data/feedback';
 import { chapterOf, levelById } from '../data/chapters';
 import { type Level, type Mood } from '../data/levels';
@@ -139,7 +140,7 @@ function LevelInner({ level }: { level: Level }) {
     (nid: string) => {
       const n = d.nodes.find((x) => x.id === nid);
       if (!n || !isPiece(n)) return undefined;
-      return { name: displayName(n.data, band).main, service: n.data.service };
+      return { name: displayName(n.data).main, service: n.data.service };
     },
     [d.nodes, band],
   );
@@ -225,7 +226,7 @@ function LevelInner({ level }: { level: Level }) {
                         must reach
                         {n.data.source!.needs.map((need) => {
                           const svc = (need in SERVICES ? need : pieces.find((p) => p.id === need)?.data.service) as ServiceId;
-                          const label = need in SERVICES ? displayName({ service: svc }, band).main : nameOf(need)?.name;
+                          const label = need in SERVICES ? displayName({ service: svc }).main : nameOf(need)?.name;
                           return (
                             <span key={need} className="chip chip-sm" title={label}>
                               <img src={iconUrl(svc)} alt="" />
@@ -330,10 +331,7 @@ function LevelInner({ level }: { level: Level }) {
                 <p>{bt(level.lesson.text, band)}</p>
                 <div className="win-learned">
                   {level.teaches.map((s) => (
-                    <span key={s} className="chip">
-                      <img src={iconUrl(s)} alt="" />
-                      {band === 'architect' ? SERVICES[s].name : `${SERVICES[s].nickname} · ${SERVICES[s].name}`}
-                    </span>
+                    <ServiceChip key={s} service={s} full />
                   ))}
                 </div>
                 {!next && <p className="win-ending">{bt(chapter.ending, band)}</p>}

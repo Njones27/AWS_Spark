@@ -84,7 +84,7 @@ describe('data', () => {
   });
 
   it('says how to flip a backwards arrow', () => {
-    expect(explainRejection('lambda', 'iam').simple).toMatch(/wrong way.*from the Key Keeper to the Helper Robot/);
+    expect(explainRejection('lambda', 'iam').simple).toMatch(/wrong way.*from IAM to Lambda/);
     expect(explainRejection('rds', 'lambda').tech).toBe('Draw it the other way: AWS Lambda saves to Amazon RDS.');
   });
 
@@ -347,7 +347,7 @@ describe('simulate', () => {
     expect(simulate(thinking.nodes, thinking.edges).success).toBe(true);
   });
 
-  it('the data hose needs somewhere to deliver', () => {
+  it('Firehose needs somewhere to deliver', () => {
     const alone = line(['apigw', 'firehose']);
     expect(simulate(alone.nodes, alone.edges).sources.u.failures[0].reason).toEqual({ kind: 'deadEnd', node: 's1' });
     const delivered = line(['apigw', 'firehose', 's3']);
