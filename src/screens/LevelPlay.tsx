@@ -9,6 +9,7 @@ import { TopBar } from '../components/Chrome';
 import { Sheet, TurnTip } from '../components/PhoneChrome';
 import { ServiceCard } from '../components/ServiceCard';
 import { ServiceChip } from '../components/ServiceTip';
+import { SidePanel } from '../components/SidePanel';
 import { Terms } from '../components/Terms';
 import { topProblem } from '../data/feedback';
 import { chapterOf, levelById, STORY } from '../data/chapters';
@@ -332,10 +333,10 @@ function LevelInner({ level }: { level: Level }) {
 
       <div className="level-body">
         {!phone && (
-          <aside className="story-panel">
+          <SidePanel id="level" label="Mission" width={window.innerWidth <= 1180 ? 270 : 330} className="story-panel">
             {panel}
             {serviceCard}
-          </aside>
+          </SidePanel>
         )}
 
         <BuilderCanvas

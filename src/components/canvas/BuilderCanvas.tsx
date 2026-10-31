@@ -1,9 +1,11 @@
 import {
   Background,
   BackgroundVariant,
+  ControlButton,
   Controls,
   ReactFlow,
   useConnection,
+  useNodesInitialized,
   useReactFlow,
   useStore,
   type Connection,
@@ -88,18 +90,67 @@ export function BuilderCanvas({
   const band = useBand();
   const { device, sideways } = useDevice();
   const phone = device === 'phone';
-  const { getNode, getEdges, getInternalNode, flowToScreenPosition, fitView } = useReactFlow<AppNode, AppEdge>();
-  // Turning a phone, or switching between the phone and laptop layouts, changes the map's shape completely, so fit the
-  // map again (the first fit happens on mount).
-  const padding = sideways ? PHONE_WIDE_FIT : phone ? PHONE_FIT : LAPTOP_FIT;
-  const shape = useRef(padding);
-  useEffect(() => {
-    if (shape.current === padding) return;
-    shape.current = padding;
-    const timer = window.setTimeout(() => fitView({ padding, duration: 200 }), 150);
-    return () => window.clearTimeout(timer);
-  }, [padding, fitView]);
+  const { getNode, getEdges, getInternalNode, flowToScreenPosition, fitView, getViewport, setViewport } = useReactFlow<
+    AppNode,
+    AppEdge
+  >();
   const wrap = useRef<HTMLDivElement>(null);
+  // Room around the map when it's fitted to the screen. On a laptop the tray along the bottom wraps onto two rows in a
+  // narrow window, so leave room for however tall it really is.
+  const fitPadding = useCallback(() => {
+    if (sideways) return PHONE_WIDE_FIT;
+    if (phone) return PHONE_FIT;
+    const tray = wrap.current?.querySelector('.canvas-dock:not(.canvas-dock-right)');
+    const room = tray ? Math.round(tray.getBoundingClientRect().height) + 28 : 0;
+    return room > 120 ? { ...LAPTOP_FIT, bottom: `${room}px` as const } : LAPTOP_FIT;
+  }, [phone, sideways]);
+  const fit = useCallback((duration?: number) => fitView({ padding: fitPadding(), duration }), [fitView, fitPadding]);
+  // Once the student pans or zooms the map themselves, a resize keeps their view rather than fitting the map again.
+  const moved = useRef(false);
+
+  // Turning a phone, or switching between the phone and laptop layouts, changes the map's shape completely, so fit the
+  // map again.
+  const layout = useRef(fitPadding);
+  useEffect(() => {
+    if (layout.current === fitPadding) return;
+    layout.current = fitPadding;
+    moved.current = false;
+    const timer = window.setTimeout(() => fit(200), 150);
+    return () => window.clearTimeout(timer);
+  }, [fitPadding, fit]);
+
+  // The first fit (the fitView prop) can't see the tray yet; fit once more when every piece has been measured.
+  const measured = useNodesInitialized();
+  const ready = useRef(false);
+  useEffect(() => {
+    if (!measured || ready.current) return;
+    ready.current = true;
+    if (!moved.current) fit();
+  }, [measured, fit]);
+
+  // When the map's box changes size (the window is resized, or a side panel is dragged or folded away) or the tray
+  // wraps onto another row, keep the map in view: fit it again or, if the student has moved it, keep the same middle.
+  useEffect(() => {
+    const el = wrap.current;
+    if (!el) return;
+    let last = { w: el.clientWidth, h: el.clientHeight };
+    const observer = new ResizeObserver(() => {
+      const prev = last;
+      last = { w: el.clientWidth, h: el.clientHeight };
+      if (!ready.current || !last.w || !last.h) return;
+      if (!moved.current) {
+        fit();
+        return;
+      }
+      const vp = getViewport();
+      setViewport({ x: vp.x + (last.w - prev.w) / 2, y: vp.y + (last.h - prev.h) / 2, zoom: vp.zoom });
+    });
+    observer.observe(el);
+    const tray = el.querySelector('.canvas-dock:not(.canvas-dock-right)');
+    if (tray) observer.observe(tray);
+    return () => observer.disconnect();
+  }, [fit, getViewport, setViewport]);
+
   const [bubble, setBubble] = useState<Bubble | null>(null);
   const [wiggleId, setWiggleId] = useState<string | null>(null);
   const lastConnected = useRef<string | null>(null);
@@ -254,9 +305,13 @@ export function BuilderCanvas({
             }}
             onNodesDelete={() => onStructureChange?.()}
             onEdgesDelete={() => onStructureChange?.()}
-            onMoveStart={() => setBubble(null)}
+            onMoveStart={(event) => {
+              setBubble(null);
+              // Only the student's own drags, scrolls and pinches carry an event; fitting the map doesn't.
+              if (event) moved.current = true;
+            }}
             fitView
-            fitViewOptions={{ padding }}
+            fitViewOptions={{ padding: sideways ? PHONE_WIDE_FIT : phone ? PHONE_FIT : LAPTOP_FIT }}
             minZoom={0.3}
             maxZoom={1.8}
             connectionRadius={44}
@@ -266,7 +321,27 @@ export function BuilderCanvas({
             deleteKeyCode={['Backspace', 'Delete']}
           >
             <Background variant={BackgroundVariant.Dots} gap={28} size={2.2} color="#e2d7c3" />
-            <Controls showInteractive={false} position="top-right" />
+            <Controls
+              showInteractive={false}
+              showFitView={false}
+              position="top-right"
+              onZoomIn={() => (moved.current = true)}
+              onZoomOut={() => (moved.current = true)}
+            >
+              <ControlButton
+                className="react-flow__controls-fitview"
+                title="Fit the whole map on screen"
+                aria-label="Fit the whole map on screen"
+                onClick={() => {
+                  moved.current = false;
+                  fit(200);
+                }}
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 30" aria-hidden="true">
+                  <path d="M3.692 4.63c0-.53.4-.938.939-.938h5.215V0H4.708C2.13 0 0 2.054 0 4.63v5.216h3.692V4.631zM27.354 0h-5.2v3.692h5.17c.53 0 .984.4.984.939v5.215H32V4.631A4.624 4.624 0 0027.354 0zm.954 24.83c0 .532-.4.94-.939.94h-5.215v3.768h5.215c2.577 0 4.631-2.13 4.631-4.707v-5.139h-3.692v5.139zm-23.677.94c-.531 0-.939-.4-.939-.94v-5.138H0v5.139c0 2.577 2.13 4.707 4.708 4.707h5.138V25.77H4.631z" />
+                </svg>
+              </ControlButton>
+            </Controls>
           </ReactFlow>
           {bubble && (
             <div

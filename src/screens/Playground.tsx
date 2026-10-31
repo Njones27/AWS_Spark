@@ -17,6 +17,7 @@ import { ProjectNotes } from '../components/playground/ProjectNotes';
 import { OpenShared, ShareDialog, type SharedState } from '../components/playground/ShareDialog';
 import { StarterPicker } from '../components/playground/StarterPicker';
 import { ServiceCard } from '../components/ServiceCard';
+import { SidePanel } from '../components/SidePanel';
 import { topProblem } from '../data/feedback';
 import { CATEGORIES, SERVICE_LIST } from '../data/services';
 import type { SourceSpec } from '../data/types';
@@ -291,9 +292,9 @@ function PlaygroundInner({ share, shareId }: { share?: string; shareId?: string 
 
       <div className="play-body">
         {!phone && (
-          <aside className="catalog" aria-label="Pieces">
+          <SidePanel id="playground" label="Pieces" width={window.innerWidth <= 900 ? 220 : 260} className="catalog">
             {pieceList}
-          </aside>
+          </SidePanel>
         )}
 
         <BuilderCanvas
