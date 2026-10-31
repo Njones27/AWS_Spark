@@ -117,9 +117,10 @@ account config must name the same `Project.Account`, `Region` and `Profile` (`se
 | `app-config-account-prod.json` | `Account` | `027729116436` | `spark-prod` |
 | `app-config-prod.json` | `Prod` | `027729116436` | `spark-prod` |
 
-Every IAM role the app creates carries the permissions boundary `arn:aws:iam::<account>:policy/Spark-RoleBoundary`
-and has a name starting with `Spark-`; the CDK exec role may not create any other kind of role
-(`infra/policies/`, see `infra/README.md` "Least-privilege bootstrap").
+Every IAM role the app creates has a name starting with `Spark-` and carries the permissions boundary
+`arn:aws:iam::<account>:policy/Spark-RoleBoundary`, except `Spark-<Stage>-GitHubDeploy`, which carries
+`Spark-DeployRoleBoundary` and, like `Spark-Account-GitHubOidc`, is deployed only with admin credentials
+(`CliCredentialsStackSynthesizer`). See `infra/policies/` and `infra/README.md` "Least-privilege bootstrap".
 
 ```jsonc
 // app-config-dev.json. Prod: throttles 500/1000, CreateProfile 20, Recover 5, Share 10, Save 200, ReservedConcurrency 0 for now (100 once the Lambda quota increase is granted)

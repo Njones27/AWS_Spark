@@ -1,5 +1,6 @@
 // Account-level stack (config/app-config-account-<dev|prod>.json): the GitHub Actions OIDC provider and the AWS Budgets.
-// Deployed by hand once per account by script/setup_initial.sh, never by CI.
+// Deployed by hand once per account by script/setup_initial.sh, never by CI, with the caller's own credentials
+// (CliCredentialsStackSynthesizer): the CDK exec role is denied every OIDC provider write.
 
 import * as cdk from 'aws-cdk-lib';
 import * as budgets from 'aws-cdk-lib/aws-budgets';
@@ -16,7 +17,7 @@ export class GitHubOidcStack extends BaseStack {
     public readonly provider: iam.IOidcProvider;
 
     constructor(appContext: AppContext, stackConfig: StackConfig) {
-        super(appContext, stackConfig);
+        super(appContext, stackConfig, { synthesizer: new cdk.CliCredentialsStackSynthesizer() });
 
         // An account can hold only one provider per URL: set CreateProvider false to import an existing one.
         if (configBoolean(stackConfig, 'CreateProvider')) {

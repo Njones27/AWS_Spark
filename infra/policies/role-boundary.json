@@ -81,21 +81,6 @@
         "cloudfront:GetInvalidation"
       ],
       "Resource": "arn:aws:cloudfront::${ACCOUNT_ID}:distribution/*"
-    },
-    {
-      "Sid": "GitHubDeployAssumeCdkBootstrapRoles",
-      "Effect": "Allow",
-      "Action": "sts:AssumeRole",
-      "Resource": "arn:aws:iam::${ACCOUNT_ID}:role/cdk-hnb659fds-*"
-    },
-    {
-      "Sid": "GitHubDeployReadParameters",
-      "Effect": "Allow",
-      "Action": "ssm:GetParameter",
-      "Resource": [
-        "arn:aws:ssm:${REGION}:${ACCOUNT_ID}:parameter/cdk-bootstrap/hnb659fds/version",
-        "arn:aws:ssm:${REGION}:${ACCOUNT_ID}:parameter/Spark-*"
-      ]
     }
   ]
 }

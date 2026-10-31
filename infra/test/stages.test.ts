@@ -53,15 +53,15 @@ describe.each(Object.entries(expectations))('%s config', (stage, want) => {
             });
         });
 
-        it('may only assume the CDK bootstrap roles and read two SSM parameters', () => {
+        it('may only assume the CDK deploy and file-publishing roles and read two SSM parameters', () => {
             const role = onlyResource(template, 'AWS::IAM::Role');
             expect(role.Properties.ManagedPolicyArns).toBeUndefined();
             const statements = role.Properties.Policies[0].PolicyDocument.Statement;
             expect(statements.map((s: { Action: string }) => s.Action)).toEqual(['sts:AssumeRole', 'ssm:GetParameter', 'ssm:GetParameter']);
-            expect(statements[0].Resource).toHaveLength(4);
-            for (const arn of statements[0].Resource) {
-                expect(arn).toMatch(new RegExp(`^arn:aws:iam::${want.account}:role/cdk-hnb659fds-[a-z-]+-role-${want.account}-us-east-1$`));
-            }
+            // Only the deploy and file-publishing bootstrap roles: no lookups, no Docker assets.
+            expect(statements[0].Resource).toEqual(['deploy', 'file-publishing'].map(
+                (kind) => `arn:aws:iam::${want.account}:role/cdk-hnb659fds-${kind}-role-${want.account}-us-east-1`,
+            ));
             expect(statements[1].Resource).toBe(`arn:aws:ssm:us-east-1:${want.account}:parameter/cdk-bootstrap/hnb659fds/version`);
             expect(statements[2].Resource).toBe(`arn:aws:ssm:us-east-1:${want.account}:parameter/${want.prefix}-DistributionDomain`);
         });

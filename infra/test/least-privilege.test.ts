@@ -1,19 +1,30 @@
 // The CDK bootstrap's CloudFormation execution role runs with infra/policies/cfn-exec-policy.json and
-// cfn-exec-web-ops-policy.json instead of AdministratorAccess, and every role the app creates carries the
-// Spark-RoleBoundary permissions boundary (infra/policies/role-boundary.json). These tests keep the app, the policies
+// cfn-exec-web-ops-policy.json instead of AdministratorAccess, every app role carries the Spark-RoleBoundary
+// permissions boundary (infra/policies/role-boundary.json), and the GitHub deploy role carries the narrower
+// Spark-DeployRoleBoundary (deploy-role-boundary.json). The account and Cicd stacks deploy with the caller's
+// credentials, never through the exec role. These tests keep the app, the policies
 // and the boundary in step. When one fails after adding an AWS service or a resource, read infra/README.md,
 // "Least-privilege bootstrap", for how to extend the policies.
 
 import * as fs from 'fs';
 import * as path from 'path';
+import * as cdk from 'aws-cdk-lib';
+import * as cxapi from 'aws-cdk-lib/cx-api';
 import { describe, expect, it } from 'vitest';
 
-import { CFN_EXEC_POLICY_NAME, ROLE_BOUNDARY_POLICY_NAME, ROLE_NAME_PREFIX } from '../lib/permissions-boundary';
-import { CONFIG_NAMES, ConfigName, INFRA_DIR, configPath, stacksOf, synthConfig, templateOf, writeConfigCopy } from './helpers';
+import {
+    CFN_EXEC_POLICY_NAME, DEPLOY_ROLE_BOUNDARY_POLICY_NAME, ROLE_BOUNDARY_POLICY_NAME, ROLE_NAME_PREFIX,
+} from '../lib/permissions-boundary';
+import { CONFIG_NAMES, ConfigName, INFRA_DIR, configPath, stacksOf, synthConfig, writeConfigCopy } from './helpers';
 
 const POLICY_DIR = path.join(INFRA_DIR, 'policies');
 const EXEC_POLICY_FILES = { [CFN_EXEC_POLICY_NAME]: 'cfn-exec-policy.json', 'Spark-CdkCfnExecWebOps': 'cfn-exec-web-ops-policy.json' };
 const BOUNDARY_FILE = 'role-boundary.json';
+const DEPLOY_BOUNDARY_FILE = 'deploy-role-boundary.json';
+/** Every Spark-managed policy; the exec policies deny editing any of them. */
+const SPARK_POLICY_NAMES = [ROLE_BOUNDARY_POLICY_NAME, DEPLOY_ROLE_BOUNDARY_POLICY_NAME, ...Object.keys(EXEC_POLICY_FILES)];
+/** The GitHub deploy roles: the only roles with Spark-DeployRoleBoundary instead of Spark-RoleBoundary. */
+const isDeployRole = (props: Record<string, any>) => typeof props.RoleName === 'string' && /^Spark-[A-Za-z]+-GitHubDeploy$/.test(props.RoleName);
 const README_HINT = 'see infra/README.md, "Least-privilege bootstrap"';
 
 /** IAM's limit for a customer-managed policy, counted without whitespace. */
@@ -48,7 +59,14 @@ const execPolicies = Object.values(EXEC_POLICY_FILES).map((file) => readPolicy(f
 const execAllowActions = execPolicies.flatMap(allowActions);
 
 type Resources = Record<string, { Type: string; Properties?: Record<string, any> }>;
-interface SynthedStack { config: string; stackName: string; account: string; resources: Resources }
+interface SynthedStack {
+    config: string;
+    stackName: string;
+    account: string;
+    resources: Resources;
+    stack: cdk.Stack;
+    artifact: cxapi.CloudFormationStackArtifact;
+}
 
 /**
  * Every stack of every shipped config, plus variants that switch on the optional resources (custom domain:
@@ -75,12 +93,15 @@ function synthAll(): SynthedStack[] {
             }),
         })),
     ];
-    return variants.flatMap(({ config, file }) => stacksOf(synthConfig(file)).map((stack) => ({
-        config,
-        stackName: stack.stackName,
-        account: stack.account,
-        resources: templateOf(stack).toJSON().Resources as Resources,
-    })));
+    // One synth per app: the assembly gives both the templates and the deploy metadata (roles, asset manifests).
+    return variants.flatMap(({ config, file }) => {
+        const result = synthConfig(file);
+        const assembly = result.appContext.cdkApp.synth();
+        return stacksOf(result).map((stack) => {
+            const artifact = assembly.getStackByName(stack.stackName);
+            return { config, stackName: stack.stackName, account: stack.account, resources: artifact.template.Resources as Resources, stack, artifact };
+        });
+    });
 }
 
 const stacks = synthAll();
@@ -109,8 +130,15 @@ describe('permissions boundary on every role', () => {
         ]));
     });
 
-    it.each(roles.map((r) => [`${r.stack.config} ${r.stack.stackName}/${r.logicalId}`, r] as const))('%s has Spark-RoleBoundary', (_, role) => {
-        expect(role.props.PermissionsBoundary).toBe(`arn:aws:iam::${role.stack.account}:policy/${ROLE_BOUNDARY_POLICY_NAME}`);
+    it.each(roles.map((r) => [`${r.stack.config} ${r.stack.stackName}/${r.logicalId}`, r] as const))('%s has its boundary', (_, role) => {
+        const name = isDeployRole(role.props) ? DEPLOY_ROLE_BOUNDARY_POLICY_NAME : ROLE_BOUNDARY_POLICY_NAME;
+        expect(role.props.PermissionsBoundary).toBe(`arn:aws:iam::${role.stack.account}:policy/${name}`);
+    });
+
+    it('gives Spark-DeployRoleBoundary to exactly the two GitHub deploy roles', () => {
+        const deployRoles = roles.filter((r) => JSON.stringify(r.props.PermissionsBoundary).includes(DEPLOY_ROLE_BOUNDARY_POLICY_NAME));
+        expect([...new Set(deployRoles.map((r) => r.props.RoleName))].sort()).toEqual(['Spark-Dev-GitHubDeploy', 'Spark-Prod-GitHubDeploy']);
+        expect(deployRoles.every((r) => r.stack.stackName.endsWith('-Cicd'))).toBe(true);
     });
 
     it('creates no IAM users, groups or managed policies (the exec policy cannot create them)', () => {
@@ -211,6 +239,7 @@ describe('role boundary permits what the app roles do', () => {
     // Listed by the Api stack but not an IAM action: transactions are authorized per item (PutItem, UpdateItem, ...).
     const NOT_IAM_ACTIONS = ['dynamodb:TransactWriteItems'];
     const boundaryActions = allowActions(readPolicy(BOUNDARY_FILE));
+    const deployBoundaryActions = allowActions(readPolicy(DEPLOY_BOUNDARY_FILE));
 
     function actionsOf(stack: SynthedStack, logicalId: string, props: Record<string, any>): string[] {
         const refersToRole = (v: unknown) => JSON.stringify(v).includes(`"${logicalId}"`);
@@ -237,13 +266,14 @@ describe('role boundary permits what the app roles do', () => {
     it.each(roles.map((r) => [`${r.stack.config} ${r.stack.stackName}/${r.logicalId}`, r] as const))('%s', (_, role) => {
         const actions = actionsOf(role.stack, role.logicalId, role.props).filter((a) => !NOT_IAM_ACTIONS.includes(a));
         expect(actions.length).toBeGreaterThan(0);
-        const uncovered = actions.filter((a) => !boundaryActions.some((pattern) => iamMatch(pattern, a, true)));
-        expect(uncovered, `not allowed by infra/policies/${BOUNDARY_FILE}; ${README_HINT}`).toEqual([]);
+        const [file, allowed] = isDeployRole(role.props) ? [DEPLOY_BOUNDARY_FILE, deployBoundaryActions] : [BOUNDARY_FILE, boundaryActions];
+        const uncovered = actions.filter((a) => !allowed.some((pattern) => iamMatch(pattern, a, true)));
+        expect(uncovered, `not allowed by infra/policies/${file}; ${README_HINT}`).toEqual([]);
     });
 });
 
 describe('policy files', () => {
-    const files = [...Object.values(EXEC_POLICY_FILES), BOUNDARY_FILE];
+    const files = [...Object.values(EXEC_POLICY_FILES), BOUNDARY_FILE, DEPLOY_BOUNDARY_FILE];
 
     it.each(files)('%s parses, uses only ${ACCOUNT_ID}/${REGION} placeholders and fits a managed policy', (file) => {
         const raw = fs.readFileSync(path.join(POLICY_DIR, file), 'utf8');
@@ -264,8 +294,35 @@ describe('policy files', () => {
         expect(denies.find((s) => list(s.Action).includes('iam:DeleteRolePermissionsBoundary'))?.Resource).toBe('*');
         const edits = denies.find((s) => list(s.Action).includes('iam:CreatePolicyVersion'))!;
         expect(list(edits.Action).sort()).toEqual(['iam:CreatePolicyVersion', 'iam:DeletePolicy', 'iam:DeletePolicyVersion', 'iam:SetDefaultPolicyVersion']);
-        expect(list(edits.Resource).sort()).toEqual([ROLE_BOUNDARY_POLICY_NAME, ...Object.keys(EXEC_POLICY_FILES)]
-            .map((name) => `arn:aws:iam::111122223333:policy/${name}`).sort());
+        expect(list(edits.Resource).sort()).toEqual(SPARK_POLICY_NAMES.map((name) => `arn:aws:iam::111122223333:policy/${name}`).sort());
+    });
+
+    it('denies the exec role every change to the GitHub deploy roles and every OIDC provider write', () => {
+        const denies = readPolicy(EXEC_POLICY_FILES[CFN_EXEC_POLICY_NAME]).Statement.filter((s) => s.Effect === 'Deny');
+        const deployRole = denies.find((s) => list(s.Resource).includes('arn:aws:iam::111122223333:role/Spark-*-GitHubDeploy'))!;
+        expect(list(deployRole.Action).sort()).toEqual([
+            'iam:AttachRolePolicy', 'iam:CreateRole', 'iam:DeleteRole', 'iam:DeleteRolePolicy', 'iam:DetachRolePolicy',
+            'iam:PutRolePermissionsBoundary', 'iam:PutRolePolicy', 'iam:UpdateAssumeRolePolicy',
+        ]);
+        const oidc = denies.find((s) => list(s.Resource).includes('arn:aws:iam::111122223333:oidc-provider/*'))!;
+        expect(list(oidc.Action).sort()).toEqual([
+            'iam:AddClientIDToOpenIDConnectProvider', 'iam:CreateOpenIDConnectProvider', 'iam:DeleteOpenIDConnectProvider',
+            'iam:RemoveClientIDFromOpenIDConnectProvider', 'iam:TagOpenIDConnectProvider', 'iam:UntagOpenIDConnectProvider',
+            'iam:UpdateOpenIDConnectProviderThumbprint',
+        ]);
+        expect(execAllowActions.filter((a) => /OpenIDConnect/i.test(a))).toEqual([]);
+    });
+
+    it('lets the exec role add Lambda permissions only for the principals the app uses', () => {
+        const principals = [...new Set(stacks.flatMap((s) => Object.values(s.resources))
+            .filter((r) => r.Type === 'AWS::Lambda::Permission')
+            .map((r) => r.Properties!.Principal))];
+        expect(principals).toEqual(['apigateway.amazonaws.com']);
+        const allow = execPolicies.flatMap((d) => d.Statement)
+            .filter((s) => s.Effect === 'Allow' && list(s.Action).some((a) => /^lambda:(AddPermission|RemovePermission)$/.test(a)));
+        expect(allow).toHaveLength(1);
+        expect(list(allow[0].Action).sort()).toEqual(['lambda:AddPermission', 'lambda:RemovePermission']);
+        expect(list(allow[0].Condition?.StringEquals?.['lambda:Principal'] as string | string[]).sort()).toEqual(principals.sort());
     });
 
     it('only lets IAM roles be created or widened under Spark-* with the boundary, and passed only to Lambda', () => {
@@ -280,17 +337,61 @@ describe('policy files', () => {
         const passRole = all.filter((s) => list(s.Action).some((a) => iamMatch(a, 'iam:PassRole', true)));
         expect(passRole).toHaveLength(1);
         expect(passRole[0].Condition).toEqual({ StringEquals: { 'iam:PassedToService': 'lambda.amazonaws.com' } });
-        // Nothing else in IAM: no users, groups, managed policies, or access keys.
+        // Nothing else in IAM: no users, groups, managed policies, access keys or OIDC providers.
         const iamActions = all.flatMap((s) => list(s.Action)).filter((a) => a.startsWith('iam:'));
-        expect(iamActions.filter((a) => !/Role|OpenIDConnectProvider/.test(a))).toEqual([]);
+        expect(iamActions.filter((a) => !/Role/.test(a))).toEqual([]);
     });
 
-    it('the boundary grants no IAM or Organizations actions and assumes only CDK bootstrap roles', () => {
-        const doc = readPolicy(BOUNDARY_FILE);
+    it.each([BOUNDARY_FILE, DEPLOY_BOUNDARY_FILE])('%s grants no IAM or Organizations actions and no "*" resource', (file) => {
+        const doc = readPolicy(file);
         expect(doc.Statement.every((s) => s.Effect === 'Allow')).toBe(true);
         expect(allowActions(doc).filter((a) => /^(iam|organizations|account):/.test(a))).toEqual([]);
-        const assume = doc.Statement.filter((s) => list(s.Action).includes('sts:AssumeRole'));
-        expect(assume.flatMap((s) => list(s.Resource))).toEqual(['arn:aws:iam::111122223333:role/cdk-hnb659fds-*']);
         expect(doc.Statement.flatMap((s) => list(s.Resource))).not.toContain('*');
+    });
+
+    it('only the deploy-role boundary allows sts:AssumeRole, and only the CDK deploy and file-publishing roles', () => {
+        expect(allowActions(readPolicy(BOUNDARY_FILE)).filter((a) => a.startsWith('sts:'))).toEqual([]);
+        const doc = readPolicy(DEPLOY_BOUNDARY_FILE);
+        expect(allowActions(doc).sort()).toEqual(['ssm:GetParameter', 'sts:AssumeRole']);
+        const assume = doc.Statement.filter((s) => list(s.Action).includes('sts:AssumeRole'));
+        expect(assume.flatMap((s) => list(s.Resource)).sort()).toEqual([
+            'arn:aws:iam::111122223333:role/cdk-hnb659fds-deploy-role-111122223333-us-east-1',
+            'arn:aws:iam::111122223333:role/cdk-hnb659fds-file-publishing-role-111122223333-us-east-1',
+        ]);
+    });
+});
+
+describe('the account and Cicd stacks deploy with the caller\'s credentials, never the exec role', () => {
+    const byName = (suffix: string) => stacks.filter((s) => s.config in { 'account-dev': 1, 'account-prod': 1, dev: 1, prod: 1 }
+        && s.stackName.endsWith(suffix));
+
+    it.each([...byName('-GitHubOidc'), ...byName('-Cicd')].map((s) => [`${s.config} ${s.stackName}`, s] as const))('%s', (_, synthed) => {
+        expect(synthed.stack.synthesizer).toBeInstanceOf(cdk.CliCredentialsStackSynthesizer);
+        const artifact = synthed.artifact;
+        expect(artifact.assumeRoleArn).toBeUndefined();
+        expect(artifact.cloudFormationExecutionRoleArn).toBeUndefined();
+        const assetManifests = artifact.dependencies.filter((d): d is cxapi.AssetManifestArtifact => d instanceof cxapi.AssetManifestArtifact);
+        for (const manifest of assetManifests) {
+            const contents = JSON.parse(fs.readFileSync(manifest.file, 'utf8'));
+            expect(JSON.stringify(contents)).not.toContain('assumeRoleArn');
+            expect(Object.keys(contents.dockerImages ?? {})).toEqual([]);
+        }
+    });
+
+    it('every other stack still goes through the bootstrap deploy role (so CI uses the bounded path)', () => {
+        const other = stacks.filter((s) => !s.stackName.endsWith('-Cicd') && !s.stackName.endsWith('-GitHubOidc'));
+        expect(other.length).toBeGreaterThan(0);
+        for (const s of other) expect(s.stack.synthesizer).toBeInstanceOf(cdk.DefaultStackSynthesizer);
+    });
+
+    it('no stack has Docker image assets or context lookups (CI cannot assume the image-publishing or lookup roles)', () => {
+        for (const s of stacks) {
+            const artifact = s.artifact;
+            expect(artifact.assets.filter((a) => a.packaging === 'container-image')).toEqual([]);
+            expect(artifact.assembly.manifest.missing ?? []).toEqual([]);
+            for (const d of artifact.dependencies.filter((x): x is cxapi.AssetManifestArtifact => x instanceof cxapi.AssetManifestArtifact)) {
+                expect(Object.keys(JSON.parse(fs.readFileSync(d.file, 'utf8')).dockerImages ?? {})).toEqual([]);
+            }
+        }
     });
 });

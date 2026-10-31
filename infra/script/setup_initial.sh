@@ -8,12 +8,14 @@
 # Adapted from aws-samples/aws-cdk-project-template-for-devops script/setup_initial.sh. It:
 # 1. checks the account's Lambda concurrency quota against what the stage config reserves (warns, never stops)
 # 2. builds the frontend (every cdk command synthesizes the Web stack, which uploads dist/)
-# 3. creates or updates the managed policies in infra/policies/ (Spark-RoleBoundary, Spark-CdkCfnExec,
-#    Spark-CdkCfnExecWebOps), then runs `cdk bootstrap aws://<account>/<region>` with the two exec policies as the
-#    CloudFormation execution policies, instead of the default AdministratorAccess
+# 3. creates or updates the managed policies in infra/policies/ (Spark-RoleBoundary, Spark-DeployRoleBoundary,
+#    Spark-CdkCfnExec, Spark-CdkCfnExecWebOps), then runs `cdk bootstrap aws://<account>/<region>` with the two exec
+#    policies as the CloudFormation execution policies, instead of the default AdministratorAccess
 # 4. deploys the account config (GitHub OIDC provider, budgets)
 # 5. creates the <Project>-<Stage>-OriginVerifySecret SSM parameter (once), deploys <Project>-<Stage>-Cicd, and
 #    prints the GitHub environment variables to set
+# The account and Cicd stacks use CliCredentialsStackSynthesizer: they deploy with the credentials this script runs
+# with, never through the CDK exec role (which is denied changes to the deploy role and the OIDC provider).
 #
 # Dependencies are not installed here: run `npm ci` at the repo root first. Safe to re-run; re-running it on an
 # account that was bootstrapped with AdministratorAccess switches that account to the least-privilege policies.
@@ -83,13 +85,16 @@ echo "==--------BuildFrontend---------=="
 echo
 
 echo "==--------LeastPrivilegePolicies---------=="
-# The boundary first: the exec policies only allow creating roles that carry it.
+# The boundaries first: the exec policies only allow creating roles that carry Spark-RoleBoundary, and the Cicd
+# stack's deploy role carries Spark-DeployRoleBoundary.
 ensure_managed_policy "$ACCOUNT" "$REGION" Spark-RoleBoundary "$POLICY_DIR/role-boundary.json" \
-  "Permissions boundary of every Spark IAM role (infra/policies/role-boundary.json)"
+  "Permissions boundary of every Spark app IAM role (infra/policies/role-boundary.json)"
+ensure_managed_policy "$ACCOUNT" "$REGION" Spark-DeployRoleBoundary "$POLICY_DIR/deploy-role-boundary.json" \
+  "Permissions boundary of the Spark GitHub deploy roles (infra/policies/deploy-role-boundary.json)"
 ensure_managed_policy "$ACCOUNT" "$REGION" Spark-CdkCfnExec "$POLICY_DIR/cfn-exec-policy.json" \
-  "CDK CloudFormation execution role, IAM and API/data services (infra/policies/cfn-exec-policy.json)"
+  "CDK CloudFormation execution role, IAM and API services (infra/policies/cfn-exec-policy.json)"
 ensure_managed_policy "$ACCOUNT" "$REGION" Spark-CdkCfnExecWebOps "$POLICY_DIR/cfn-exec-web-ops-policy.json" \
-  "CDK CloudFormation execution role, web/ops services (infra/policies/cfn-exec-web-ops-policy.json)"
+  "CDK CloudFormation execution role, data, web and ops services (infra/policies/cfn-exec-web-ops-policy.json)"
 echo
 
 echo "==--------BootstrapCDKEnvironment---------=="
@@ -100,6 +105,7 @@ APP_CONFIG="$ACCOUNT_CONFIG" npx cdk bootstrap "aws://$ACCOUNT/$REGION" \
 echo
 
 echo "==--------DeployAccountStacks---------=="
+# With this shell's credentials (CliCredentialsStackSynthesizer), not the exec role.
 npx cdk deploy --all "${APPROVAL[@]}" -c APP_CONFIG="$ACCOUNT_CONFIG"
 echo
 
@@ -121,6 +127,7 @@ else
   echo "Created SSM parameter $SECRET_NAME."
 fi
 
+# With this shell's credentials (CliCredentialsStackSynthesizer): CI and the exec role cannot change this role.
 npx cdk deploy "$PREFIX-Cicd" "${APPROVAL[@]}" -c APP_CONFIG="$STAGE_CONFIG"
 
 ROLE_ARN="$(aws ssm get-parameter --name "$PREFIX-DeployRoleArn" --region "$REGION" --query Parameter.Value --output text)"

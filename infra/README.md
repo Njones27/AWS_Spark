@@ -15,7 +15,7 @@ infra/
 ├── config/                app-config-account-{dev,prod}.json, app-config-dev.json, app-config-prod.json
 ├── lib/template/          AppContext, AppConfig, BaseStack, CommonHelper, CommonGuardian (MIT-0, adapted)
 ├── lib/create-stacks.ts   creates the stacks listed under "Stack" in the loaded config
-├── lib/permissions-boundary.ts  puts the Spark-RoleBoundary permissions boundary on every IAM role
+├── lib/permissions-boundary.ts  puts the Spark-RoleBoundary permissions boundary on every app IAM role
 ├── policies/              least-privilege CDK exec policies + the role boundary (see "Least-privilege bootstrap")
 ├── stack/                 github-oidc, cicd, data, api, web, ops
 ├── script/                setup_initial.sh, deploy_stacks.sh, destroy_stacks.sh (+ lib.sh)
@@ -151,19 +151,19 @@ The script is safe to re-run. It does the following:
 3. Builds the frontend (`npm run build` at the repo root). Every `cdk` command synthesizes the whole app,
    including the Web stack that uploads `dist/`, even when it deploys only Cicd. This is why a clean checkout
    needs the build.
-4. Creates or updates three customer-managed policies from `infra/policies/` (with the account ID and region
-   filled in): `Spark-RoleBoundary`, `Spark-CdkCfnExec` and `Spark-CdkCfnExecWebOps`. A policy whose document
+4. Creates or updates four customer-managed policies from `infra/policies/` (with the account ID and region
+   filled in): `Spark-RoleBoundary`, `Spark-DeployRoleBoundary`, `Spark-CdkCfnExec` and `Spark-CdkCfnExecWebOps`. A policy whose document
    changed gets a new default version; IAM keeps at most 5, so the oldest non-default version is deleted first.
 5. Runs `cdk bootstrap aws://<account>/us-east-1 --cloudformation-execution-policies
    arn:aws:iam::<account>:policy/Spark-CdkCfnExec,arn:aws:iam::<account>:policy/Spark-CdkCfnExecWebOps`, so the
    CloudFormation execution role never gets `AdministratorAccess`.
-6. Deploys `Spark-Account-GitHubOidc`, which holds the OIDC provider and the budgets. The budgets get an
+6. Deploys `Spark-Account-GitHubOidc` with your own (admin) credentials, not through the exec role, which holds the OIDC provider and the budgets. The budgets get an
    email notification (ACTUAL > 100%) once `BudgetEmail` is set. A new account has no GitHub OIDC provider, so both
    account configs have `CreateProvider: true`. An account holds only one provider per URL: if one already exists,
    set `CreateProvider: false` and `ExistingProviderArn`.
 7. For the stage:
    - creates `Spark-<Stage>-OriginVerifySecret` if it does not exist yet
-   - deploys `Spark-<Stage>-Cicd`. CDK asks you to confirm the IAM changes.
+   - deploys `Spark-<Stage>-Cicd`, also with your own credentials. CDK asks you to confirm the IAM changes.
    - prints the GitHub environment variables, plus the matching `gh variable set` commands
 
 ### GitHub environments
@@ -183,7 +183,9 @@ reviewers** (the owner). Both options are free on public repos, and [Security no
 explains why both are needed.
 
 The role trusts only `repo:Njones27/AWS_Spark:environment:<stage>` with audience `sts.amazonaws.com`.
-It can only assume the four `cdk-hnb659fds-*` bootstrap roles and read two SSM parameters: the bootstrap
+It can only assume two bootstrap roles, `cdk-hnb659fds-deploy-role-*` and `cdk-hnb659fds-file-publishing-role-*`
+(the app has no context lookups and no Docker assets, so CI never needs the lookup or image-publishing roles), and
+read two SSM parameters: the bootstrap
 version, and `Spark-<Stage>-DistributionDomain` for the smoke test. Sessions last at most 2 hours.
 
 ## How deploys flow
@@ -261,8 +263,8 @@ if it ever writes JSON lines directly.
 
 - **Deploys are least-privilege, not admin.** The CloudFormation execution role (`cdk-hnb659fds-cfn-exec-role-*`)
   runs with `Spark-CdkCfnExec` and `Spark-CdkCfnExecWebOps`, not bootstrap's default `AdministratorAccess`, and
-  every role the app creates is capped by `Spark-RoleBoundary`. Each GitHub deploy role can only assume the
-  bootstrap roles, so the most a deploy can do is create and change Spark's own resources. Details:
+  every role the app creates is capped by `Spark-RoleBoundary` (the GitHub deploy roles by the narrower
+  `Spark-DeployRoleBoundary`). Each GitHub deploy role can only assume the deploy and file-publishing bootstrap roles, so the most a deploy can do is create and change Spark's own resources. Details:
   [Least-privilege bootstrap](#least-privilege-bootstrap).
 - **One account per stage.** The dev role cannot reach prod at all; the deploy roles never share an account.
 - The controls on the GitHub side still matter, because a deploy can still replace or delete Spark's resources:
@@ -270,8 +272,18 @@ if it ever writes JSON lines directly.
   - `main` requires a reviewed PR (the `Mainline_shield` ruleset).
   - `prod` also needs a required reviewer before every deploy.
   - Each role trusts exactly one `repo:...:environment:<stage>` subject.
-- The Cicd stacks are deployed only by hand (`setup_initial.sh`), so CI cannot widen its own trust policy.
-  (The exec role could change it if a CI deploy targeted Cicd, but the role would still be capped by the boundary.)
+- **CI cannot rewrite its own trust.** The `Spark-<Stage>-Cicd` and `Spark-Account-GitHubOidc` stacks use
+  `CliCredentialsStackSynthesizer`: `setup_initial.sh` deploys them with the admin credentials of the shell, never
+  through the bootstrap roles (their manifests name no role to assume, and their only asset is the template). The exec
+  policy denies every change to `role/Spark-*-GitHubDeploy` (create, delete, trust, inline and attached policies,
+  boundary) and every OIDC provider write, so even a CI deploy that targeted those stacks would fail.
+  `deploy.yml` and `deploy_stacks.sh` leave Cicd out anyway.
+- **Known gaps, accepted for now:**
+  - `logs:PutResourcePolicy` is allowed on `*` because HTTP API access logging needs it and the action has no
+    resource-level permissions. A deploy could therefore change CloudWatch Logs resource policies account-wide.
+  - `s3:PutBucketPublicAccessBlock` and `s3:PutBucketPolicy` on `spark-*` buckets mean a deploy could make the site
+    bucket public. Consider an SCP (deny those on `spark-*` unless the public access block stays on) once the accounts
+    sit under an organization policy.
 - The origin-verify secret is a plain SSM String. It also appears in the CloudFront and Lambda configuration,
   so anyone who can read those can read it. It stops casual direct calls to `execute-api`; it is not an
   authentication boundary.
@@ -280,14 +292,15 @@ if it ever writes JSON lines directly.
 
 `cdk bootstrap` creates `cdk-hnb659fds-cfn-exec-role-<account>-<region>`, the role CloudFormation uses to create
 every resource, and by default attaches `AdministratorAccess` to it. Spark replaces that in every account, from the
-first bootstrap, with three customer-managed policies kept in `infra/policies/` (comment-free JSON, so the
+first bootstrap, with customer-managed policies kept in `infra/policies/` (comment-free JSON, so the
 reasoning lives here). `setup_initial.sh` fills in `${ACCOUNT_ID}` and `${REGION}` and creates or updates them.
 
 | Policy | File | Attached to |
 |---|---|---|
-| `Spark-CdkCfnExec` | `cfn-exec-policy.json` | the exec role: IAM roles, the OIDC provider, Lambda, API Gateway, DynamoDB, SSM, Logs |
-| `Spark-CdkCfnExecWebOps` | `cfn-exec-web-ops-policy.json` | the exec role: S3 site buckets, CloudFront, CloudWatch, SNS, Budgets, ACM, Route 53 |
-| `Spark-RoleBoundary` | `role-boundary.json` | permissions boundary of every IAM role the app creates |
+| `Spark-CdkCfnExec` | `cfn-exec-policy.json` | the exec role: IAM roles (plus the denies), Lambda, API Gateway, SSM, Logs |
+| `Spark-CdkCfnExecWebOps` | `cfn-exec-web-ops-policy.json` | the exec role: DynamoDB, S3 site buckets, CloudFront, CloudWatch, SNS, Budgets, ACM, Route 53 |
+| `Spark-RoleBoundary` | `role-boundary.json` | permissions boundary of every app IAM role (Lambda and custom resource roles) |
+| `Spark-DeployRoleBoundary` | `deploy-role-boundary.json` | permissions boundary of the `Spark-<Stage>-GitHubDeploy` roles only |
 
 The exec permissions are two policies only because a managed policy holds at most 6,144 characters; the test
 `policy files` checks each file against that limit.
@@ -322,12 +335,15 @@ The exec permissions are two policies only because a managed policy holds at mos
     permissions boundary is `Spark-RoleBoundary` (condition `iam:PermissionsBoundary`). A deploy can attach any
     policy to a Spark role, even `AdministratorAccess`, and the role can still do no more than the boundary allows.
   - `iam:PassRole` is limited to `role/Spark-*` passed to `lambda.amazonaws.com`.
+  - `lambda:AddPermission`/`RemovePermission` require `lambda:Principal` = `apigateway.amazonaws.com`, the only
+    principal any synthesized `AWS::Lambda::Permission` uses (a test keeps the two in step), so a deploy cannot
+    open a Spark function to another account or service.
   - Both exec policies deny `iam:DeleteRolePermissionsBoundary` everywhere, and deny `CreatePolicyVersion`,
-    `DeletePolicy`, `DeletePolicyVersion` and `SetDefaultPolicyVersion` on the three Spark policies, so a deploy
+    `DeletePolicy`, `DeletePolicyVersion` and `SetDefaultPolicyVersion` on the four Spark policies, so a deploy
     cannot loosen its own limits. The exec role cannot create users, groups, managed policies or access keys at all.
-  - The GitHub OIDC provider may be created, read, tagged, updated and deleted, but only
-    `oidc-provider/token.actions.githubusercontent.com`.
-- **The boundary** allows exactly what the app's roles use, read from the synthesized role policies:
+  - `Spark-CdkCfnExec` also denies every change to `role/Spark-*-GitHubDeploy` and every OIDC provider write (see
+    [Security notes](#security-notes)); those are deployed with admin credentials.
+- **The boundaries** allow exactly what the roles use, read from the synthesized role policies:
   - API Lambda: the table read/write actions on `table/Spark-*` (Query, GetItem, PutItem, UpdateItem, DeleteItem,
     BatchWriteItem, ConditionCheckItem; transactions are authorized per item), and CloudWatch Logs writes on Spark log
     groups.
@@ -335,18 +351,23 @@ The exec permissions are two policies only because a managed policy holds at mos
     `cloudfront:CreateInvalidation`/`GetInvalidation` on distributions.
   - autoDeleteObjects (dev's bucket): list and delete objects and put the bucket policy on `spark-*` buckets. The
     bucket policy grants these to the provider role, and the boundary still caps them.
-  - GitHub deploy role: `sts:AssumeRole` on `role/cdk-hnb659fds-*`, `ssm:GetParameter` on
-    `/cdk-bootstrap/hnb659fds/version` and `parameter/Spark-*`.
-- `lib/permissions-boundary.ts` applies the boundary with `iam.PermissionsBoundary.of(stack).apply(...)` to every
-  stack. That aspect matches on the CloudFormation type `AWS::IAM::Role`, so it also covers roles made as plain
-  `CfnResource`s, such as the autoDeleteObjects custom resource provider role.
+  - GitHub deploy role (`Spark-DeployRoleBoundary`, nothing else in it): `sts:AssumeRole` on exactly
+    `cdk-hnb659fds-deploy-role-<account>-<region>` and `cdk-hnb659fds-file-publishing-role-<account>-<region>`, and
+    `ssm:GetParameter` on `/cdk-bootstrap/hnb659fds/version` and `parameter/Spark-*`. `Spark-RoleBoundary` allows no
+    `sts:AssumeRole` at all.
+- `lib/permissions-boundary.ts` adds `Spark-RoleBoundary` to every stack with an aspect that matches the
+  CloudFormation type `AWS::IAM::Role`, so it also covers roles made as plain `CfnResource`s, such as the
+  autoDeleteObjects custom resource provider role. It skips a role that sets its own boundary, which only the deploy
+  role in `stack/cicd-stack.ts` does (`Spark-DeployRoleBoundary`).
 
 **Tests that hold it together** (`test/least-privilege.test.ts`): every `AWS::IAM::Role` in every config
-(account-dev, account-prod, dev, prod, plus variants with a domain and email subscriptions) has the boundary; every
-role name (explicit, or CloudFormation's `<stack>-<logicalId>-<random>`) falls inside `role/Spark-*`; every resource
-type maps to a service the exec policies allow (`Custom::*` must be a Spark Lambda the exec role may invoke); every
-action in the roles' policies is allowed by the boundary; and the files parse, fit IAM's size limit and keep their
-deny statements.
+(account-dev, account-prod, dev, prod, plus variants with a domain and email subscriptions) has `Spark-RoleBoundary`,
+except the two GitHub deploy roles, which have `Spark-DeployRoleBoundary`; every role name (explicit, or
+CloudFormation's `<stack>-<logicalId>-<random>`) falls inside `role/Spark-*`; every resource type maps to a service the
+exec policies allow (`Custom::*` must be a Spark Lambda the exec role may invoke); every action in the roles' policies
+is allowed by their boundary; the account and Cicd stacks synthesize with CLI credentials (no role to assume, no
+Docker assets); every Lambda permission principal is covered by the `lambda:Principal` condition; CI may assume exactly
+the deploy and file-publishing roles; and the files parse, fit IAM's size limit and keep their deny statements.
 
 **Adding an AWS service or resource.** If a change adds a resource type or a role permission, the coverage test fails
 and points here. Then:
@@ -371,6 +392,7 @@ the same is:
 cd infra
 source script/lib.sh
 ensure_managed_policy <account> us-east-1 Spark-RoleBoundary policies/role-boundary.json "Spark role boundary"
+ensure_managed_policy <account> us-east-1 Spark-DeployRoleBoundary policies/deploy-role-boundary.json "Spark deploy role boundary"
 ensure_managed_policy <account> us-east-1 Spark-CdkCfnExec policies/cfn-exec-policy.json "Spark CDK exec"
 ensure_managed_policy <account> us-east-1 Spark-CdkCfnExecWebOps policies/cfn-exec-web-ops-policy.json "Spark CDK exec web/ops"
 npx cdk bootstrap aws://<account>/us-east-1 -c APP_CONFIG=config/app-config-account-<stage>.json \
@@ -395,7 +417,7 @@ prints the commands to remove them:
 - the `OriginVerifySecret` parameter
 
 The account-level pieces stay too: `Spark-Account-GitHubOidc` (destroy it with the account config), the `CDKToolkit`
-bootstrap stack and the three `Spark-*` managed policies from `setup_initial.sh`.
+bootstrap stack and the four `Spark-*` managed policies from `setup_initial.sh`.
 
 ## Swapping to a new pair of AWS accounts (handoff runbook)
 
@@ -465,5 +487,6 @@ Account IDs live only in `infra/config/*.json` and in the GitHub environment var
   an action the exec policies do not allow. Add it as described in
   [Least-privilege bootstrap](#least-privilege-bootstrap), then re-run `setup_initial.sh` for both accounts.
 - **A role-creating deploy fails with `AccessDenied` on `iam:CreateRole`**: the role is missing the
-  `Spark-RoleBoundary` boundary or its name does not start with `Spark-`. `npm test -w infra` names the role.
+  `Spark-RoleBoundary` boundary or its name does not start with `Spark-` (or it is a `Spark-*-GitHubDeploy` role,
+  which only `setup_initial.sh` may deploy). `npm test -w infra` names the role.
 - **CI: `Variable X is not set on the 'dev' environment`**: add it under **Settings → Environments**.

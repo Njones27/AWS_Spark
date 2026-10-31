@@ -50,22 +50,6 @@
       }
     },
     {
-      "Sid": "GitHubOidcProvider",
-      "Effect": "Allow",
-      "Action": [
-        "iam:AddClientIDToOpenIDConnectProvider",
-        "iam:CreateOpenIDConnectProvider",
-        "iam:DeleteOpenIDConnectProvider",
-        "iam:GetOpenIDConnectProvider",
-        "iam:ListOpenIDConnectProviderTags",
-        "iam:RemoveClientIDFromOpenIDConnectProvider",
-        "iam:TagOpenIDConnectProvider",
-        "iam:UntagOpenIDConnectProvider",
-        "iam:UpdateOpenIDConnectProviderThumbprint"
-      ],
-      "Resource": "arn:aws:iam::${ACCOUNT_ID}:oidc-provider/token.actions.githubusercontent.com"
-    },
-    {
       "Sid": "DenyBoundaryRemoval",
       "Effect": "Deny",
       "Action": "iam:DeleteRolePermissionsBoundary",
@@ -82,9 +66,39 @@
       ],
       "Resource": [
         "arn:aws:iam::${ACCOUNT_ID}:policy/Spark-RoleBoundary",
+        "arn:aws:iam::${ACCOUNT_ID}:policy/Spark-DeployRoleBoundary",
         "arn:aws:iam::${ACCOUNT_ID}:policy/Spark-CdkCfnExec",
         "arn:aws:iam::${ACCOUNT_ID}:policy/Spark-CdkCfnExecWebOps"
       ]
+    },
+    {
+      "Sid": "DenyGitHubDeployRoleChanges",
+      "Effect": "Deny",
+      "Action": [
+        "iam:AttachRolePolicy",
+        "iam:CreateRole",
+        "iam:DeleteRole",
+        "iam:DeleteRolePolicy",
+        "iam:DetachRolePolicy",
+        "iam:PutRolePermissionsBoundary",
+        "iam:PutRolePolicy",
+        "iam:UpdateAssumeRolePolicy"
+      ],
+      "Resource": "arn:aws:iam::${ACCOUNT_ID}:role/Spark-*-GitHubDeploy"
+    },
+    {
+      "Sid": "DenyOidcProviderWrites",
+      "Effect": "Deny",
+      "Action": [
+        "iam:AddClientIDToOpenIDConnectProvider",
+        "iam:CreateOpenIDConnectProvider",
+        "iam:DeleteOpenIDConnectProvider",
+        "iam:RemoveClientIDFromOpenIDConnectProvider",
+        "iam:TagOpenIDConnectProvider",
+        "iam:UntagOpenIDConnectProvider",
+        "iam:UpdateOpenIDConnectProviderThumbprint"
+      ],
+      "Resource": "arn:aws:iam::${ACCOUNT_ID}:oidc-provider/*"
     },
     {
       "Sid": "S3ReadCdkAssets",
@@ -110,7 +124,6 @@
       "Sid": "LambdaSparkFunctions",
       "Effect": "Allow",
       "Action": [
-        "lambda:AddPermission",
         "lambda:CreateFunction",
         "lambda:DeleteFunction",
         "lambda:DeleteFunctionConcurrency",
@@ -132,7 +145,6 @@
         "lambda:PutFunctionEventInvokeConfig",
         "lambda:PutFunctionRecursionConfig",
         "lambda:PutRuntimeManagementConfig",
-        "lambda:RemovePermission",
         "lambda:TagResource",
         "lambda:UntagResource",
         "lambda:UpdateFunctionCode",
@@ -140,6 +152,20 @@
         "lambda:UpdateFunctionEventInvokeConfig"
       ],
       "Resource": "arn:aws:lambda:${REGION}:${ACCOUNT_ID}:function:Spark-*"
+    },
+    {
+      "Sid": "LambdaPermissionsForApiGateway",
+      "Effect": "Allow",
+      "Action": [
+        "lambda:AddPermission",
+        "lambda:RemovePermission"
+      ],
+      "Resource": "arn:aws:lambda:${REGION}:${ACCOUNT_ID}:function:Spark-*",
+      "Condition": {
+        "StringEquals": {
+          "lambda:Principal": "apigateway.amazonaws.com"
+        }
+      }
     },
     {
       "Sid": "LambdaAwsCliLayers",
@@ -165,27 +191,6 @@
         "arn:aws:apigateway:${REGION}::/apis*",
         "arn:aws:apigateway:${REGION}::/tags/*"
       ]
-    },
-    {
-      "Sid": "DynamoDbSparkTables",
-      "Effect": "Allow",
-      "Action": [
-        "dynamodb:CreateTable",
-        "dynamodb:DeleteTable",
-        "dynamodb:DescribeContinuousBackups",
-        "dynamodb:DescribeContributorInsights",
-        "dynamodb:DescribeKinesisStreamingDestination",
-        "dynamodb:DescribeTable",
-        "dynamodb:DescribeTimeToLive",
-        "dynamodb:GetResourcePolicy",
-        "dynamodb:ListTagsOfResource",
-        "dynamodb:TagResource",
-        "dynamodb:UntagResource",
-        "dynamodb:UpdateContinuousBackups",
-        "dynamodb:UpdateTable",
-        "dynamodb:UpdateTimeToLive"
-      ],
-      "Resource": "arn:aws:dynamodb:${REGION}:${ACCOUNT_ID}:table/Spark-*"
     },
     {
       "Sid": "SsmSparkParameters",
@@ -238,8 +243,6 @@
       "Sid": "NoResourceLevel",
       "Effect": "Allow",
       "Action": [
-        "dynamodb:ListTables",
-        "iam:ListOpenIDConnectProviders",
         "lambda:ListFunctions",
         "lambda:ListLayers",
         "lambda:ListLayerVersions",

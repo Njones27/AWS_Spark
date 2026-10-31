@@ -18,6 +18,7 @@
       ],
       "Resource": [
         "arn:aws:iam::${ACCOUNT_ID}:policy/Spark-RoleBoundary",
+        "arn:aws:iam::${ACCOUNT_ID}:policy/Spark-DeployRoleBoundary",
         "arn:aws:iam::${ACCOUNT_ID}:policy/Spark-CdkCfnExec",
         "arn:aws:iam::${ACCOUNT_ID}:policy/Spark-CdkCfnExecWebOps"
       ]
@@ -172,6 +173,27 @@
       ]
     },
     {
+      "Sid": "DynamoDbSparkTables",
+      "Effect": "Allow",
+      "Action": [
+        "dynamodb:CreateTable",
+        "dynamodb:DeleteTable",
+        "dynamodb:DescribeContinuousBackups",
+        "dynamodb:DescribeContributorInsights",
+        "dynamodb:DescribeKinesisStreamingDestination",
+        "dynamodb:DescribeTable",
+        "dynamodb:DescribeTimeToLive",
+        "dynamodb:GetResourcePolicy",
+        "dynamodb:ListTagsOfResource",
+        "dynamodb:TagResource",
+        "dynamodb:UntagResource",
+        "dynamodb:UpdateContinuousBackups",
+        "dynamodb:UpdateTable",
+        "dynamodb:UpdateTimeToLive"
+      ],
+      "Resource": "arn:aws:dynamodb:${REGION}:${ACCOUNT_ID}:table/Spark-*"
+    },
+    {
       "Sid": "NoResourceLevel",
       "Effect": "Allow",
       "Action": [
@@ -184,6 +206,7 @@
         "cloudfront:ListOriginAccessControls",
         "cloudfront:ListResponseHeadersPolicies",
         "cloudwatch:ListDashboards",
+        "dynamodb:ListTables",
         "route53:ListHostedZones",
         "s3:ListAllMyBuckets",
         "sns:ListSubscriptions",
