@@ -3166,91 +3166,90 @@ html[data-device='phone'] body {
   flex: 1;
 }
 
-/* Sideways phone: the same shape as a laptop, with the tools in a rail on the right. */
-@media (orientation: landscape) {
-  .turn-tip {
-    display: none;
-  }
-  [data-device='phone'] .level-screen,
-  [data-device='phone'] .playground-screen {
-    grid-template-columns: minmax(0, 1fr) auto;
-    grid-template-rows: auto minmax(0, 1fr);
-  }
-  [data-device='phone'] .level-screen > .topbar,
-  [data-device='phone'] .playground-screen > .topbar {
-    grid-column: 1 / -1;
-    min-height: 0;
-    padding: 4px calc(10px + env(safe-area-inset-right)) 4px calc(10px + env(safe-area-inset-left));
-  }
-  [data-device='phone'] .phone-bar {
-    grid-template-columns: none;
-    grid-auto-rows: 1fr;
-    width: calc(104px + env(safe-area-inset-right));
-    padding: 8px calc(8px + env(safe-area-inset-right)) calc(8px + env(safe-area-inset-bottom)) 8px;
-    border-top: none;
-    border-left: 2px solid var(--paper-2);
-  }
-  [data-device='phone'] .phone-tab {
-    flex-direction: column;
-    gap: 0;
-    min-height: 0;
-    font-size: 14px;
-  }
-  [data-device='phone'] .phone-bar .btn-run {
-    min-height: 0;
-    font-size: 17px;
-    white-space: normal;
-  }
-  [data-device='phone'] .mission-bar {
-    top: 6px;
-    left: 6px;
-    right: auto;
-    width: min(480px, calc(100% - 72px));
-    padding: 4px 10px 4px 4px;
-  }
-  [data-device='phone'] .mission-bar .sparky {
-    width: 34px;
-    height: 34px;
-  }
-  [data-device='phone'] .mission-bar-body {
-    grid-template-columns: minmax(0, 1fr) auto;
-    align-items: center;
-  }
-  [data-device='phone'] .mission-bar-text {
-    -webkit-line-clamp: 1;
-  }
-  [data-device='phone'] .canvas .react-flow__controls {
-    margin-top: 15px;
-  }
-  /* Sideways, a sheet slides in beside the tool rail so the map stays in view. */
-  [data-device='phone'] .sheet {
-    top: 0;
-    left: auto;
-    width: min(400px, 60%);
-    max-height: none;
-    border-radius: var(--r-lg) 0 0 var(--r-lg);
-    box-shadow: -8px 0 24px rgba(38, 48, 67, 0.16);
-    animation-name: sheet-in;
-  }
-  [data-device='phone'] .sheet-backdrop {
-    background: rgba(38, 48, 67, 0.1);
-  }
-  [data-device='phone'] .sheet .dock-wrap-lg {
-    grid-template-columns: repeat(auto-fill, minmax(84px, 1fr));
-    gap: 12px 8px;
-  }
-  [data-device='phone'] .sheet .dock-lg {
-    padding: 6px 4px;
-  }
-  [data-device='phone'] .sheet .dock-lg img {
-    width: 38px;
-    height: 38px;
-  }
-  [data-device='phone'] .phone-info {
-    left: auto;
-    width: min(380px, calc(100% - 16px));
-    max-height: calc(100% - 64px);
-  }
+/* Sideways phone (data-sideways, set by src/device.ts): the same shape as a laptop, with the tools in a rail on the
+   right. */
+[data-sideways] .turn-tip {
+  display: none;
+}
+[data-sideways] .level-screen,
+[data-sideways] .playground-screen {
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-rows: auto minmax(0, 1fr);
+}
+[data-sideways] .level-screen > .topbar,
+[data-sideways] .playground-screen > .topbar {
+  grid-column: 1 / -1;
+  min-height: 0;
+  padding: 4px calc(10px + env(safe-area-inset-right)) 4px calc(10px + env(safe-area-inset-left));
+}
+[data-sideways] .phone-bar {
+  grid-template-columns: none;
+  grid-auto-rows: 1fr;
+  width: calc(104px + env(safe-area-inset-right));
+  padding: 8px calc(8px + env(safe-area-inset-right)) calc(8px + env(safe-area-inset-bottom)) 8px;
+  border-top: none;
+  border-left: 2px solid var(--paper-2);
+}
+[data-sideways] .phone-tab {
+  flex-direction: column;
+  gap: 0;
+  min-height: 0;
+  font-size: 14px;
+}
+[data-sideways] .phone-bar .btn-run {
+  min-height: 0;
+  font-size: 17px;
+  white-space: normal;
+}
+[data-sideways] .mission-bar {
+  top: 6px;
+  left: 6px;
+  right: auto;
+  width: min(480px, calc(100% - 72px));
+  padding: 4px 10px 4px 4px;
+}
+[data-sideways] .mission-bar .sparky {
+  width: 34px;
+  height: 34px;
+}
+[data-sideways] .mission-bar-body {
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+}
+[data-sideways] .mission-bar-text {
+  -webkit-line-clamp: 1;
+}
+[data-sideways] .canvas .react-flow__controls {
+  margin-top: 15px;
+}
+/* Sideways, a sheet slides in beside the tool rail so the map stays in view. */
+[data-sideways] .sheet {
+  top: 0;
+  left: auto;
+  width: min(400px, 60%);
+  max-height: none;
+  border-radius: var(--r-lg) 0 0 var(--r-lg);
+  box-shadow: -8px 0 24px rgba(38, 48, 67, 0.16);
+  animation-name: sheet-in;
+}
+[data-sideways] .sheet-backdrop {
+  background: rgba(38, 48, 67, 0.1);
+}
+[data-sideways] .sheet .dock-wrap-lg {
+  grid-template-columns: repeat(auto-fill, minmax(84px, 1fr));
+  gap: 12px 8px;
+}
+[data-sideways] .sheet .dock-lg {
+  padding: 6px 4px;
+}
+[data-sideways] .sheet .dock-lg img {
+  width: 38px;
+  height: 38px;
+}
+[data-sideways] .phone-info {
+  left: auto;
+  width: min(380px, calc(100% - 16px));
+  max-height: calc(100% - 64px);
 }
 
 @media (prefers-reduced-motion: reduce) {

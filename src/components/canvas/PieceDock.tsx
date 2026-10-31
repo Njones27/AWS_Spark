@@ -69,6 +69,8 @@ function DockItem({
         onPointerMove={move}
         onPointerUp={up}
         onPointerCancel={cancel}
+        // The browser can stop tracking a drag without a pointercancel; end the drag so a hidden tray comes back.
+        onLostPointerCapture={cancel}
         // Keyboard activation (pointer clicks are handled on pointer-up).
         onClick={(e) => e.detail === 0 && !empty && onDrop(item.service, null)}
         aria-label={`Add ${def.name}${item.left !== undefined ? `, ${item.left} left` : ''}`}

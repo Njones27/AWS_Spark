@@ -100,6 +100,11 @@ function PlaygroundInner({ share, shareId }: { share?: string; shareId?: string 
   const phone = useDevice().device === 'phone';
   const [piecesOpen, setPiecesOpen] = useState(false);
   const [dragging, setDragging] = useState(false);
+  // The sheet belongs to the phone layout; don't bring it back after a trip to the laptop layout.
+  useEffect(() => {
+    setPiecesOpen(false);
+    setDragging(false);
+  }, [phone]);
   const drop = useDropPiece(d.setNodes, PLAY_CLOUD);
 
   // Save (debounced) whenever the diagram, plan, or goal changes.
@@ -195,7 +200,13 @@ function PlaygroundInner({ share, shareId }: { share?: string; shareId?: string 
     setShowPlan(true);
   };
   const runButton = (
-    <button className={`btn btn-run ${running ? 'is-stop' : ''}`} onClick={() => setRunning((r) => !r)}>
+    <button
+      className={`btn btn-run ${running ? 'is-stop' : ''}`}
+      onClick={() => {
+        setPiecesOpen(false);
+        setRunning((r) => !r);
+      }}
+    >
       {running ? '■ Stop' : '▶ Run'}
     </button>
   );

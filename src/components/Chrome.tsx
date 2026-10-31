@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { useRef, useState, type ReactNode } from 'react';
 import { BANDS } from '../data/text';
 import { setLayoutChoice, useDevice } from '../device';
 import { go, href } from '../router';
@@ -6,6 +6,7 @@ import type { Band } from '../data/types';
 import { useApp, useBand } from '../store';
 import { Sparky } from './art/Sparky';
 import { PhoneMenu } from './PhoneChrome';
+import { useDismiss } from './useDismiss';
 
 export function TopBar({
   back,
@@ -63,12 +64,7 @@ export function BandSwitch() {
   const setBand = useApp((s) => s.setBand);
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    if (!open) return;
-    const close = (e: PointerEvent) => !ref.current?.contains(e.target as Node) && setOpen(false);
-    window.addEventListener('pointerdown', close);
-    return () => window.removeEventListener('pointerdown', close);
-  }, [open]);
+  useDismiss(ref, open, () => setOpen(false));
   const cur = BANDS.find((b) => b.id === band)!;
   return (
     <div className="band-switch" ref={ref}>

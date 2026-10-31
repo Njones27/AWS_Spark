@@ -1,16 +1,12 @@
-import { useEffect, useRef, useState, type MouseEvent, type ReactNode } from 'react';
+import { useRef, useState, type MouseEvent, type ReactNode } from 'react';
 import { setLayoutChoice } from '../device';
+import { useDismiss } from './useDismiss';
 
 /** The phone top bar's "⋯" menu: the buttons a laptop shows in the top bar, plus a way back to the laptop layout. */
 export function PhoneMenu({ children }: { children?: ReactNode }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    if (!open) return;
-    const close = (e: PointerEvent) => !ref.current?.contains(e.target as Node) && setOpen(false);
-    window.addEventListener('pointerdown', close);
-    return () => window.removeEventListener('pointerdown', close);
-  }, [open]);
+  useDismiss(ref, open, () => setOpen(false));
   // Picking an item closes the menu; opening a submenu (the level switch) keeps it open.
   const pick = (e: MouseEvent) => {
     if ((e.target as Element).closest('a, button:not([aria-haspopup])')) setOpen(false);
@@ -61,7 +57,13 @@ export function Sheet({
         {/* A close button rather than a drag handle: swiping down on a phone page pulls to refresh. */}
         <header className="sheet-head">
           <h2>{title}</h2>
-          <button className="btn btn-ghost btn-icon sheet-close" aria-label={`Close ${title}`} onClick={onClose}>
+          {/* Focus starts here, so Escape and screen readers land in the sheet. */}
+          <button
+            className="btn btn-ghost btn-icon sheet-close"
+            aria-label={`Close ${title}`}
+            onClick={onClose}
+            autoFocus
+          >
             <span aria-hidden="true">✕</span>
           </button>
           {hint && <p>{hint}</p>}

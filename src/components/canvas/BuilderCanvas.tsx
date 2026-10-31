@@ -86,24 +86,17 @@ export function BuilderCanvas({
   children,
 }: Props) {
   const band = useBand();
-  const phone = useDevice().device === 'phone';
-  const sideways = phone && matchMedia('(orientation: landscape)').matches;
+  const { device, sideways } = useDevice();
+  const phone = device === 'phone';
   const { getNode, getEdges, getInternalNode, flowToScreenPosition, fitView } = useReactFlow<AppNode, AppEdge>();
-  // Turning a phone changes the map's shape completely, so fit the map again.
+  // Turning a phone changes the map's shape completely, so fit the map again (the first fit happens on mount).
+  const shape = useRef(sideways);
   useEffect(() => {
-    if (!phone) return;
-    const wide = matchMedia('(orientation: landscape)');
-    let timer = 0;
-    const refit = () => {
-      window.clearTimeout(timer);
-      timer = window.setTimeout(() => fitView({ padding: wide.matches ? PHONE_WIDE_FIT : PHONE_FIT, duration: 200 }), 150);
-    };
-    wide.addEventListener('change', refit);
-    return () => {
-      window.clearTimeout(timer);
-      wide.removeEventListener('change', refit);
-    };
-  }, [phone, fitView]);
+    if (!phone || shape.current === sideways) return;
+    shape.current = sideways;
+    const timer = window.setTimeout(() => fitView({ padding: sideways ? PHONE_WIDE_FIT : PHONE_FIT, duration: 200 }), 150);
+    return () => window.clearTimeout(timer);
+  }, [phone, sideways, fitView]);
   const wrap = useRef<HTMLDivElement>(null);
   const [bubble, setBubble] = useState<Bubble | null>(null);
   const [wiggleId, setWiggleId] = useState<string | null>(null);

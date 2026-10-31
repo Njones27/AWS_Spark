@@ -83,6 +83,11 @@ function LevelInner({ level }: { level: Level }) {
   const phone = useDevice().device === 'phone';
   const [sheet, setSheet] = useState<'mission' | 'pieces' | null>(null);
   const [dragging, setDragging] = useState(false);
+  // Sheets belong to the phone layout; don't bring one back after a trip to the laptop layout.
+  useEffect(() => {
+    setSheet(null);
+    setDragging(false);
+  }, [phone]);
   const raf = useRef(0);
   const timer = useRef(0);
 
@@ -116,6 +121,7 @@ function LevelInner({ level }: { level: Level }) {
 
   const run = () => {
     setSelected(null);
+    setSheet(null);
     setPhase('running');
     const g = toSim(d.nodes, d.edges);
     const t0 = performance.now();
@@ -334,10 +340,12 @@ function LevelInner({ level }: { level: Level }) {
         >
           {phone ? (
             <>
-              <button className={`mission-bar mission-${sparkyMood}`} onClick={() => toggle('mission')} aria-live="polite">
+              <button className={`mission-bar mission-${sparkyMood}`} onClick={() => toggle('mission')}>
                 <Sparky mood={sparkyMood} size={44} bob={false} />
                 <span className="mission-bar-body">
-                  <span className="mission-bar-text">{sparkyText}</span>
+                  <span className="mission-bar-text" aria-live="polite">
+                    {sparkyText}
+                  </span>
                   <span className="mission-bar-meta">
                     <span>
                       Goals {goalsMet} of {goalsTotal}
