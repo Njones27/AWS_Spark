@@ -109,6 +109,30 @@ export function SidePanel({
   const style = { '--panel-w': `${saved.width}px` } as CSSProperties;
   return (
     <div className={`side-panel ${saved.open ? '' : 'is-closed'} ${dragging ? 'is-resizing' : ''}`} style={style}>
+      {/* The show/hide button heads the panel, where it stays put whether the panel is open or folded to a rail. */}
+      <div className="panel-head">
+        <button
+          type="button"
+          className="panel-toggle"
+          aria-controls={panelId}
+          aria-expanded={saved.open}
+          aria-label={saved.open ? `Hide ${label}` : `Show ${label}`}
+          title={saved.open ? `Hide ${label}` : `Show ${label}`}
+          onClick={toggle}
+        >
+          <SidebarIcon />
+          {!saved.open && (
+            <span className="panel-toggle-label" aria-hidden="true">
+              {label}
+            </span>
+          )}
+        </button>
+        {saved.open && (
+          <span className="panel-title" aria-hidden="true">
+            {label}
+          </span>
+        )}
+      </div>
       <aside id={panelId} className={className} aria-label={label}>
         {children}
       </aside>
@@ -131,22 +155,6 @@ export function SidePanel({
           onKeyDown={onKeyDown}
         />
       )}
-      <button
-        type="button"
-        className="panel-toggle"
-        aria-controls={panelId}
-        aria-expanded={saved.open}
-        title={saved.open ? `Hide ${label.toLowerCase()}` : `Show ${label.toLowerCase()}`}
-        onClick={toggle}
-      >
-        <SidebarIcon />
-        {!saved.open && (
-          <span className="panel-toggle-label" aria-hidden="true">
-            {label}
-          </span>
-        )}
-        <span className="sr-only">{saved.open ? `Hide ${label}` : `Show ${label}`}</span>
-      </button>
     </div>
   );
 }
