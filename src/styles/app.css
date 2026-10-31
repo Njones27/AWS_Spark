@@ -267,7 +267,8 @@ img {
   z-index: 60;
   animation: fade 0.25s ease;
 }
-/* Story and win cards cover the map (its panels go up to 21) but stay under the top bar (30), whose menus open over them. */
+/* Story and win cards cover the map (its panels go up to 21) but stay under the side panel (26), whose show/hide button
+   sits on the map's edge, and the top bar (30), whose menus open over them. */
 .modal-backdrop.in-canvas {
   position: absolute;
   z-index: 25;
@@ -712,7 +713,7 @@ img {
    window, so shrinking the window shrinks the panel along with the map. */
 .side-panel {
   position: relative;
-  z-index: 20;
+  z-index: 26;
   display: grid;
   grid-template-columns: minmax(0, 1fr);
   grid-template-rows: minmax(0, 1fr);
@@ -767,20 +768,22 @@ img {
 .panel-toggle {
   position: absolute;
   top: 12px;
-  right: -14px;
-  width: 28px;
-  height: 28px;
+  right: -16px;
+  width: 32px;
+  height: 32px;
   display: grid;
   place-items: center;
   padding: 0;
   border: 2px solid var(--paper-2);
-  border-radius: 50%;
+  border-radius: 10px;
   background: var(--card);
   color: var(--ink-soft);
-  font-size: 18px;
-  line-height: 1;
   box-shadow: var(--shadow-sm);
   cursor: pointer;
+}
+.panel-toggle svg {
+  width: 18px;
+  height: 18px;
 }
 .panel-toggle:hover {
   color: var(--ink);
