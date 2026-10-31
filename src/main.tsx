@@ -6,6 +6,7 @@ import './styles/app.css';
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { App } from './App';
+import { startDeviceWatch } from './device';
 import { appSync } from './sync';
 
 // After a deploy, a tab opened earlier can ask for a file that is gone. Reload once to get the new version.
@@ -38,6 +39,9 @@ window.addEventListener(
 
 // Progress syncs to the student's Builder Key in the background. The app never waits for it.
 appSync.start();
+
+// Tags <html> with data-device="phone" or "laptop" before the first paint.
+startDeviceWatch();
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

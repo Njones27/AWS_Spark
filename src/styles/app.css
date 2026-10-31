@@ -295,6 +295,9 @@ img {
 
 .band-picker {
   max-width: 1080px;
+  /* Scroll inside the card rather than run off a short screen. */
+  max-height: calc(100dvh - 32px);
+  overflow-y: auto;
   text-align: center;
 }
 .band-picker .sparky {
@@ -2739,5 +2742,529 @@ img {
     clip-path: inset(50%);
     white-space: nowrap;
     padding: 0;
+  }
+}
+
+/* ── phone layout ────────────────────────────────────────── */
+/* Everything here applies only under html[data-device='phone'] (set by src/device.ts) or to elements that only the
+   phone layout renders, so the laptop layout never changes. */
+.btn-icon {
+  flex: none;
+  width: var(--tap);
+  padding: 0;
+  justify-content: center;
+  font-size: 20px;
+}
+[data-device='phone'] .topbar {
+  gap: 8px;
+  padding: 8px 10px;
+  min-height: 60px;
+}
+[data-device='phone'] .topbar-title {
+  font-size: 18px;
+  line-height: 1.15;
+}
+[data-device='phone'] .topbar-title small {
+  display: block;
+  margin: 0;
+  font-size: 11px;
+}
+
+.phone-menu {
+  position: relative;
+  flex: none;
+}
+.phone-menu-list {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 8px);
+  width: min(300px, calc(100vw - 20px));
+  max-height: calc(100dvh - 90px);
+  overflow-y: auto;
+  display: grid;
+  gap: 2px;
+  padding: 8px;
+  background: var(--card);
+  border-radius: var(--r-md);
+  box-shadow: var(--shadow-lg);
+  z-index: 40;
+  animation: pop 0.2s var(--ease-bounce);
+}
+.phone-menu-list > .btn,
+.phone-menu-list .band-switch > .btn {
+  width: 100%;
+  justify-content: flex-start;
+  border-color: transparent;
+  box-shadow: none;
+}
+.phone-menu-list > .btn-primary {
+  justify-content: center;
+}
+[data-device='phone'] .phone-menu-list .btn-label,
+[data-device='phone'] .phone-menu-list .band-grades {
+  display: inline;
+}
+.phone-menu-list .band-menu {
+  position: static;
+  width: auto;
+  padding: 4px 0 0;
+  box-shadow: none;
+  animation: none;
+}
+.phone-menu-list .phone-menu-layout {
+  margin-top: 4px;
+  border-top: 1px solid var(--paper-2);
+  border-radius: 0 0 var(--r-sm) var(--r-sm);
+  color: var(--ink-soft);
+  font-weight: 500;
+}
+
+/* level screen: the map fills the screen, the story and the tray live in sheets */
+[data-device='phone'] .level-screen,
+[data-device='phone'] .playground-screen {
+  grid-template-rows: auto minmax(0, 1fr) auto;
+}
+[data-device='phone'] .play-body,
+[data-device='phone'] .level-body {
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: minmax(0, 1fr);
+}
+/* Clear of the mission bar, which only the level screen has. */
+[data-device='phone'] .level-screen .canvas .react-flow__controls {
+  margin-top: 104px;
+}
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+.mission-bar {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  right: 8px;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px 6px 6px;
+  border: none;
+  border-radius: 20px;
+  background: var(--card);
+  box-shadow: var(--shadow-md);
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.mission-bar .sparky {
+  flex: none;
+}
+.mission-worried {
+  background: var(--bad-soft);
+}
+.mission-cheer {
+  background: var(--ok-soft);
+}
+.mission-bar-body {
+  flex: 1;
+  min-width: 0;
+  display: grid;
+  gap: 4px;
+}
+.mission-bar-text {
+  font-size: 14px;
+  line-height: 1.3;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.mission-bar-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 600;
+}
+.mission-bar-meta span {
+  padding: 2px 8px;
+  border-radius: 99px;
+  background: var(--paper-2);
+}
+.mission-bar-meta .is-ok {
+  background: var(--ok-soft);
+  color: #1f6e4c;
+}
+.mission-bar-meta .is-bad {
+  background: var(--bad-soft);
+  color: #a3262b;
+}
+[data-device='phone'] .canvas-dock-right {
+  left: 8px;
+  right: 8px;
+  bottom: 8px;
+  max-width: none;
+}
+[data-device='phone'] .run-summary {
+  max-width: none;
+  width: 100%;
+}
+.phone-info {
+  position: absolute;
+  left: 8px;
+  right: 8px;
+  bottom: 8px;
+  z-index: 10;
+  max-height: 55%;
+  overflow-y: auto;
+  border-radius: var(--r-lg);
+}
+
+.sheet-backdrop {
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+  background: rgba(38, 48, 67, 0.22);
+  animation: fade 0.2s ease;
+}
+.sheet {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 21;
+  max-height: calc(100% - 24px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 0 14px 14px;
+  background: var(--card);
+  border-radius: var(--r-lg) var(--r-lg) 0 0;
+  box-shadow: 0 -8px 24px rgba(38, 48, 67, 0.16);
+  animation: sheet-up 0.25s var(--ease-out);
+}
+/* While a piece is dragged out of the sheet, the sheet steps aside so the piece can land anywhere on the map. */
+.sheet.is-hidden,
+.sheet-backdrop.is-hidden {
+  visibility: hidden;
+}
+@keyframes sheet-in {
+  from {
+    transform: translateX(40px);
+    opacity: 0;
+  }
+}
+@keyframes sheet-up {
+  from {
+    transform: translateY(40px);
+    opacity: 0;
+  }
+}
+.sheet-head {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  column-gap: 8px;
+  padding: 10px 0 8px;
+  background: var(--card);
+}
+.sheet-head h2 {
+  font-size: 19px;
+}
+.sheet-head p {
+  grid-column: 1 / -1;
+  font-size: 13px;
+  color: var(--ink-soft);
+}
+.sheet-close {
+  font-size: 16px;
+}
+.sheet-body {
+  margin-top: 4px;
+}
+/* Swiping down on the page would pull to refresh and lose the student's map. */
+html[data-device='phone'],
+html[data-device='phone'] body {
+  overscroll-behavior: none;
+}
+.sheet .dock-wrap-lg {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
+  gap: 14px 10px;
+  padding-top: 8px;
+}
+.sheet .dock-wrap-sm {
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 6px;
+}
+.catalog-sheet {
+  display: grid;
+  gap: 12px;
+}
+/* As in the laptop catalog: a vertical swipe scrolls the sheet, a sideways drag pulls a piece onto the map. */
+.catalog-sheet .dock-item {
+  touch-action: pan-y;
+}
+.sheet .dock-lg {
+  width: auto;
+}
+.story-sheet {
+  display: grid;
+  gap: 14px;
+}
+
+.phone-bar {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1.2fr;
+  gap: 8px;
+  padding: 8px 10px calc(10px + env(safe-area-inset-bottom));
+  background: var(--card);
+  border-top: 2px solid var(--paper-2);
+}
+.phone-tab {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 56px;
+  border: 2px solid var(--paper-3);
+  border-radius: 16px;
+  background: var(--card);
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 16px;
+  color: var(--ink);
+  cursor: pointer;
+}
+.phone-bar[inert] .phone-tab {
+  opacity: 0.45;
+}
+.phone-tab[aria-pressed='true'] {
+  border-color: var(--ink);
+  background: var(--paper-2);
+}
+.phone-tab-count {
+  position: absolute;
+  top: -8px;
+  right: -4px;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 6px;
+  display: grid;
+  place-items: center;
+  border-radius: 99px;
+  background: var(--ink);
+  color: #fff;
+  font-size: 12px;
+}
+.phone-bar .btn-run {
+  min-width: 0;
+  min-height: 56px;
+  padding: 0 10px;
+  border-radius: 16px;
+  font-size: 19px;
+}
+.phone-bar .btn-run.is-stop {
+  font-size: 15px;
+}
+
+/* Story and win cards sit inside the map, which is short on a phone: let them scroll rather than clip. */
+[data-device='phone'] .modal-backdrop.in-canvas {
+  padding: 8px;
+}
+[data-device='phone'] .modal-backdrop.in-canvas .modal {
+  max-height: 100%;
+  overflow-y: auto;
+  padding: 18px 18px;
+}
+[data-device='phone'] .story-card h2 {
+  font-size: 26px;
+}
+
+/* "Who's building today?": on phones and small windows, a short list of rows that fits one screen instead of four
+   tall cards. Every phone matches this (see PHONE_QUERY in src/device.ts); a laptop window this small would overflow. */
+@media (max-width: 760px), (max-height: 600px) {
+  .band-picker {
+    padding: 18px 14px;
+  }
+  .band-picker .sparky {
+    width: 64px;
+    height: 54px;
+  }
+  .band-picker h2 {
+    font-size: 24px;
+    margin: 2px 0 4px;
+  }
+  .band-picker > .muted {
+    font-size: 14px;
+  }
+  .band-cards {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 8px;
+    margin-top: 14px;
+  }
+  .band-card {
+    display: grid;
+    grid-template-columns: 40px minmax(0, 1fr) auto;
+    grid-template-areas:
+      'icon name grades'
+      'icon tag tag';
+    align-items: center;
+    gap: 2px 12px;
+    padding: 10px 14px;
+    text-align: left;
+  }
+  .band-card-icon {
+    grid-area: icon;
+    font-size: 30px;
+  }
+  .band-card strong {
+    grid-area: name;
+    font-size: 19px;
+  }
+  .band-card em {
+    grid-area: grades;
+    font-size: 13px;
+  }
+  .band-card > small {
+    grid-area: tag;
+  }
+  .band-card-sample {
+    display: none;
+  }
+}
+
+/* Bigger names and connect dots, so pieces stay readable and grabbable at a phone's zoom. */
+[data-device='phone'] .piece-name {
+  font-size: 22px;
+}
+[data-device='phone'] .piece-sub {
+  display: none;
+}
+[data-device='phone'] .react-flow__handle.nub {
+  width: 46px;
+  height: 46px;
+}
+[data-device='phone'] .nub-plus {
+  font-size: 28px;
+}
+
+.turn-tip {
+  position: absolute;
+  left: 8px;
+  right: 8px;
+  bottom: 8px;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 6px 6px 12px;
+  background: var(--card);
+  border-radius: var(--r-md);
+  box-shadow: var(--shadow-md);
+  font-size: 14px;
+}
+.turn-tip > span:nth-child(2) {
+  flex: 1;
+}
+
+/* Sideways phone (data-sideways, set by src/device.ts): the same shape as a laptop, with the tools in a rail on the
+   right. */
+[data-sideways] .turn-tip {
+  display: none;
+}
+[data-sideways] .level-screen,
+[data-sideways] .playground-screen {
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-rows: auto minmax(0, 1fr);
+}
+[data-sideways] .level-screen > .topbar,
+[data-sideways] .playground-screen > .topbar {
+  grid-column: 1 / -1;
+  min-height: 0;
+  padding: 4px calc(10px + env(safe-area-inset-right)) 4px calc(10px + env(safe-area-inset-left));
+}
+[data-sideways] .phone-bar {
+  grid-template-columns: none;
+  grid-auto-rows: 1fr;
+  width: calc(104px + env(safe-area-inset-right));
+  padding: 8px calc(8px + env(safe-area-inset-right)) calc(8px + env(safe-area-inset-bottom)) 8px;
+  border-top: none;
+  border-left: 2px solid var(--paper-2);
+}
+[data-sideways] .phone-tab {
+  flex-direction: column;
+  gap: 0;
+  min-height: 0;
+  font-size: 14px;
+}
+[data-sideways] .phone-bar .btn-run {
+  min-height: 0;
+  font-size: 17px;
+  white-space: normal;
+}
+[data-sideways] .mission-bar {
+  top: 6px;
+  left: 6px;
+  right: auto;
+  width: min(480px, calc(100% - 72px));
+  padding: 4px 10px 4px 4px;
+}
+[data-sideways] .mission-bar .sparky {
+  width: 34px;
+  height: 34px;
+}
+[data-sideways] .mission-bar-body {
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+}
+[data-sideways] .mission-bar-text {
+  -webkit-line-clamp: 1;
+}
+[data-sideways] .level-screen .canvas .react-flow__controls {
+  margin-top: 15px;
+}
+/* Sideways, a sheet slides in beside the tool rail so the map stays in view. */
+[data-sideways] .sheet {
+  top: 0;
+  left: auto;
+  width: min(400px, 60%);
+  max-height: none;
+  border-radius: var(--r-lg) 0 0 var(--r-lg);
+  box-shadow: -8px 0 24px rgba(38, 48, 67, 0.16);
+  animation-name: sheet-in;
+}
+[data-sideways] .sheet-backdrop {
+  background: rgba(38, 48, 67, 0.1);
+}
+[data-sideways] .sheet .dock-wrap-lg {
+  grid-template-columns: repeat(auto-fill, minmax(84px, 1fr));
+  gap: 12px 8px;
+}
+[data-sideways] .sheet .dock-lg {
+  padding: 6px 4px;
+}
+[data-sideways] .sheet .dock-lg img {
+  width: 38px;
+  height: 38px;
+}
+[data-sideways] .phone-info {
+  left: auto;
+  width: min(380px, calc(100% - 16px));
+  max-height: calc(100% - 64px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sheet,
+  .sheet-backdrop,
+  .phone-menu-list {
+    animation: none;
   }
 }

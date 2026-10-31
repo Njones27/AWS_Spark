@@ -13,11 +13,12 @@ import {
   type OnEdgesChange,
   type OnNodesChange,
 } from '@xyflow/react';
-import { useCallback, useMemo, useRef, useState, type Dispatch, type ReactNode, type SetStateAction } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type Dispatch, type ReactNode, type SetStateAction } from 'react';
 import { ServiceChip } from '../ServiceTip';
 import type { ServiceId } from '../../data/types';
 import { badgesFor } from '../../engine/badges';
 import { checkConnection } from '../../engine/validate';
+import { useDevice } from '../../device';
 import { useBand } from '../../store';
 import { CloudZone, TownZone } from '../art/Scenery';
 import { Sparky } from '../art/Sparky';
@@ -41,6 +42,12 @@ const nodeTypes = {
   town: ({ data }: NodeProps<ZoneNode>) => <TownZone width={data.width} height={data.height} />,
 };
 const edgeTypes = { flow: FlowEdge };
+
+// Room around the map when it first fits the screen: the laptop keeps clear of the zoom buttons and the tray; a phone
+// keeps clear of the mission bar along the top (one line when the phone is sideways).
+const LAPTOP_FIT = { top: '16px', left: '16px', right: '64px', bottom: '120px' } as const;
+const PHONE_FIT = { top: '96px', left: '8px', right: '8px', bottom: '12px' } as const;
+const PHONE_WIDE_FIT = { top: '56px', left: '8px', right: '56px', bottom: '8px' } as const;
 
 interface Bubble {
   title: string;
@@ -79,7 +86,19 @@ export function BuilderCanvas({
   children,
 }: Props) {
   const band = useBand();
-  const { getNode, getEdges, getInternalNode, flowToScreenPosition } = useReactFlow<AppNode, AppEdge>();
+  const { device, sideways } = useDevice();
+  const phone = device === 'phone';
+  const { getNode, getEdges, getInternalNode, flowToScreenPosition, fitView } = useReactFlow<AppNode, AppEdge>();
+  // Turning a phone, or switching between the phone and laptop layouts, changes the map's shape completely, so fit the
+  // map again (the first fit happens on mount).
+  const padding = sideways ? PHONE_WIDE_FIT : phone ? PHONE_FIT : LAPTOP_FIT;
+  const shape = useRef(padding);
+  useEffect(() => {
+    if (shape.current === padding) return;
+    shape.current = padding;
+    const timer = window.setTimeout(() => fitView({ padding, duration: 200 }), 150);
+    return () => window.clearTimeout(timer);
+  }, [padding, fitView]);
   const wrap = useRef<HTMLDivElement>(null);
   const [bubble, setBubble] = useState<Bubble | null>(null);
   const [wiggleId, setWiggleId] = useState<string | null>(null);
@@ -237,7 +256,7 @@ export function BuilderCanvas({
             onEdgesDelete={() => onStructureChange?.()}
             onMoveStart={() => setBubble(null)}
             fitView
-            fitViewOptions={{ padding: { top: '16px', left: '16px', right: '64px', bottom: '120px' } }}
+            fitViewOptions={{ padding }}
             minZoom={0.3}
             maxZoom={1.8}
             connectionRadius={44}

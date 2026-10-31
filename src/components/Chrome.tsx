@@ -1,9 +1,12 @@
-import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { useRef, useState, type ReactNode } from 'react';
 import { BANDS } from '../data/text';
+import { setLayoutChoice, useDevice } from '../device';
 import { go, href } from '../router';
 import type { Band } from '../data/types';
 import { useApp, useBand } from '../store';
 import { Sparky } from './art/Sparky';
+import { PhoneMenu } from './PhoneChrome';
+import { useDismiss } from './useDismiss';
 
 export function TopBar({
   back,
@@ -16,6 +19,23 @@ export function TopBar({
   children?: ReactNode;
   hideBand?: boolean;
 }) {
+  const { device, phoneScreen } = useDevice();
+  if (device === 'phone') {
+    return (
+      <header className="topbar">
+        {back && (
+          <a className="btn btn-ghost btn-icon" href={back.href} aria-label={back.label}>
+            <span aria-hidden="true">←</span>
+          </a>
+        )}
+        <div className="topbar-title">{title}</div>
+        <PhoneMenu>
+          {children}
+          {!hideBand && <BandSwitch />}
+        </PhoneMenu>
+      </header>
+    );
+  }
   return (
     <header className="topbar">
       {back && (
@@ -27,6 +47,11 @@ export function TopBar({
       <div className="topbar-actions">
         {children}
         {!hideBand && <BandSwitch />}
+        {phoneScreen && (
+          <button className="btn btn-chip" onClick={() => setLayoutChoice('auto')}>
+            <span aria-hidden="true">📱</span> Phone layout
+          </button>
+        )}
       </div>
     </header>
   );
@@ -39,12 +64,7 @@ export function BandSwitch() {
   const setBand = useApp((s) => s.setBand);
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    if (!open) return;
-    const close = (e: PointerEvent) => !ref.current?.contains(e.target as Node) && setOpen(false);
-    window.addEventListener('pointerdown', close);
-    return () => window.removeEventListener('pointerdown', close);
-  }, [open]);
+  useDismiss(ref, open, () => setOpen(false));
   const cur = BANDS.find((b) => b.id === band)!;
   return (
     <div className="band-switch" ref={ref}>
