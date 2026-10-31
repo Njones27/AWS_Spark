@@ -26,6 +26,16 @@ function shownWidth(handle: HTMLElement) {
   return handle.parentElement?.getBoundingClientRect().width ?? MIN;
 }
 
+/** A window with a strip down its left side: the usual "show or hide the sidebar" picture. */
+function SidebarIcon() {
+  return (
+    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden="true">
+      <rect x="2.5" y="3.5" width="15" height="13" rx="3" />
+      <path d="M7.5 3.5v13" />
+    </svg>
+  );
+}
+
 function clamp(w: number) {
   return Math.round(Math.min(MAX, Math.max(MIN, w)));
 }
@@ -99,6 +109,30 @@ export function SidePanel({
   const style = { '--panel-w': `${saved.width}px` } as CSSProperties;
   return (
     <div className={`side-panel ${saved.open ? '' : 'is-closed'} ${dragging ? 'is-resizing' : ''}`} style={style}>
+      {/* The show/hide button heads the panel, where it stays put whether the panel is open or folded to a rail. */}
+      <div className="panel-head">
+        <button
+          type="button"
+          className="panel-toggle"
+          aria-controls={panelId}
+          aria-expanded={saved.open}
+          aria-label={saved.open ? `Hide ${label}` : `Show ${label}`}
+          title={saved.open ? `Hide ${label}` : `Show ${label}`}
+          onClick={toggle}
+        >
+          <SidebarIcon />
+          {!saved.open && (
+            <span className="panel-toggle-label" aria-hidden="true">
+              {label}
+            </span>
+          )}
+        </button>
+        {saved.open && (
+          <span className="panel-title" aria-hidden="true">
+            {label}
+          </span>
+        )}
+      </div>
       <aside id={panelId} className={className} aria-label={label}>
         {children}
       </aside>
@@ -121,22 +155,6 @@ export function SidePanel({
           onKeyDown={onKeyDown}
         />
       )}
-      <button
-        type="button"
-        className="panel-toggle"
-        aria-controls={panelId}
-        aria-expanded={saved.open}
-        title={saved.open ? `Hide ${label.toLowerCase()}` : `Show ${label.toLowerCase()}`}
-        onClick={toggle}
-      >
-        <span aria-hidden="true">{saved.open ? '‹' : '›'}</span>
-        {!saved.open && (
-          <span className="panel-toggle-label" aria-hidden="true">
-            {label}
-          </span>
-        )}
-        <span className="sr-only">{saved.open ? `Hide ${label}` : `Show ${label}`}</span>
-      </button>
     </div>
   );
 }
