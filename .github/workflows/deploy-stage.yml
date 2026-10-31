@@ -1,4 +1,4 @@
-# Deploys one stage. Called by deploy.yml; everything stage-specific comes from the GitHub environment's
+# Deploys one stage. Called by deploy.yml (main: dev, then prod) and ci.yml (open PRs: dev only); everything stage-specific comes from the GitHub environment's
 # variables (set them with the commands script/setup_initial.sh prints, see infra/README.md):
 #   AWS_DEPLOY_ROLE_ARN, AWS_REGION, AWS_ACCOUNT_ID, APP_CONFIG
 name: Deploy stage

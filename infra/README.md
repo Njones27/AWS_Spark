@@ -178,11 +178,12 @@ In the repo, open **Settings → Environments** and create `dev` and `prod`. Giv
 | `AWS_ACCOUNT_ID` | `166147842278` (prod: `027729116436`) |
 | `APP_CONFIG` | `config/app-config-dev.json` (prod: `config/app-config-prod.json`; relative to `infra/`) |
 
-On **both** environments, limit **Deployment branches** to `main`. On `prod`, also add **Required
-reviewers** (the owner). Both options are free on public repos, and [Security notes](#security-notes)
-explains why both are needed.
+On `prod`, limit **Deployment branches** to `main` and add **Required reviewers** (the owner). Leave `dev`
+open to all branches, because open PRs deploy there (see [How deploys flow](#how-deploys-flow)). Both options
+are free on public repos, and [Security notes](#security-notes) explains the trade-off.
 
-The role trusts only `repo:Njones27/AWS_Spark:environment:<stage>` with audience `sts.amazonaws.com`.
+The role trusts only `<GitHubSubjectPrefix>:environment:<stage>` with audience `sts.amazonaws.com` (this repo
+uses GitHub's immutable subject, `repo:Njones27@153565100/AWS_Spark@1437703955`).
 It can only assume two bootstrap roles, `cdk-hnb659fds-deploy-role-*` and `cdk-hnb659fds-file-publishing-role-*`
 (the app has no context lookups and no Docker assets, so CI never needs the lookup or image-publishing roles), and
 read two SSM parameters: the bootstrap
@@ -191,9 +192,22 @@ version, and `Spark-<Stage>-DistributionDomain` for the smoke test. Sessions las
 ## How deploys flow
 
 ```
-PR to main ──> ci.yml: npm ci, typecheck:all, test:all, build, cdk synth (account-dev, account-prod, dev, prod). No AWS credentials.
+push to a PR ──> ci.yml ──> verify: typecheck:all, test:all, build, cdk synth (account-dev, account-prod, dev, prod; no AWS credentials)
+                          ──> deploy-dev: deploy the PR to dev, smoke test      (branches of this repo only)
 merge to main ──> deploy.yml ──> dev: deploy, smoke test ──> prod: waits for approval, deploy, smoke test
 ```
+
+- **PRs only ever reach dev.** Each push to an open PR re-runs the checks and, when they pass, deploys that PR
+  to dev so you can try it at the dev URL (GitHub links it on the PR as "deployed to dev"). Prod is reachable
+  only from `main` (`deploy.yml`), after the owner approves the `prod` environment.
+- Dev holds whatever deployed last: the newest PR push, or `main` after a merge. With two PRs open at once,
+  the last one pushed wins until the other is pushed again.
+- Dev deploys from PRs and from `main` share one queue. If a PR push queues behind a running dev deploy while a
+  merge-to-main dev deploy is also waiting, GitHub keeps only the newest, so the main run's `dev` job is cancelled
+  and its `prod` job is skipped. Nothing reaches prod; re-run **Actions → Deploy** for that merge.
+- PRs from forks run `verify` only. They get no OIDC token, and their code never runs with AWS credentials.
+- A newer push to the same PR cancels its old checks, but never a deploy that has started (job-level
+  concurrency, see below).
 
 - `deploy.yml` calls `deploy-stage.yml` once per environment. Each stage job uses the concurrency group
   `deploy-<environment>`. Only one deploy per environment runs at a time, none is cancelled half-way, and if
@@ -268,9 +282,11 @@ if it ever writes JSON lines directly.
   [Least-privilege bootstrap](#least-privilege-bootstrap).
 - **One account per stage.** The dev role cannot reach prod at all; the deploy roles never share an account.
 - The controls on the GitHub side still matter, because a deploy can still replace or delete Spark's resources:
-  - Both environments, `dev` and `prod`, accept deployments only from the `main` branch.
+  - `prod` accepts deployments only from `main`, and needs a required reviewer before every deploy.
   - `main` requires a reviewed PR (the `Mainline_shield` ruleset).
-  - `prod` also needs a required reviewer before every deploy.
+  - `dev` accepts any branch of this repo, so open PRs can deploy there. Fork PRs never get credentials. A branch
+    pushed to this repo can therefore change or delete Spark's dev resources, but nothing in the prod account and
+    nothing outside the scoped exec policies. Only people with write access can push branches.
   - Each role trusts exactly one `repo:...:environment:<stage>` subject.
 - **CI cannot rewrite its own trust.** The `Spark-<Stage>-Cicd` and `Spark-Account-GitHubOidc` stacks use
   `CliCredentialsStackSynthesizer`: `setup_initial.sh` deploys them with the admin credentials of the shell, never

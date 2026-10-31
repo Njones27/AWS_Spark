@@ -294,7 +294,7 @@ img {
 }
 
 .band-picker {
-  max-width: 880px;
+  max-width: 1080px;
   text-align: center;
 }
 .band-picker .sparky {
@@ -302,7 +302,7 @@ img {
 }
 .band-cards {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(4, 1fr);
   gap: 14px;
   margin-top: 20px;
 }
@@ -1882,7 +1882,7 @@ img {
     grid-template-columns: 1fr;
   }
   .band-cards {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, 1fr);
   }
   .band-grades {
     display: none;
