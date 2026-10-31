@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { BANDS } from '../data/text';
+import { go, href } from '../router';
 import type { Band } from '../data/types';
 import { useApp, useBand } from '../store';
 import { Sparky } from './art/Sparky';
@@ -111,6 +112,28 @@ export function BandPicker() {
               <small>{b.tagline}</small>
             </button>
           ))}
+          {/* Not a fourth band: college students go to the Advanced Track, which always uses Architect detail. */}
+          <button
+            className="band-card band-college"
+            onClick={() => {
+              setBand('architect');
+              go(href.advanced);
+            }}
+          >
+            <span className="band-card-icon" aria-hidden="true">
+              🎓
+            </span>
+            <strong>College</strong>
+            <em>College & up</em>
+            <span className="band-card-sample">
+              <img src={`${import.meta.env.BASE_URL}icons/s3.svg`} alt="" />
+              <span>
+                <b>Amazon S3</b>
+                <small>Object storage with 11 nines of durability</small>
+              </span>
+            </span>
+            <small>Opens the Advanced Track: real incidents and budgets</small>
+          </button>
         </div>
       </div>
     </div>
