@@ -1,4 +1,7 @@
-# Pull-request checks. No AWS credentials and no context lookups in the CDK app, so PRs from forks are safe.
+# Pull-request pipeline. `verify` runs with no AWS credentials and no context lookups, so PRs from forks are safe.
+# For PRs from branches of this repo, `deploy-dev` then deploys the PR to the dev stage and smoke-tests it, so you
+# can try the change live before merging. Prod is never touched here: only a merge to main (deploy.yml) reaches
+# prod, and only after the owner approves the `prod` environment.
 name: CI
 
 on:
@@ -9,15 +12,16 @@ on:
 permissions:
   contents: read
 
-concurrency:
-  group: ci-${{ github.ref }}
-  cancel-in-progress: true
-
 jobs:
   verify:
     name: Typecheck, test, build, synth
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    # A newer push to the same PR cancels the old checks. This is job-level on purpose: a run-level group would
+    # also cancel a dev deploy half-way through.
+    concurrency:
+      group: ci-verify-${{ github.ref }}
+      cancel-in-progress: true
     steps:
       - uses: actions/checkout@v4
         with:
@@ -48,3 +52,15 @@ jobs:
             npx cdk synth --quiet -c APP_CONFIG="config/app-config-$config.json"
             echo "::endgroup::"
           done
+
+  # Deploys the PR to dev once the checks pass. Skipped for forks (no OIDC token, and their code must never run
+  # with AWS credentials) and for manual runs. Queues behind any other dev deploy (see deploy-stage.yml).
+  deploy-dev:
+    needs: verify
+    if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
+    permissions:
+      id-token: write
+      contents: read
+    uses: ./.github/workflows/deploy-stage.yml
+    with:
+      environment: dev

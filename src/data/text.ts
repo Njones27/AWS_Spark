@@ -6,7 +6,8 @@ export function bt(text: BandText, band: Band): string {
 }
 
 export const BANDS: { id: Band; label: string; grades: string; tagline: string }[] = [
-  { id: 'explorer', label: 'Explorer', grades: 'Grades K–5', tagline: 'Pictures, friendly names, and lots of hints' },
-  { id: 'builder', label: 'Builder', grades: 'Grades 6–8', tagline: 'Friendly names plus the real AWS names' },
-  { id: 'architect', label: 'Architect', grades: 'Grades 9–12', tagline: 'Real AWS names, numbers, and how it works' },
+  // Every band sees the real AWS names. What changes is how things are explained, how numbers show, and how much help there is.
+  { id: 'explorer', label: 'Explorer', grades: 'Grades K–5', tagline: 'Simple words, pictures, and lots of hints' },
+  { id: 'builder', label: 'Builder', grades: 'Grades 6–8', tagline: 'Everyday words and real numbers' },
+  { id: 'architect', label: 'Architect', grades: 'Grades 9–12', tagline: 'Technical details and how it works' },
 ];

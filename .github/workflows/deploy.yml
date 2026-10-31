@@ -1,5 +1,5 @@
-# Every push to main deploys dev, smoke-tests it, then waits for approval on the `prod` environment
-# (required reviewer) and deploys prod. Manual runs can stop after dev.
+# Every push to main (a merged PR) deploys dev, smoke-tests it, then waits for approval on the `prod` environment
+# (required reviewer) and deploys prod. Manual runs can stop after dev. Open PRs deploy to dev only, from ci.yml.
 name: Deploy
 
 on:

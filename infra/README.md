@@ -147,20 +147,34 @@ In the repo, open **Settings → Environments** and create `dev` and `prod`. Giv
 | `AWS_ACCOUNT_ID` | `179326015123` |
 | `APP_CONFIG` | `config/app-config-dev.json` (relative to `infra/`) |
 
-On **both** environments, limit **Deployment branches** to `main`. On `prod`, also add **Required
-reviewers** (the owner). Both options are free on public repos, and [Security notes](#security-notes)
-explains why both are needed.
+On `prod`, limit **Deployment branches** to `main` and add **Required reviewers** (the owner). Leave `dev`
+open to all branches, because open PRs deploy there (see [How deploys flow](#how-deploys-flow)). Both options
+are free on public repos, and [Security notes](#security-notes) explains the trade-off.
 
-The role trusts only `repo:Njones27/AWS_Spark:environment:<stage>` with audience `sts.amazonaws.com`.
+The role trusts only `<GitHubSubjectPrefix>:environment:<stage>` with audience `sts.amazonaws.com` (this repo
+uses GitHub's immutable subject, `repo:Njones27@153565100/AWS_Spark@1437703955`).
 It can only assume the four `cdk-hnb659fds-*` bootstrap roles and read two SSM parameters: the bootstrap
 version, and `Spark-<Stage>-DistributionDomain` for the smoke test. Sessions last at most 2 hours.
 
 ## How deploys flow
 
 ```
-PR to main ──> ci.yml: npm ci, typecheck:all, test:all, build, cdk synth (account, dev, prod). No AWS credentials.
+push to a PR ──> ci.yml ──> verify: typecheck:all, test:all, build, cdk synth (no AWS credentials)
+                          ──> deploy-dev: deploy the PR to dev, smoke test      (branches of this repo only)
 merge to main ──> deploy.yml ──> dev: deploy, smoke test ──> prod: waits for approval, deploy, smoke test
 ```
+
+- **PRs only ever reach dev.** Each push to an open PR re-runs the checks and, when they pass, deploys that PR
+  to dev so you can try it at the dev URL (GitHub links it on the PR as "deployed to dev"). Prod is reachable
+  only from `main` (`deploy.yml`), after the owner approves the `prod` environment.
+- Dev holds whatever deployed last: the newest PR push, or `main` after a merge. With two PRs open at once,
+  the last one pushed wins until the other is pushed again.
+- Dev deploys from PRs and from `main` share one queue. If a PR push queues behind a running dev deploy while a
+  merge-to-main dev deploy is also waiting, GitHub keeps only the newest, so the main run's `dev` job is cancelled
+  and its `prod` job is skipped. Nothing reaches prod; re-run **Actions → Deploy** for that merge.
+- PRs from forks run `verify` only. They get no OIDC token, and their code never runs with AWS credentials.
+- A newer push to the same PR cancels its old checks, but never a deploy that has started (job-level
+  concurrency, see below).
 
 - `deploy.yml` calls `deploy-stage.yml` once per environment. Each stage job uses the concurrency group
   `deploy-<environment>`. Only one deploy per environment runs at a time, none is cancelled half-way, and if
@@ -230,9 +244,12 @@ if it ever writes JSON lines directly.
   (`cdk-hnb659fds-cfn-exec-role-*`) `AdministratorAccess` by default. Each GitHub deploy role can only assume
   the bootstrap roles, but through them it can deploy any CloudFormation template, so either environment's role
   can change anything in the account. The controls that matter are on the GitHub side:
-  - Both environments, `dev` and `prod`, accept deployments only from the `main` branch.
+  - `prod` accepts deployments only from `main`, and needs a required reviewer before every deploy.
   - `main` requires a reviewed PR (the `Mainline_shield` ruleset).
-  - `prod` also needs a required reviewer before every deploy.
+  - `dev` accepts any branch of this repo, so open PRs can deploy there. Fork PRs never get credentials. The
+    trade-off: because the bootstrap execution role is admin, a branch pushed to this repo could deploy a template
+    that touches prod resources in the same account. Only people with write access can push branches, so this is
+    acceptable for a solo repo. Moving prod to its own account (below) removes it.
   - Each role trusts exactly one `repo:...:environment:<stage>` subject.
 - **Hardening path:**
   - Re-bootstrap with `cdk bootstrap --cloudformation-execution-policies <ARN of a narrower managed policy>`.
