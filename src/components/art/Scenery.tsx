@@ -139,9 +139,9 @@ export function TownScene() {
           {[0, 1, 2].map((k) => (
             <circle key={k} r="6" fill="var(--sun)" stroke="var(--card)" strokeWidth="2">
               {still ? (
-                <animateMotion {...parkedMotion((k + 1) / 4)} path={d} />
+                <animateMotion key="park" {...parkedMotion((k + 1) / 4)} path={d} />
               ) : (
-                <animateMotion dur="2.6s" begin={`${k * 0.87 + i * 0.3}s`} repeatCount="indefinite" path={d} />
+                <animateMotion key="run" dur="2.6s" begin={`${k * 0.87 + i * 0.3}s`} repeatCount="indefinite" path={d} />
               )}
             </circle>
           ))}

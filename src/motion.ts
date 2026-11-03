@@ -1,19 +1,18 @@
 import { useSyncExternalStore } from 'react';
 
 // CSS can stop CSS animations for students who ask their device for less motion, but not SVG <animateMotion>, so the
-// request dots read this and stand still instead.
+// request dots read this and stand still instead. Each switch between still and moving must remount the <animateMotion>
+// (give the two kinds different keys): Chromium won't restart one that has frozen, or move it when its path changes.
 
-const QUERY = '(prefers-reduced-motion: reduce)';
+const query = typeof matchMedia === 'function' ? matchMedia('(prefers-reduced-motion: reduce)') : null;
 
 function subscribe(cb: () => void) {
-  if (typeof matchMedia !== 'function') return () => {};
-  const mq = matchMedia(QUERY);
-  mq.addEventListener('change', cb);
-  return () => mq.removeEventListener('change', cb);
+  query?.addEventListener('change', cb);
+  return () => query?.removeEventListener('change', cb);
 }
 
 export function useReducedMotion(): boolean {
-  return useSyncExternalStore(subscribe, () => typeof matchMedia === 'function' && matchMedia(QUERY).matches);
+  return useSyncExternalStore(subscribe, () => query?.matches ?? false);
 }
 
 /**

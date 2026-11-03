@@ -14,9 +14,10 @@ function Dots({ path, n, cls }: { path: string; n: number; cls: string }) {
       {Array.from({ length: n }, (_, i) => (
         <circle key={`${n}-${i}`} className={cls} r={cls === 'dot-bot' ? 6.5 : 6}>
           {still ? (
-            <animateMotion {...parkedMotion((i + 0.5) / n)} path={path} />
+            // Keyed by path: a frozen animateMotion ignores a new path, so a moved arrow needs a fresh one.
+            <animateMotion key={`park ${path}`} {...parkedMotion((i + 0.5) / n)} path={path} />
           ) : (
-            <animateMotion dur={`${DOT_SECONDS}s`} begin={`${-(i * DOT_SECONDS) / n}s`} repeatCount="indefinite" path={path} />
+            <animateMotion key="run" dur={`${DOT_SECONDS}s`} begin={`${-(i * DOT_SECONDS) / n}s`} repeatCount="indefinite" path={path} />
           )}
         </circle>
       ))}
