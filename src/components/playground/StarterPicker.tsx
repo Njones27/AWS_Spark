@@ -3,6 +3,7 @@ import { iconUrl, SERVICES } from '../../data/services';
 import { STARTERS, type Starter } from '../../data/starters';
 import { Sparky } from '../art/Sparky';
 import { useEscape } from './ShareDialog';
+import { Icon } from '../Icon';
 
 interface Props {
   onPick: (starter: Starter) => void;
@@ -54,6 +55,12 @@ export function StarterPicker({ onPick, onClose }: Props) {
                 <strong>{s.title}</strong>
                 <small>{s.examples}</small>
                 <Chain starter={s} />
+                {s.id === picked && (
+                  // The radio's checked state already says this to screen readers.
+                  <span className="starter-chosen" aria-hidden="true">
+                    <Icon name="check" /> Chosen
+                  </span>
+                )}
               </button>
             ))}
           </div>
@@ -63,7 +70,7 @@ export function StarterPicker({ onPick, onClose }: Props) {
             Start with a blank map
           </button>
           <button className="btn btn-primary" onClick={() => onPick(starter)}>
-            Start with this plan ▶
+            Start with this plan <Icon name="play" />
           </button>
         </div>
       </div>
@@ -80,7 +87,7 @@ function Chain({ starter }: { starter: Starter }) {
         const fed = i > 0 && edges.some((e) => e.source === nodes[i - 1].id && e.target === n.id);
         return (
           <span key={n.id} className="starter-step">
-            {i > 0 && <i aria-hidden="true">{fed ? '→' : '+'}</i>}
+            {i > 0 && <i aria-hidden="true">{fed ? <Icon name="chevron" /> : '+'}</i>}
             <img src={iconUrl(n.service)} alt="" />
           </span>
         );

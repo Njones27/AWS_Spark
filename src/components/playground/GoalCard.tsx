@@ -1,3 +1,5 @@
+import { Icon } from '../Icon';
+
 interface Props {
   /** How many people the town pieces send, and what the first group is called. */
   demand: number;
@@ -14,7 +16,7 @@ export function GoalCard({ demand, who, what, onWhat, answered }: Props) {
   return (
     <section className={`goal-card ${answered === null ? '' : done ? 'is-met' : 'is-missed'}`} aria-label="Project goal">
       <div className="goal-line">
-        <span aria-hidden="true">🎯</span>
+        <Icon name="target" />
         <strong>
           Goal: {demand} {who.toLowerCase()} can
         </strong>
@@ -35,7 +37,16 @@ export function GoalCard({ demand, who, what, onWhat, answered }: Props) {
             <i style={{ width: `${demand ? Math.min(100, (answered / demand) * 100) : 0}%` }} />
           </div>
           <p className="goal-result" aria-live="polite">
-            {Math.round(answered)} of {demand} {done ? '✓ Goal met!' : '✗ Not yet'}
+            {Math.round(answered)} of {demand}{' '}
+            {done ? (
+              <>
+                <Icon name="check" /> Goal met!
+              </>
+            ) : (
+              <>
+                <Icon name="alert" /> Not yet
+              </>
+            )}
           </p>
         </>
       )}

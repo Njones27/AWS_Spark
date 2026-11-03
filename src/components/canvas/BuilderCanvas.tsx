@@ -21,9 +21,11 @@ import type { ServiceId } from '../../data/types';
 import { badgesFor } from '../../engine/badges';
 import { checkConnection } from '../../engine/validate';
 import { useDevice } from '../../device';
+import { useTheme } from '../../theme';
 import { useBand } from '../../store';
 import { CloudZone, TownZone } from '../art/Scenery';
 import { Sparky } from '../art/Sparky';
+import { Icon } from '../Icon';
 import { FlowEdge } from './FlowEdge';
 import {
   isPiece,
@@ -151,6 +153,7 @@ export function BuilderCanvas({
     return () => observer.disconnect();
   }, [fit, getViewport, setViewport]);
 
+  const { theme } = useTheme();
   const [bubble, setBubble] = useState<Bubble | null>(null);
   const [wiggleId, setWiggleId] = useState<string | null>(null);
   const lastConnected = useRef<string | null>(null);
@@ -283,6 +286,7 @@ export function BuilderCanvas({
       <UiContext.Provider value={ui}>
         <div ref={wrap} className={`canvas ${dragging || clicking ? 'is-connecting' : ''} ${sim.running ? 'is-running' : ''}`}>
           <ReactFlow<AppNode, AppEdge>
+            colorMode={theme}
             nodes={nodes}
             edges={edges}
             nodeTypes={nodeTypes}
@@ -353,7 +357,7 @@ export function BuilderCanvas({
                 <Sparky mood="worried" size={46} bob={false} />
                 <strong>{bubble.title}</strong>
                 <button className="bubble-close" aria-label="Close" onClick={() => setBubble(null)}>
-                  ✕
+                  <Icon name="close" />
                 </button>
               </div>
               <p>{bubble.text}</p>

@@ -1,6 +1,14 @@
 /* Spark design tokens — "cozy town map": warm map paper, meadow greens, pond blues,
-   a sunny accent for moving requests, and coral for the main action. */
+   a sunny accent for moving requests, and coral for the main action.
+
+   Each bright hue has up to three jobs, kept apart so contrast holds in both themes:
+   - the hue itself (--coral, --flow…) is for art, lines, borders and meter fills;
+   - --X-text is for words in that colour (≥ 4.5:1 on --card and the matching --X-soft);
+   - --X-fill with --on-X is for solid badges and buttons with words on them (≥ 4.5:1).
+   The dark theme ("Maple Hollow at night") is set by data-theme="dark" on <html> (see src/theme.ts). */
 :root {
+  color-scheme: light;
+
   /* surfaces */
   --paper: #f7f2e8;
   --paper-2: #efe7d7;
@@ -8,13 +16,15 @@
   --card: #fffdf8;
   --cloud: #ffffff;
   --cloud-shade: #dfe9f3;
+  --field: #ffffff;
+  --scrim: rgb(38 48 67 / 0.32);
 
   /* ink */
   --ink: #263043;
   --ink-soft: #5b6475;
-  --ink-faint: #8b93a3;
+  --ink-faint: #606879;
 
-  /* landscape */
+  /* landscape (art only) */
   --meadow: #cfe5b8;
   --meadow-2: #b4d69a;
   --meadow-deep: #6fa35a;
@@ -23,25 +33,72 @@
   --road: #ead9b8;
   --roof: #e07a5f;
   --roof-2: #c8644a;
+  --sky: #cfe7f2;
+  --hill: #c6e0ae;
+  --hill-far: #d9ecc6;
+  --tree-2: #86b86f;
+  --trunk: #8a6a4a;
+  --wall: #fffaf0;
+  --wall-warm: #fff6e6;
+  --awning: #ffffff;
+  --roof-orange: #e9a05f;
+  --roof-blue: #7c9bc4;
+  --window: #a9dbe6;
+  --orb: #ffe7a3;
+  --shine: rgb(255 255 255 / 0.4);
+  --zone-cloud-top: #ffffff;
+  --zone-cloud-bottom: #eaf2f9;
+  --source-tint: #fff7e2;
+  /* characters keep their colours in both themes, so faces stay readable on their white or skin-tone shapes */
+  --face-ink: #263043;
+  --face-blush: #ef6f4f;
 
   /* accents */
   --coral: #ef6f4f;
   --coral-deep: #d4553a;
+  --coral-fill: #cc4a2e;
+  --coral-hover: #bb4228;
+  --coral-press: #a23820;
+  --on-coral: #ffffff;
+  --coral-text: #b23f25;
+  --coral-soft: #fde3dc;
   --sun: #ffc531;
+  --on-sun: #263043; /* the sun stays bright at night, so its words stay dark */
   --sun-soft: #ffe7a3;
   --flow: #2a9d8f;
+  --flow-text: #1d7a6f;
   --flow-soft: #bfe6df;
   --plum: #7b5ea7;
+  --plum-text: #634689;
   --plum-soft: #e3d8f2;
+  --plum-fill: #7b5ea7;
+  --on-plum: #ffffff;
   --gremlin: #c2417a;
+  --gremlin-text: #b0336b;
+  --gremlin-soft: #f6d3e3;
+  --meadow-fill: #4f7f3d;
+  --on-meadow: #ffffff;
+  --aws-ink: #232f3e;
+  --on-aws-ink: #ffffff;
 
   /* status */
   --ok: #3ba776;
+  --ok-text: #1f6e47;
   --ok-soft: #d4f0e1;
+  --ok-fill: #24794f;
+  --on-ok: #ffffff;
   --warn: #f0a33a;
+  --warn-text: #8a5a00;
   --warn-soft: #fde9c8;
   --bad: #e5484d;
+  --bad-text: #b0242a;
   --bad-soft: #fbd9da;
+  --bad-fill: #c42b31;
+  --on-bad: #ffffff;
+
+  /* edges and focus */
+  --border-control: #8a7a5c;
+  --ring: #2a7286;
 
   /* type */
   --font-display: 'Fredoka Variable', 'Fredoka', ui-rounded, 'Arial Rounded MT Bold', sans-serif;
@@ -52,10 +109,11 @@
   --r-md: 16px;
   --r-lg: 24px;
   --r-xl: 32px;
-  --shadow-sm: 0 1px 0 rgba(38, 48, 67, 0.06), 0 2px 6px rgba(38, 48, 67, 0.08);
-  --shadow-md: 0 2px 0 rgba(38, 48, 67, 0.06), 0 8px 24px rgba(38, 48, 67, 0.12);
-  --shadow-lg: 0 4px 0 rgba(38, 48, 67, 0.05), 0 18px 48px rgba(38, 48, 67, 0.18);
-  --press: 0 4px 0 var(--coral-deep);
+  --shadow-rgb: 38 48 67;
+  --shadow-sm: 0 1px 0 rgb(var(--shadow-rgb) / 0.06), 0 2px 6px rgb(var(--shadow-rgb) / 0.08);
+  --shadow-md: 0 2px 0 rgb(var(--shadow-rgb) / 0.06), 0 8px 24px rgb(var(--shadow-rgb) / 0.12);
+  --shadow-lg: 0 4px 0 rgb(var(--shadow-rgb) / 0.05), 0 18px 48px rgb(var(--shadow-rgb) / 0.18);
+  --press: 0 4px 0 var(--coral-press);
 
   /* motion */
   --ease-bounce: cubic-bezier(0.34, 1.56, 0.64, 1);
@@ -63,4 +121,94 @@
 
   /* minimum touch target */
   --tap: 44px;
+}
+
+:root[data-theme='dark'] {
+  color-scheme: dark;
+
+  --paper: #121826;
+  --paper-2: #1a2232;
+  --paper-3: #2b3548;
+  --card: #1e2636;
+  --cloud: #2a3449;
+  --cloud-shade: #222c3e;
+  --field: #141b29;
+  --scrim: rgb(4 7 14 / 0.6);
+
+  --ink: #eef1f6;
+  --ink-soft: #b7bfcd;
+  --ink-faint: #929bae;
+
+  --meadow: #1f3326;
+  --meadow-2: #27402e;
+  --meadow-deep: #3f6a3a;
+  --pond: #1d4a57;
+  --pond-deep: #6cc4d8;
+  --road: #3a3428;
+  --roof: #b5604a;
+  --roof-2: #94493a;
+  --sky: #0b1222;
+  --hill: #1b2e22;
+  --hill-far: #22382a;
+  --tree-2: #345a33;
+  --trunk: #4d3b2b;
+  --wall: #cfc3ad;
+  --wall-warm: #d6c7ab;
+  --awning: #d8cdbb;
+  --roof-orange: #a8703f;
+  --roof-blue: #4e6a92;
+  --window: #ffd77a;
+  --orb: #f3e9c6;
+  --shine: rgb(255 255 255 / 0.12);
+  --zone-cloud-top: #26314a;
+  --zone-cloud-bottom: #1f2940;
+  --source-tint: #2b2618;
+
+  --coral: #ff8a6b;
+  --coral-deep: #ff9a7e;
+  --coral-fill: #ff8a6b;
+  --coral-hover: #ff9d82;
+  --coral-press: #c9573b;
+  --on-coral: #1a120e;
+  --coral-text: #ff9a7e;
+  --coral-soft: #3d2420;
+  --sun: #ffc531;
+  --sun-soft: #3a3020;
+  --flow: #5fd0c0;
+  --flow-text: #5fd0c0;
+  --flow-soft: #183d39;
+  --plum: #c3a8ee;
+  --plum-text: #c3a8ee;
+  --plum-soft: #2f2645;
+  --plum-fill: #c3a8ee;
+  --on-plum: #1b1230;
+  --gremlin: #f080b4;
+  --gremlin-text: #f080b4;
+  --gremlin-soft: #3d1f2f;
+  --meadow-fill: #8fcf74;
+  --on-meadow: #10200b;
+  --aws-ink: #e9edf3;
+  --on-aws-ink: #161e2b;
+
+  --ok: #6fd69c;
+  --ok-text: #6fd69c;
+  --ok-soft: #15352a;
+  --ok-fill: #6fd69c;
+  --on-ok: #0c2216;
+  --warn: #f7c063;
+  --warn-text: #f7c063;
+  --warn-soft: #3a2d16;
+  --bad: #ff8085;
+  --bad-text: #ff8085;
+  --bad-soft: #3d1d24;
+  --bad-fill: #ff8085;
+  --on-bad: #2a0a0d;
+
+  --border-control: #6b7891;
+  --ring: #7fd0e2;
+
+  --shadow-rgb: 0 0 0;
+  --shadow-sm: 0 1px 0 rgb(0 0 0 / 0.2), 0 2px 6px rgb(0 0 0 / 0.25);
+  --shadow-md: 0 2px 0 rgb(0 0 0 / 0.2), 0 8px 24px rgb(0 0 0 / 0.35);
+  --shadow-lg: 0 4px 0 rgb(0 0 0 / 0.2), 0 18px 48px rgb(0 0 0 / 0.45);
 }

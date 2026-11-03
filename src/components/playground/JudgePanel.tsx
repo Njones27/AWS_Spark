@@ -1,8 +1,10 @@
 import { useState } from 'react';
 import type { JudgeQuestion } from '../../engine/judge';
 import { Sparky } from '../art/Sparky';
+import { Icon } from '../Icon';
 
-const VERDICT_LABEL = { good: '✓ Your map answers this', fix: '✗ Something to fix', think: '' } as const;
+const VERDICT_LABEL = { good: 'Your map answers this', fix: 'Something to fix', think: '' } as const;
+const VERDICT_ICON = { good: 'check', fix: 'alert' } as const;
 
 /** Questions a judge might ask about the team's own map. Answers come from checking the map itself. */
 export function JudgePanel({ questions, onClose }: { questions: JudgeQuestion[]; onClose: () => void }) {
@@ -22,7 +24,7 @@ export function JudgePanel({ questions, onClose }: { questions: JudgeQuestion[];
             </h3>
           </div>
           <button className="icon-btn" aria-label="Close" onClick={onClose}>
-            ✕
+            <Icon name="close" />
           </button>
         </header>
         {!questions.length && <p className="muted">Add some AWS pieces to your map, and a judge will have questions.</p>}
@@ -42,7 +44,11 @@ export function JudgePanel({ questions, onClose }: { questions: JudgeQuestion[];
             )}
             {open[q.id] ? (
               <p className="judge-answer" aria-live="polite">
-                {VERDICT_LABEL[q.verdict] && <b>{VERDICT_LABEL[q.verdict]}. </b>}
+                {q.verdict !== 'think' && (
+                  <b>
+                    <Icon name={VERDICT_ICON[q.verdict]} /> {VERDICT_LABEL[q.verdict]}.{' '}
+                  </b>
+                )}
                 {q.answer}
               </p>
             ) : (

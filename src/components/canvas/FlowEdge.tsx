@@ -1,6 +1,7 @@
 import { EdgeLabelRenderer, getBezierPath, useInternalNode, useReactFlow, type EdgeProps } from '@xyflow/react';
 import { memo } from 'react';
 import { floatingParams, useSim, type AppEdge } from './model';
+import { Icon } from '../Icon';
 
 const DOT_SECONDS = 1.8;
 const dotCount = (flow: number) => (flow <= 0.05 ? 0 : Math.min(9, Math.max(3, Math.round(3 + flow / 25))));
@@ -47,7 +48,7 @@ function FlowEdgeView({ id, source, target, data, selected, markerEnd }: EdgePro
               title="Cut this arrow"
               onClick={() => deleteElements({ edges: [{ id }] })}
             >
-              ✂️
+              <Icon name="scissors" />
             </button>
           </div>
         </EdgeLabelRenderer>
