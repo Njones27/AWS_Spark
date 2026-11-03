@@ -1,0 +1,790 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="color-scheme" content="dark" />
+<title>Spark Dark Options</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Lexend:wght@400;500;600&display=swap" rel="stylesheet" />
+<style>
+/* Four dark palettes for Spark, next to today's. Every palette's text pairs pass WCAG AA (4.5:1); the table under each
+   one measures how far apart its layers are (page, panel, cloud zone, card, card edge), which is what makes the
+   screen read flat or clear. Generated from the palette validator; the mocks are the same ones as ui-audit-drafts.html. */
+[data-pal='current'] {
+  color-scheme: dark;
+  --paper: #121826;
+  --paper-2: #1a2232;
+  --paper-3: #2b3548;
+  --card: #1e2636;
+  --cloud: #26314a;
+  --cloud-shade: #222c3e;
+  --region: #26314a;
+  --region-edge: #222c3e;
+  --card-edge: #1e2636;
+  --sky-top: #0b1222;
+  --sky-bottom: #1c2a45;
+  --ink: #eef1f6;
+  --ink-soft: #b7bfcd;
+  --ink-faint: #929bae;
+  --meadow: #1f3326;
+  --meadow-2: #27402e;
+  --meadow-deep: #3f6a3a;
+  --meadow-fill: #8fcf74;
+  --on-meadow: #10200b;
+  --pond: #1d4a57;
+  --pond-deep: #6cc4d8;
+  --road: #3a3428;
+  --roof: #b5604a;
+  --roof-2: #94493a;
+  --window: #ffd77a;
+  --orb: #f3e9c6;
+  --coral: #ff8a6b;
+  --coral-fill: #ff8a6b;
+  --coral-hover: #ff9d82;
+  --coral-press: #c9573b;
+  --on-coral: #1a120e;
+  --coral-text: #ff9a7e;
+  --sun: #ffc531;
+  --sun-soft: #3a3020;
+  --flow: #5fd0c0;
+  --flow-text: #5fd0c0;
+  --flow-soft: #183d39;
+  --plum: #c3a8ee;
+  --plum-text: #c3a8ee;
+  --plum-soft: #2f2645;
+  --ok: #6fd69c;
+  --ok-text: #6fd69c;
+  --ok-soft: #15352a;
+  --warn: #f7c063;
+  --warn-text: #f7c063;
+  --warn-soft: #3a2d16;
+  --bad: #ff8085;
+  --bad-text: #ff8085;
+  --bad-soft: #3d1d24;
+  --field: #121826;
+  --border: #2b3548;
+  --border-control: #6b7891;
+  --ring: #7fd0e2;
+  --tag-dark: #e9edf3;
+  --on-tag-dark: #161e2b;
+  --shadow-rgb: 0, 0, 0;
+  --shadow-a: 3;
+}
+[data-pal='nightmap'] {
+  color-scheme: dark;
+  --paper: #0d121e;
+  --paper-2: #161d2c;
+  --paper-3: #33405a;
+  --card: #2b3651;
+  --cloud: #1c2741;
+  --cloud-shade: #34446a;
+  --region: #1c2741;
+  --region-edge: #34446a;
+  --card-edge: #4a5a80;
+  --sky-top: #090e1b;
+  --sky-bottom: #1d2c4b;
+  --ink: #eef1f6;
+  --ink-soft: #b9c1cf;
+  --ink-faint: #a0a9bb;
+  --meadow: #26422e;
+  --meadow-2: #335a3c;
+  --meadow-deep: #4f8a4a;
+  --meadow-fill: #8fcf74;
+  --on-meadow: #10200b;
+  --pond: #23596b;
+  --pond-deep: #6cc4d8;
+  --road: #4a4130;
+  --roof: #c26a50;
+  --roof-2: #9c4f3d;
+  --window: #ffd77a;
+  --orb: #f3e9c6;
+  --coral: #ff8a6b;
+  --coral-fill: #ff8a6b;
+  --coral-hover: #ff9d82;
+  --coral-press: #c9573b;
+  --on-coral: #1a120e;
+  --coral-text: #ff9a7e;
+  --sun: #ffc531;
+  --sun-soft: #3d3218;
+  --flow: #5fd0c0;
+  --flow-text: #5fd0c0;
+  --flow-soft: #163f3a;
+  --plum: #c3a8ee;
+  --plum-text: #c3a8ee;
+  --plum-soft: #322849;
+  --ok: #6fd69c;
+  --ok-text: #6fd69c;
+  --ok-soft: #163a2c;
+  --warn: #f7c063;
+  --warn-text: #f7c063;
+  --warn-soft: #3d2f14;
+  --bad: #ff8085;
+  --bad-text: #ff8085;
+  --bad-soft: #432028;
+  --field: #0d121e;
+  --border: #34405a;
+  --border-control: #71809c;
+  --ring: #7fd0e2;
+  --tag-dark: #e9edf3;
+  --on-tag-dark: #161e2b;
+  --shadow-rgb: 0, 0, 0;
+  --shadow-a: 3;
+}
+[data-pal='moonlit'] {
+  color-scheme: dark;
+  --paper: #0a0f1d;
+  --paper-2: #121a2c;
+  --paper-3: #2f3e5e;
+  --card: #283760;
+  --cloud: #18264a;
+  --cloud-shade: #34497e;
+  --region: #18264a;
+  --region-edge: #34497e;
+  --card-edge: #4b62a0;
+  --sky-top: #070c1a;
+  --sky-bottom: #1a2b55;
+  --ink: #f0f4ff;
+  --ink-soft: #bac6df;
+  --ink-faint: #95a3c0;
+  --meadow: #1c4740;
+  --meadow-2: #28604f;
+  --meadow-deep: #3f9078;
+  --meadow-fill: #8fcf74;
+  --on-meadow: #10200b;
+  --pond: #2a6d8c;
+  --pond-deep: #6cc4d8;
+  --road: #3b4560;
+  --roof: #c06a58;
+  --roof-2: #9a4f44;
+  --window: #ffd77a;
+  --orb: #f3e9c6;
+  --coral: #ff8a6b;
+  --coral-fill: #ff8a6b;
+  --coral-hover: #ff9d82;
+  --coral-press: #c9573b;
+  --on-coral: #1a120e;
+  --coral-text: #ff9a7e;
+  --sun: #ffc531;
+  --sun-soft: #3a3420;
+  --flow: #5fd0c0;
+  --flow-text: #5fd0c0;
+  --flow-soft: #123f45;
+  --plum: #c3a8ee;
+  --plum-text: #c3a8ee;
+  --plum-soft: #2e2a52;
+  --ok: #6fd69c;
+  --ok-text: #6fd69c;
+  --ok-soft: #123a33;
+  --warn: #f7c063;
+  --warn-text: #f7c063;
+  --warn-soft: #3a3016;
+  --bad: #ff8085;
+  --bad-text: #ff8085;
+  --bad-soft: #40202c;
+  --field: #0a0f1d;
+  --border: #2f3e5e;
+  --border-control: #6f81a8;
+  --ring: #7fd0e2;
+  --tag-dark: #eaf0ff;
+  --on-tag-dark: #0e1630;
+  --shadow-rgb: 0, 0, 0;
+  --shadow-a: 3;
+}
+[data-pal='lamplight'] {
+  color-scheme: dark;
+  --paper: #14110d;
+  --paper-2: #1d1914;
+  --paper-3: #3d3529;
+  --card: #3b3328;
+  --cloud: #24212f;
+  --cloud-shade: #4a4560;
+  --region: #24212f;
+  --region-edge: #4a4560;
+  --card-edge: #5c4f3e;
+  --sky-top: #0f0c09;
+  --sky-bottom: #2a2230;
+  --ink: #f5eee2;
+  --ink-soft: #cbc0ae;
+  --ink-faint: #ab9f8a;
+  --meadow: #2c4325;
+  --meadow-2: #3a5a2f;
+  --meadow-deep: #5f8a42;
+  --meadow-fill: #8fcf74;
+  --on-meadow: #10200b;
+  --pond: #24535b;
+  --pond-deep: #6cc4d8;
+  --road: #4a3c2b;
+  --roof: #c8704f;
+  --roof-2: #a0533b;
+  --window: #ffd77a;
+  --orb: #f3e9c6;
+  --coral: #ff8a6b;
+  --coral-fill: #ff8a6b;
+  --coral-hover: #ff9d82;
+  --coral-press: #c9573b;
+  --on-coral: #1a120e;
+  --coral-text: #ffa285;
+  --sun: #ffc531;
+  --sun-soft: #3e3118;
+  --flow: #5fd0c0;
+  --flow-text: #5fd0c0;
+  --flow-soft: #173a33;
+  --plum: #c3a8ee;
+  --plum-text: #c3a8ee;
+  --plum-soft: #33283f;
+  --ok: #6fd69c;
+  --ok-text: #6fd69c;
+  --ok-soft: #183526;
+  --warn: #f7c063;
+  --warn-text: #f7c063;
+  --warn-soft: #3e2e12;
+  --bad: #ff8085;
+  --bad-text: #ff8085;
+  --bad-soft: #42201f;
+  --field: #14110d;
+  --border: #3d3529;
+  --border-control: #857660;
+  --ring: #7fd0e2;
+  --tag-dark: #f5eee2;
+  --on-tag-dark: #1e1a15;
+  --shadow-rgb: 0, 0, 0;
+  --shadow-a: 3;
+}
+[data-pal='twilight'] {
+  color-scheme: dark;
+  --paper: #1b2230;
+  --paper-2: #232b3a;
+  --paper-3: #3f4a5f;
+  --card: #38435b;
+  --cloud: #29344f;
+  --cloud-shade: #4a5a80;
+  --region: #29344f;
+  --region-edge: #4a5a80;
+  --card-edge: #56647f;
+  --sky-top: #141b2a;
+  --sky-bottom: #2c3a5c;
+  --ink: #f3f5f9;
+  --ink-soft: #c8cfdb;
+  --ink-faint: #b3bbca;
+  --meadow: #33553c;
+  --meadow-2: #426a4a;
+  --meadow-deep: #62a05e;
+  --meadow-fill: #8fcf74;
+  --on-meadow: #10200b;
+  --pond: #2f6a80;
+  --pond-deep: #6cc4d8;
+  --road: #5a4e3c;
+  --roof: #cc735a;
+  --roof-2: #a65845;
+  --window: #ffd77a;
+  --orb: #f3e9c6;
+  --coral: #ff8a6b;
+  --coral-fill: #ff8a6b;
+  --coral-hover: #ff9d82;
+  --coral-press: #c9573b;
+  --on-coral: #1a120e;
+  --coral-text: #ffa98f;
+  --sun: #ffc531;
+  --sun-soft: #4a3d1f;
+  --flow: #5fd0c0;
+  --flow-text: #78dccd;
+  --flow-soft: #1d4b46;
+  --plum: #c3a8ee;
+  --plum-text: #d0baf3;
+  --plum-soft: #3d3459;
+  --ok: #6fd69c;
+  --ok-text: #86e0ad;
+  --ok-soft: #1d4636;
+  --warn: #f7c063;
+  --warn-text: #f9cb7a;
+  --warn-soft: #4a3a18;
+  --bad: #ff8085;
+  --bad-text: #ff9a9e;
+  --bad-soft: #512a32;
+  --field: #1b2230;
+  --border: #3f4a5f;
+  --border-control: #7f8ba3;
+  --ring: #7fd0e2;
+  --tag-dark: #f3f5f9;
+  --on-tag-dark: #1c2330;
+  --shadow-rgb: 0, 0, 0;
+  --shadow-a: 3;
+}
+
+:root {
+  --font-display: 'Fredoka', ui-rounded, 'Arial Rounded MT Bold', sans-serif;
+  --font-body: 'Lexend', ui-sans-serif, system-ui, sans-serif;
+  --r-sm: 10px;
+  --r-md: 16px;
+  --r-lg: 24px;
+  --tap: 44px;
+  --shadow-sm: 0 1px 0 rgba(var(--shadow-rgb), calc(0.06 * var(--shadow-a))), 0 2px 6px rgba(var(--shadow-rgb), calc(0.08 * var(--shadow-a)));
+  --shadow-md: 0 2px 0 rgba(var(--shadow-rgb), calc(0.06 * var(--shadow-a))), 0 8px 24px rgba(var(--shadow-rgb), calc(0.12 * var(--shadow-a)));
+  /* Sparky is a character: same colours in both themes */
+  --sparky-body: #ffffff;
+  --sparky-edge: #c9d6e3;
+  --sparky-ink: #263043;
+  --sparky-cheek: #ef6f4f;
+}
+
+/* page chrome (not part of the proposal) */
+:root { --doc-bg: #0b0f17; --doc-fg: #e9edf3; --doc-muted: #a7b0bf; --doc-line: #263043; --doc-card: #121823; --doc-accent: #b6a6ff; --doc-on-accent: #160f33; }
+* { box-sizing: border-box; }
+html { color-scheme: dark; }
+body { margin: 0; background: var(--doc-bg); color: var(--doc-fg); font: 15px/1.55 var(--font-body); }
+:focus-visible { outline: 3px solid var(--doc-accent); outline-offset: 2px; }
+.doc-head { position: sticky; top: 0; z-index: 50; background: var(--doc-bg); border-bottom: 1px solid var(--doc-line); }
+.doc-head-in { max-width: 1400px; margin: 0 auto; padding: 12px 16px; display: flex; flex-wrap: wrap; gap: 10px 20px; align-items: center; }
+.doc-title { font: 600 20px/1.2 var(--font-display); margin: 0; }
+.doc-title small { display: block; font: 400 13px/1.35 var(--font-body); color: var(--doc-muted); }
+.seg { margin-left: auto; display: inline-flex; flex-wrap: wrap; gap: 2px; border: 1px solid var(--doc-line); border-radius: 22px; padding: 3px; background: var(--doc-card); }
+.seg button { min-height: 38px; padding: 0 14px; border: 0; border-radius: 999px; background: none; color: var(--doc-fg); font: 500 14px var(--font-body); cursor: pointer; }
+.seg button[aria-pressed='true'] { background: var(--doc-accent); color: var(--doc-on-accent); }
+main { max-width: 1400px; margin: 0 auto; padding: 4px 16px 80px; }
+.intro { color: var(--doc-muted); max-width: 80ch; margin: 18px 0 0; }
+.prop { margin-top: 30px; padding-top: 22px; border-top: 1px solid var(--doc-line); }
+body.solo .prop { border-top: 0; }
+.prop-head { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; margin-bottom: 14px; }
+@media (min-width: 1000px) { .prop-head { grid-template-columns: minmax(0, 1fr) minmax(0, 470px); align-items: start; } }
+.prop h2 { font: 600 24px/1.2 var(--font-display); margin: 0 0 6px; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.tag-rec { font: 600 12px var(--font-body); background: var(--doc-accent); color: var(--doc-on-accent); padding: 3px 10px; border-radius: 99px; }
+.blurb { margin: 0 0 10px; color: var(--doc-muted); max-width: 62ch; }
+.swatches { display: flex; gap: 4px; flex-wrap: wrap; }
+.sw { width: 28px; height: 28px; border-radius: 7px; border: 1px solid rgba(255,255,255,.14); }
+.metrics { background: var(--doc-card); border: 1px solid var(--doc-line); border-radius: 14px; padding: 10px 14px; overflow-x: auto; }
+.aa { margin: 0 0 6px; font-size: 14px; }
+.aa .ok { font: 600 12px var(--font-body); background: #15352a; color: #6fd69c; padding: 2px 8px; border-radius: 99px; margin-left: 4px; }
+table { border-collapse: collapse; width: 100%; font-size: 13px; }
+th, td { text-align: left; padding: 4px 6px; border-bottom: 1px solid var(--doc-line); white-space: nowrap; }
+th { font-weight: 600; color: var(--doc-muted); font-size: 12px; }
+tr:last-child td { border-bottom: 0; }
+.num { text-align: right; font-variant-numeric: tabular-nums; }
+.muted { color: var(--doc-muted); }
+.up { color: #6fd69c; font-weight: 600; }
+.down { color: #ff9a9e; font-weight: 600; }
+.mocks { display: grid; gap: 14px; grid-template-columns: minmax(0, 1fr); }
+@media (min-width: 1100px) { .mocks { grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr); } .mock-map { grid-column: 1 / -1; } }
+.mocks > .screen { border-radius: 16px; overflow: hidden; border: 1px solid var(--doc-line); }
+.mock-map { display: flex; justify-content: center; }
+.mock-map .m-side { max-width: 380px; width: 100%; }
+body.solo .prop:not(.is-shown) { display: none; }
+
+/* ════════════════════════════════════════════════════════════════════
+   MOCK UI — mirrors app.css but uses only the semantic tokens above.
+   ════════════════════════════════════════════════════════════════════ */
+.screen { container-type: inline-size; position: relative; background: var(--paper); color: var(--ink); font-family: var(--font-body); font-size: 16px; line-height: 1.45; }
+.screen h1, .screen h2, .screen h3 { font-family: var(--font-display); font-weight: 600; line-height: 1.1; margin: 0; }
+.screen p { margin: 0; }
+.screen :focus-visible { outline: 3px solid var(--ring); outline-offset: 2px; }
+.ico { width: 20px; height: 20px; flex: none; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.ico-sm { width: 16px; height: 16px; }
+
+.m-topbar { display: flex; align-items: center; gap: 10px; padding: 12px 14px; border-bottom: 1px solid var(--border); background: var(--paper); flex-wrap: wrap; }
+.m-wordmark { display: inline-flex; gap: 6px; align-items: center; font: 600 20px var(--font-display); }
+.m-wordmark .ico { color: var(--sun); stroke: none; fill: currentColor; }
+[data-theme='light'] .m-wordmark .ico { color: #e8a800; }
+.m-spacer { flex: 1; }
+.m-title { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.m-title h1 { font-size: 20px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.m-eyebrow { font: 600 13px var(--font-display); letter-spacing: .06em; text-transform: uppercase; color: var(--coral-text); }
+
+.m-btn { position: relative; display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: var(--tap); padding: 0 16px; border-radius: 999px; border: 2px solid var(--border); background: var(--card); color: var(--ink); font: 600 15px var(--font-display); cursor: pointer; white-space: nowrap; box-shadow: var(--shadow-sm); }
+.m-btn:hover { background: var(--paper-2); }
+.m-btn-primary { background: var(--coral-fill); color: var(--on-coral); border-color: transparent; box-shadow: 0 4px 0 var(--coral-press); }
+.m-btn-primary:hover { background: var(--coral-hover); }
+.m-btn-lg { min-height: 54px; font-size: 18px; padding: 0 24px; }
+.m-btn-run { min-height: 64px; min-width: 120px; border-radius: 20px; font-size: 22px; }
+.m-btn-link { background: none; border: 0; box-shadow: none; color: var(--ink-soft); text-decoration: underline; text-underline-offset: 3px; font-family: var(--font-body); font-weight: 500; }
+.m-icon-btn { width: var(--tap); height: var(--tap); padding: 0; border-radius: 50%; }
+.m-band { display: inline-flex; gap: 6px; align-items: center; }
+.m-band small { font: 400 12px var(--font-body); color: var(--ink-soft); }
+.is-focus { outline: 3px solid var(--ring); outline-offset: 2px; }
+
+/* home */
+.m-home { position: relative; min-height: 470px; overflow: hidden; }
+.m-sky { position: absolute; inset: 0; background: linear-gradient(var(--sky-top), var(--sky-bottom) 70%); }
+.m-scene { position: absolute; inset: 0; }
+.m-scene svg { width: 100%; height: 100%; display: block; }
+.m-home-card { position: relative; z-index: 2; margin: 18px 14px; width: min(320px, calc(100% - 28px)); background: color-mix(in srgb, var(--card) 94%, transparent); border-radius: var(--r-lg); padding: 18px; box-shadow: var(--shadow-md); display: grid; gap: 12px; }
+.m-home-card h1 { font-size: 34px; }
+.m-home-card h1 span { display: block; font-size: 20px; color: var(--coral-text); margin-top: 2px; }
+.m-home-card > p { color: var(--ink-soft); font-size: 14px; }
+.m-mode { position: relative; display: grid; grid-template-columns: 44px 1fr 20px; gap: 12px; align-items: center; padding: 12px; border-radius: var(--r-md); background: var(--card); border: 2px solid var(--border); text-align: left; color: var(--ink); font: inherit; cursor: pointer; width: 100%; }
+.m-mode:hover { border-color: var(--border-control); }
+.m-mode-icon { width: 44px; height: 44px; border-radius: 12px; display: grid; place-items: center; }
+.m-mode-icon.story { background: var(--sun-soft); color: var(--warn-text); }
+.m-mode-icon.adv { background: var(--plum-soft); color: var(--plum-text); }
+.m-mode-icon.play { background: var(--flow-soft); color: var(--flow-text); }
+.m-mode b { font: 600 17px var(--font-display); display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+.m-mode p { font-size: 13px; color: var(--ink-soft); }
+.m-tag { font: 600 12px var(--font-body); padding: 2px 8px; border-radius: 999px; background: var(--plum-soft); color: var(--plum-text); }
+.m-progress { display: flex; align-items: center; gap: 8px; margin-top: 6px; font-size: 12px; color: var(--ink-soft); }
+.m-progress i { flex: 1; height: 6px; border-radius: 99px; background: var(--paper-3); overflow: hidden; }
+.m-progress i::before { content: ''; display: block; width: var(--p, 0%); height: 100%; background: var(--ok); }
+.m-mode .chev { color: var(--ink-soft); }
+.m-house-label { position: absolute; z-index: 1; font: 600 12px var(--font-body); background: var(--tag-dark); color: var(--on-tag-dark); padding: 4px 10px; border-radius: 999px; }
+
+/* level play */
+.m-play { display: grid; grid-template-columns: 220px 1fr; min-height: 470px; }
+.m-panel { border-right: 1px solid var(--border); padding: 12px; display: grid; gap: 12px; align-content: start; background: var(--paper); }
+.m-panel-head { display: flex; align-items: center; gap: 6px; font: 600 13px var(--font-body); letter-spacing: .06em; text-transform: uppercase; color: var(--ink-soft); }
+.m-bubble { display: grid; grid-template-columns: 48px 1fr; gap: 8px; align-items: start; }
+.m-bubble p { background: var(--card); border-radius: 14px; padding: 10px 12px; font-size: 14px; box-shadow: var(--shadow-sm); }
+.m-goal { background: var(--card); border-radius: 14px; padding: 10px 12px; display: grid; grid-template-columns: 26px 1fr; gap: 8px; box-shadow: var(--shadow-sm); }
+.m-goal b { font: 600 15px var(--font-display); }
+.m-goal p { font-size: 13px; color: var(--ink-soft); }
+.m-goal-mark { width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; border: 2px solid var(--border-control); color: var(--ink-soft); }
+.m-goal.is-ok .m-goal-mark { background: var(--ok-soft); border-color: var(--ok-text); color: var(--ok-text); }
+.m-goal-status { font: 600 13px var(--font-body); color: var(--ok-text); display: flex; gap: 4px; align-items: center; }
+.m-hint { background: var(--sun-soft); border: 1px solid color-mix(in srgb, var(--sun) 55%, transparent); border-radius: 14px; padding: 10px 12px; font-size: 14px; display: grid; grid-template-columns: 20px 1fr; gap: 8px; }
+.m-hint .ico { color: var(--warn-text); }
+.m-canvas { position: relative; background: var(--paper); background-image: radial-gradient(color-mix(in srgb, var(--ink) 14%, transparent) 1px, transparent 1px); background-size: 18px 18px; padding: 14px 64px 100px 14px; display: grid; grid-template-columns: 120px 1fr; gap: 14px; align-items: stretch; }
+.m-zone { border-radius: 22px; background: var(--meadow); padding: 10px; display: grid; justify-items: center; align-content: start; gap: 12px; position: relative; }
+.m-zone-tag { font: 600 12px var(--font-body); background: var(--meadow-fill); color: var(--on-meadow); padding: 3px 10px; border-radius: 999px; }
+.m-region { position: relative; border-radius: 22px; background: var(--region); border: 2px solid var(--region-edge); padding: 12px; display: grid; align-content: start; gap: 14px; }
+.m-region-tag { justify-self: start; display: inline-flex; gap: 6px; align-items: center; font: 600 12px var(--font-body); background: var(--tag-dark); color: var(--on-tag-dark); padding: 3px 10px; border-radius: 8px; }
+.m-nodes { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+.m-node { width: 104px; background: var(--card); border: 2px solid var(--ok); border-radius: 14px; padding: 8px; display: grid; justify-items: center; gap: 4px; box-shadow: var(--shadow-sm); position: relative; }
+.m-node img { width: 40px; height: 40px; border-radius: 8px; }
+.m-node b { font: 600 13px var(--font-display); }
+/* Mono AWS icons (users, phone, aws-cloud) ship with #242F3E fills; draw them as a mask so they take the ink colour. */
+.m-mono { width: 40px; height: 40px; background: var(--ink); -webkit-mask: var(--icon) center / contain no-repeat; mask: var(--icon) center / contain no-repeat; }
+.m-node small { font-size: 12px; color: var(--ink-soft); }
+.m-meter { width: 100%; height: 6px; border-radius: 99px; background: var(--paper-3); overflow: hidden; }
+.m-meter i { display: block; height: 100%; width: 40%; background: var(--ok); }
+.m-node.is-slow { border-color: var(--warn); }
+.m-node.is-slow .m-meter i { width: 88%; background: var(--warn); }
+.m-node-state { display: inline-flex; gap: 4px; align-items: center; font: 600 12px var(--font-body); color: var(--warn-text); }
+.m-wire { flex: none; width: 28px; height: 3px; background: repeating-linear-gradient(90deg, var(--flow) 0 6px, transparent 6px 10px); }
+.m-dock { position: absolute; left: 50%; bottom: 12px; transform: translateX(-50%); display: flex; gap: 10px; align-items: center; background: var(--card); padding: 8px; border-radius: 18px; box-shadow: var(--shadow-md); }
+.m-dock-piece { position: relative; width: 56px; height: 56px; border-radius: 14px; border: 2px solid var(--border); display: grid; place-items: center; background: var(--paper); }
+.m-dock-piece img { width: 36px; height: 36px; border-radius: 8px; }
+.m-dock-new { position: absolute; top: -9px; left: -6px; font: 600 12px var(--font-body); background: var(--sun); color: #263043; padding: 1px 6px; border-radius: 99px; }
+.m-dock-count { position: absolute; top: -9px; right: -9px; min-width: 24px; height: 24px; display: grid; place-items: center; border-radius: 99px; background: var(--tag-dark); color: var(--on-tag-dark); font: 600 12px var(--font-body); }
+.m-flowctl { position: absolute; right: 10px; top: 10px; display: grid; background: var(--card); border-radius: 12px; box-shadow: var(--shadow-sm); overflow: hidden; }
+.m-flowctl button { width: 44px; height: 44px; border: 0; border-bottom: 1px solid var(--border); background: none; color: var(--ink); display: grid; place-items: center; cursor: pointer; }
+.m-flowctl button:last-child { border-bottom: 0; }
+
+/* map side panel */
+.m-side { padding: 14px; display: grid; gap: 12px; max-width: 360px; }
+.m-chapters { background: var(--card); border-radius: var(--r-md); padding: 6px; display: grid; gap: 4px; box-shadow: var(--shadow-sm); }
+.m-chapter { display: grid; grid-template-columns: 24px 1fr; gap: 10px; padding: 10px; border-radius: 12px; align-items: start; text-align: left; border: 0; background: none; color: var(--ink); font: inherit; width: 100%; cursor: pointer; }
+.m-chapter b { font: 600 16px var(--font-display); display: block; }
+.m-chapter > span > span { font-size: 13px; color: var(--ink-soft); }
+.m-chapter.is-current { background: var(--sun-soft); }
+.m-chapter.is-locked { cursor: default; }
+.m-chapter.is-locked b { color: var(--ink-soft); }
+.m-chapter.is-locked > span > span { color: var(--ink-faint); }
+.m-check { display: flex; gap: 10px; align-items: center; min-height: var(--tap); font-size: 14px; color: var(--ink-soft); cursor: pointer; }
+.m-check input { appearance: none; width: 22px; height: 22px; margin: 0; border: 2px solid var(--border-control); border-radius: 6px; background: var(--field); display: grid; place-items: center; }
+.m-check input:checked { background: var(--flow-text); border-color: var(--flow-text); }
+.m-check input:checked::after { content: ''; width: 10px; height: 6px; border: solid var(--paper); border-width: 0 0 2.5px 2.5px; transform: translateY(-1px) rotate(-45deg); }
+
+/* components */
+.m-sheet { padding: 18px; display: grid; gap: 22px; }
+.m-row { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
+.m-sub { font: 600 12px var(--font-body); letter-spacing: .06em; text-transform: uppercase; color: var(--ink-soft); margin-bottom: 8px; }
+.m-field { display: grid; gap: 6px; max-width: 320px; }
+.m-field label { font: 600 13px var(--font-body); color: var(--ink-soft); }
+.m-field input { min-height: var(--tap); border: 2px solid var(--border-control); border-radius: var(--r-sm); padding: 8px 12px; background: var(--field); color: var(--ink); font: 15px var(--font-body); }
+.m-field input::placeholder { color: var(--ink-faint); }
+.m-field input.is-focus { outline: 3px solid var(--ring); outline-offset: 1px; border-color: var(--ring); }
+.m-field .help { font-size: 13px; color: var(--ink-soft); }
+.m-field.has-error input { border-color: var(--bad-text); }
+.m-field .err { display: flex; gap: 6px; align-items: center; font: 500 13px var(--font-body); color: var(--bad-text); }
+.m-pill { display: inline-flex; gap: 6px; align-items: center; min-height: 30px; padding: 0 12px; border-radius: 999px; font: 600 13px var(--font-body); }
+.m-pill.ok { background: var(--ok-soft); color: var(--ok-text); }
+.m-pill.warn { background: var(--warn-soft); color: var(--warn-text); }
+.m-pill.bad { background: var(--bad-soft); color: var(--bad-text); }
+.m-pill.plum { background: var(--plum-soft); color: var(--plum-text); }
+.m-starters { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 12px; }
+.m-starter { position: relative; text-align: left; padding: 14px; border-radius: var(--r-md); border: 2px solid var(--border); background: var(--card); color: var(--ink); font: inherit; cursor: pointer; display: grid; gap: 4px; }
+.m-starter b { font: 600 16px var(--font-display); }
+.m-starter span { font-size: 13px; color: var(--ink-soft); }
+.m-starter[aria-pressed='true'] { border-color: var(--coral-fill); box-shadow: 0 0 0 1px var(--coral-fill); }
+.m-starter .m-starter-check { position: absolute; top: 10px; right: 10px; display: none; gap: 4px; align-items: center; font: 600 12px var(--font-body); color: var(--on-coral); background: var(--coral-fill); padding: 3px 8px 3px 6px; border-radius: 99px; }
+.m-starter[aria-pressed='true'] .m-starter-check { display: inline-flex; color: var(--on-coral); }
+.m-story { background: var(--card); border-radius: var(--r-lg); padding: 20px; box-shadow: var(--shadow-md); display: grid; gap: 14px; max-width: 460px; position: relative; border: 1px solid var(--border); }
+.m-story .who { font: 600 13px var(--font-display); color: var(--coral-text); }
+.m-story-body { display: grid; grid-template-columns: 64px 1fr; gap: 14px; align-items: start; }
+.m-story-foot { display: flex; align-items: center; gap: 12px; }
+.m-dots { display: flex; gap: 6px; }
+.m-dots i { width: 8px; height: 8px; border-radius: 99px; background: var(--border-control); }
+.m-dots i:first-child { width: 22px; background: var(--coral-fill); }
+.m-theme-btn[aria-pressed='true'] { background: var(--paper-2); }
+.m-theme-menu { background: var(--card); border-radius: 14px; padding: 6px; box-shadow: var(--shadow-md); display: grid; gap: 2px; width: 220px; border: 1px solid var(--border); }
+.m-theme-menu [role='menuitemradio'] { display: grid; grid-template-columns: 20px 1fr 18px; gap: 10px; align-items: center; min-height: var(--tap); padding: 0 10px; border-radius: 10px; border: 0; background: none; color: var(--ink); font: 500 15px var(--font-body); text-align: left; cursor: pointer; }
+.m-theme-menu [aria-checked='true'] { background: var(--paper-2); }
+.m-theme-menu [aria-checked='false'] .tick { visibility: hidden; }
+.m-theme-menu .tick { color: var(--flow-text); }
+.m-type { display: grid; gap: 4px; }
+.m-type div { display: flex; gap: 14px; align-items: baseline; }
+.m-type code { font-size: 12px; color: var(--ink-soft); width: 56px; flex: none; }
+
+@media (max-width: 700px) {
+    .m-play { grid-template-columns: 1fr; }
+  .m-panel { border-right: 0; border-bottom: 1px solid var(--border); }
+  .m-canvas { grid-template-columns: 1fr; padding-bottom: 96px; }
+  .m-zone { grid-template-columns: auto auto; justify-content: start; }
+}
+@container (max-width: 620px) {
+  .m-house-label { display: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; scroll-behavior: auto !important; }
+}
+
+/* proposals: give raised surfaces a visible edge */
+.m-bubble p, .m-goal, .m-chapters, .m-dock, .m-home-card { border: 1px solid var(--card-edge); }
+.m-mode { border-color: var(--card-edge); }
+.m-hint { border-color: color-mix(in srgb, var(--sun) 35%, transparent); }
+.m-btn { border-color: var(--card-edge); }
+.m-btn-primary { border-color: transparent; }
+.m-zone { box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--meadow-fill) 18%, transparent); }
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <symbol id="i-bolt" viewBox="0 0 24 24"><path d="M13 2 4 14h7l-1 8 9-12h-7z"/></symbol>
+    <symbol id="i-key" viewBox="0 0 24 24"><circle cx="7.5" cy="15.5" r="4.5"/><path d="m10.7 12.3 9.8-9.8M17 6l3 3M14.5 8.5l2 2"/></symbol>
+    <symbol id="i-book" viewBox="0 0 24 24"><path d="M4 19.5V5a2 2 0 0 1 2-2h14v15H6.5A2.5 2.5 0 0 0 4 20.5 2.5 2.5 0 0 0 6.5 23H20"/></symbol>
+    <symbol id="i-cap" viewBox="0 0 24 24"><path d="M22 9 12 4 2 9l10 5 10-5z"/><path d="M6 11.5V16c0 1.5 2.7 3 6 3s6-1.5 6-3v-4.5M22 9v6"/></symbol>
+    <symbol id="i-puzzle" viewBox="0 0 24 24"><path d="M19.4 14.6a2 2 0 1 0 0-3.2V7a1 1 0 0 0-1-1h-4.4a2 2 0 1 0-3.2 0H6.4a1 1 0 0 0-1 1v4.4a2 2 0 1 1 0 3.2V19a1 1 0 0 0 1 1h4.4a2 2 0 1 1 3.2 0h4.4a1 1 0 0 0 1-1z"/></symbol>
+    <symbol id="i-chev" viewBox="0 0 24 24"><path d="m9 6 6 6-6 6"/></symbol>
+    <symbol id="i-back" viewBox="0 0 24 24"><path d="M19 12H5m6-6-6 6 6 6"/></symbol>
+    <symbol id="i-bulb" viewBox="0 0 24 24"><path d="M9 18h6M10 22h4M12 2a7 7 0 0 0-4 12.7c.6.5 1 1.3 1 2.3h6c0-1 .4-1.8 1-2.3A7 7 0 0 0 12 2z"/></symbol>
+    <symbol id="i-play" viewBox="0 0 24 24"><path d="M7 4v16l13-8z" fill="currentColor"/></symbol>
+    <symbol id="i-lock" viewBox="0 0 24 24"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24"><path d="m5 12 5 5 9-10"/></symbol>
+    <symbol id="i-alert" viewBox="0 0 24 24"><path d="M12 8v5M12 16.5v.5"/><circle cx="12" cy="12" r="9.5"/></symbol>
+    <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></symbol>
+    <symbol id="i-moon" viewBox="0 0 24 24"><path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/></symbol>
+    <symbol id="i-device" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4"/></symbol>
+    <symbol id="i-restart" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></symbol>
+    <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+    <symbol id="i-minus" viewBox="0 0 24 24"><path d="M5 12h14"/></symbol>
+    <symbol id="i-fit" viewBox="0 0 24 24"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></symbol>
+    <symbol id="i-panel" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M9 4v16"/></symbol>
+    <symbol id="i-bricks" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="1.5"/><path d="M3 12h18M9 5v7M15 12v7"/></symbol>
+    <symbol id="sparky" viewBox="0 0 64 56">
+      <path d="M32 4c1 3 3 4 5 4-2 1-4 3-5 6-1-3-3-5-5-6 2 0 4-1 5-4z" fill="#ffc531" stroke="#e8a800" stroke-width="1.2" stroke-linejoin="round"/>
+      <path d="M16 48a11 11 0 0 1-1-22 14 14 0 0 1 27-5 10 10 0 0 1 9 15 7 7 0 0 1-3 12z" fill="var(--sparky-body)" stroke="var(--sparky-edge)" stroke-width="2"/>
+      <circle cx="25" cy="33" r="2.6" fill="var(--sparky-ink)"/><circle cx="39" cy="33" r="2.6" fill="var(--sparky-ink)"/>
+      <path d="M28 38.5q4 3.5 8 0" fill="none" stroke="var(--sparky-ink)" stroke-width="2" stroke-linecap="round"/>
+      <circle cx="20" cy="38" r="2.6" fill="var(--sparky-cheek)" opacity=".45"/><circle cx="44" cy="38" r="2.6" fill="var(--sparky-cheek)" opacity=".45"/>
+    </symbol>
+  </defs>
+</svg>
+<header class="doc-head">
+  <div class="doc-head-in">
+    <h1 class="doc-title">Spark dark mode options <small>Today’s dark theme and four alternatives. Every one passes WCAG AA text contrast; they differ in how clearly the layers stand apart.</small></h1>
+    <div class="seg" role="group" aria-label="Show">
+      <button type="button" data-show="all" aria-pressed="true">All</button><button type="button" data-show="current" aria-pressed="false">Today</button><button type="button" data-show="nightmap" aria-pressed="false">A · Night Map</button><button type="button" data-show="moonlit" aria-pressed="false">B · Moonlit Blue</button><button type="button" data-show="lamplight" aria-pressed="false">C · Lamplight</button><button type="button" data-show="twilight" aria-pressed="false">D · Twilight Slate</button>
+    </div>
+  </div>
+</header>
+<main>
+<p class="intro">Each option shows the title screen, a level and the story-map panel. The table under each name measures contrast between neighbouring layers: higher numbers mean cards, zones and panels separate more clearly. Today’s cards sit 1.17:1 from the page and have no visible edge (1.00:1), which is why the dark theme reads flat. Light mode stays exactly as it is in every option.</p>
+
+<section class="prop" data-key="current" aria-labelledby="h-current">
+  <div class="prop-head">
+    <div>
+      <h2 id="h-current">Today</h2>
+      <p class="blurb">What ships in PR #17 today. Every text pair passes, but cards, zones and panels sit only a shade apart, so the screen reads flat.</p>
+      <div class="swatches" aria-label="Palette"><span class='sw' title='page #121826' style='background:#121826'></span><span class='sw' title='panel #1a2232' style='background:#1a2232'></span><span class='sw' title='cloud zone #26314a' style='background:#26314a'></span><span class='sw' title='card #1e2636' style='background:#1e2636'></span><span class='sw' title='card edge #1e2636' style='background:#1e2636'></span><span class='sw' title='meadow #1f3326' style='background:#1f3326'></span><span class='sw' title='hill #27402e' style='background:#27402e'></span><span class='sw' title='pond #1d4a57' style='background:#1d4a57'></span><span class='sw' title='road #3a3428' style='background:#3a3428'></span><span class='sw' title='hint #3a3020' style='background:#3a3020'></span></div>
+    </div>
+    <div class="metrics">
+      <p class="aa">Smallest text contrast <b>5.43:1</b> <span class="ok">AA</span></p>
+      <table><thead><tr><th>Separation (contrast ratio)</th><th>This</th><th>Today</th><th>Change</th></tr></thead><tbody><tr><td>Card vs page</td><td class='num'>1.17</td><td class='num muted'>–</td><td></td></tr><tr><td>Panel vs canvas</td><td class='num'>1.11</td><td class='num muted'>–</td><td></td></tr><tr><td>Town zone vs canvas</td><td class='num'>1.32</td><td class='num muted'>–</td><td></td></tr><tr><td>Cloud zone vs canvas</td><td class='num'>1.37</td><td class='num muted'>–</td><td></td></tr><tr><td>Piece card vs cloud zone</td><td class='num'>1.17</td><td class='num muted'>–</td><td></td></tr><tr><td>Hint box vs panel</td><td class='num'>1.23</td><td class='num muted'>–</td><td></td></tr><tr><td>Card edge vs card</td><td class='num'>1.00</td><td class='num muted'>–</td><td></td></tr><tr><td>Hill vs meadow</td><td class='num'>1.19</td><td class='num muted'>–</td><td></td></tr></tbody></table>
+    </div>
+  </div>
+  <div class="mocks">
+    <div class="screen mock-home" data-pal="current" data-mock="home"></div>
+    <div class="screen mock-level" data-pal="current" data-mock="level"></div>
+    <div class="screen mock-map" data-pal="current" data-mock="map"></div>
+  </div>
+</section>
+<section class="prop" data-key="nightmap" aria-labelledby="h-nightmap">
+  <div class="prop-head">
+    <div>
+      <h2 id="h-nightmap">A · Night Map <span class="tag-rec">Recommended</span></h2>
+      <p class="blurb">Today’s navy, with each layer one step lighter as it rises, a visible edge on every card, and brighter meadows. The smallest change from today.</p>
+      <div class="swatches" aria-label="Palette"><span class='sw' title='page #0d121e' style='background:#0d121e'></span><span class='sw' title='panel #161d2c' style='background:#161d2c'></span><span class='sw' title='cloud zone #1c2741' style='background:#1c2741'></span><span class='sw' title='card #2b3651' style='background:#2b3651'></span><span class='sw' title='card edge #4a5a80' style='background:#4a5a80'></span><span class='sw' title='meadow #26422e' style='background:#26422e'></span><span class='sw' title='hill #335a3c' style='background:#335a3c'></span><span class='sw' title='pond #23596b' style='background:#23596b'></span><span class='sw' title='road #4a4130' style='background:#4a4130'></span><span class='sw' title='hint #3d3218' style='background:#3d3218'></span></div>
+    </div>
+    <div class="metrics">
+      <p class="aa">Smallest text contrast <b>5.08:1</b> <span class="ok">AA</span></p>
+      <table><thead><tr><th>Separation (contrast ratio)</th><th>This</th><th>Today</th><th>Change</th></tr></thead><tbody><tr><td>Card vs page</td><td class='num'>1.56</td><td class='num muted'>1.17</td><td class='num up'>+0.39</td></tr><tr><td>Panel vs canvas</td><td class='num'>1.11</td><td class='num muted'>1.11</td><td class='num '>+0.00</td></tr><tr><td>Town zone vs canvas</td><td class='num'>1.69</td><td class='num muted'>1.32</td><td class='num up'>+0.37</td></tr><tr><td>Cloud zone vs canvas</td><td class='num'>1.26</td><td class='num muted'>1.37</td><td class='num down'>-0.11</td></tr><tr><td>Piece card vs cloud zone</td><td class='num'>1.24</td><td class='num muted'>1.17</td><td class='num up'>+0.07</td></tr><tr><td>Hint box vs panel</td><td class='num'>1.34</td><td class='num muted'>1.23</td><td class='num up'>+0.11</td></tr><tr><td>Card edge vs card</td><td class='num'>1.75</td><td class='num muted'>1.00</td><td class='num up'>+0.75</td></tr><tr><td>Hill vs meadow</td><td class='num'>1.40</td><td class='num muted'>1.19</td><td class='num up'>+0.21</td></tr></tbody></table>
+    </div>
+  </div>
+  <div class="mocks">
+    <div class="screen mock-home" data-pal="nightmap" data-mock="home"></div>
+    <div class="screen mock-level" data-pal="nightmap" data-mock="level"></div>
+    <div class="screen mock-map" data-pal="nightmap" data-mock="map"></div>
+  </div>
+</section>
+<section class="prop" data-key="moonlit" aria-labelledby="h-moonlit">
+  <div class="prop-head">
+    <div>
+      <h2 id="h-moonlit">B · Moonlit Blue</h2>
+      <p class="blurb">Cooler and bluer, with teal-green meadows in moonlight. The strongest card and edge separation of the four.</p>
+      <div class="swatches" aria-label="Palette"><span class='sw' title='page #0a0f1d' style='background:#0a0f1d'></span><span class='sw' title='panel #121a2c' style='background:#121a2c'></span><span class='sw' title='cloud zone #18264a' style='background:#18264a'></span><span class='sw' title='card #283760' style='background:#283760'></span><span class='sw' title='card edge #4b62a0' style='background:#4b62a0'></span><span class='sw' title='meadow #1c4740' style='background:#1c4740'></span><span class='sw' title='hill #28604f' style='background:#28604f'></span><span class='sw' title='pond #2a6d8c' style='background:#2a6d8c'></span><span class='sw' title='road #3b4560' style='background:#3b4560'></span><span class='sw' title='hint #3a3420' style='background:#3a3420'></span></div>
+    </div>
+    <div class="metrics">
+      <p class="aa">Smallest text contrast <b>4.58:1</b> <span class="ok">AA</span></p>
+      <table><thead><tr><th>Separation (contrast ratio)</th><th>This</th><th>Today</th><th>Change</th></tr></thead><tbody><tr><td>Card vs page</td><td class='num'>1.64</td><td class='num muted'>1.17</td><td class='num up'>+0.47</td></tr><tr><td>Panel vs canvas</td><td class='num'>1.10</td><td class='num muted'>1.11</td><td class='num '>-0.01</td></tr><tr><td>Town zone vs canvas</td><td class='num'>1.84</td><td class='num muted'>1.32</td><td class='num up'>+0.52</td></tr><tr><td>Cloud zone vs canvas</td><td class='num'>1.29</td><td class='num muted'>1.37</td><td class='num down'>-0.08</td></tr><tr><td>Piece card vs cloud zone</td><td class='num'>1.28</td><td class='num muted'>1.17</td><td class='num up'>+0.11</td></tr><tr><td>Hint box vs panel</td><td class='num'>1.40</td><td class='num muted'>1.23</td><td class='num up'>+0.17</td></tr><tr><td>Card edge vs card</td><td class='num'>1.97</td><td class='num muted'>1.00</td><td class='num up'>+0.97</td></tr><tr><td>Hill vs meadow</td><td class='num'>1.42</td><td class='num muted'>1.19</td><td class='num up'>+0.23</td></tr></tbody></table>
+    </div>
+  </div>
+  <div class="mocks">
+    <div class="screen mock-home" data-pal="moonlit" data-mock="home"></div>
+    <div class="screen mock-level" data-pal="moonlit" data-mock="level"></div>
+    <div class="screen mock-map" data-pal="moonlit" data-mock="map"></div>
+  </div>
+</section>
+<section class="prop" data-key="lamplight" aria-labelledby="h-lamplight">
+  <div class="prop-head">
+    <div>
+      <h2 id="h-lamplight">C · Lamplight</h2>
+      <p class="blurb">Warm brown-black, like the light theme’s map paper with the lamps on. Olive meadows and a violet-grey cloud. The closest in feel to the light theme.</p>
+      <div class="swatches" aria-label="Palette"><span class='sw' title='page #14110d' style='background:#14110d'></span><span class='sw' title='panel #1d1914' style='background:#1d1914'></span><span class='sw' title='cloud zone #24212f' style='background:#24212f'></span><span class='sw' title='card #3b3328' style='background:#3b3328'></span><span class='sw' title='card edge #5c4f3e' style='background:#5c4f3e'></span><span class='sw' title='meadow #2c4325' style='background:#2c4325'></span><span class='sw' title='hill #3a5a2f' style='background:#3a5a2f'></span><span class='sw' title='pond #24535b' style='background:#24535b'></span><span class='sw' title='road #4a3c2b' style='background:#4a3c2b'></span><span class='sw' title='hint #3e3118' style='background:#3e3118'></span></div>
+    </div>
+    <div class="metrics">
+      <p class="aa">Smallest text contrast <b>4.77:1</b> <span class="ok">AA</span></p>
+      <table><thead><tr><th>Separation (contrast ratio)</th><th>This</th><th>Today</th><th>Change</th></tr></thead><tbody><tr><td>Card vs page</td><td class='num'>1.51</td><td class='num muted'>1.17</td><td class='num up'>+0.34</td></tr><tr><td>Panel vs canvas</td><td class='num'>1.08</td><td class='num muted'>1.11</td><td class='num down'>-0.03</td></tr><tr><td>Town zone vs canvas</td><td class='num'>1.74</td><td class='num muted'>1.32</td><td class='num up'>+0.42</td></tr><tr><td>Cloud zone vs canvas</td><td class='num'>1.20</td><td class='num muted'>1.37</td><td class='num down'>-0.17</td></tr><tr><td>Piece card vs cloud zone</td><td class='num'>1.27</td><td class='num muted'>1.17</td><td class='num up'>+0.10</td></tr><tr><td>Hint box vs panel</td><td class='num'>1.38</td><td class='num muted'>1.23</td><td class='num up'>+0.15</td></tr><tr><td>Card edge vs card</td><td class='num'>1.56</td><td class='num muted'>1.00</td><td class='num up'>+0.56</td></tr><tr><td>Hill vs meadow</td><td class='num'>1.39</td><td class='num muted'>1.19</td><td class='num up'>+0.20</td></tr></tbody></table>
+    </div>
+  </div>
+  <div class="mocks">
+    <div class="screen mock-home" data-pal="lamplight" data-mock="home"></div>
+    <div class="screen mock-level" data-pal="lamplight" data-mock="level"></div>
+    <div class="screen mock-map" data-pal="lamplight" data-mock="map"></div>
+  </div>
+</section>
+<section class="prop" data-key="twilight" aria-labelledby="h-twilight">
+  <div class="prop-head">
+    <div>
+      <h2 id="h-twilight">D · Twilight Slate</h2>
+      <p class="blurb">A softer, lighter dark: dusk rather than midnight. The most separation between zones and the least glare against bright classroom lights.</p>
+      <div class="swatches" aria-label="Palette"><span class='sw' title='page #1b2230' style='background:#1b2230'></span><span class='sw' title='panel #232b3a' style='background:#232b3a'></span><span class='sw' title='cloud zone #29344f' style='background:#29344f'></span><span class='sw' title='card #38435b' style='background:#38435b'></span><span class='sw' title='card edge #56647f' style='background:#56647f'></span><span class='sw' title='meadow #33553c' style='background:#33553c'></span><span class='sw' title='hill #426a4a' style='background:#426a4a'></span><span class='sw' title='pond #2f6a80' style='background:#2f6a80'></span><span class='sw' title='road #5a4e3c' style='background:#5a4e3c'></span><span class='sw' title='hint #4a3d1f' style='background:#4a3d1f'></span></div>
+    </div>
+    <div class="metrics">
+      <p class="aa">Smallest text contrast <b>5.13:1</b> <span class="ok">AA</span></p>
+      <table><thead><tr><th>Separation (contrast ratio)</th><th>This</th><th>Today</th><th>Change</th></tr></thead><tbody><tr><td>Card vs page</td><td class='num'>1.61</td><td class='num muted'>1.17</td><td class='num up'>+0.44</td></tr><tr><td>Panel vs canvas</td><td class='num'>1.12</td><td class='num muted'>1.11</td><td class='num '>+0.01</td></tr><tr><td>Town zone vs canvas</td><td class='num'>1.90</td><td class='num muted'>1.32</td><td class='num up'>+0.58</td></tr><tr><td>Cloud zone vs canvas</td><td class='num'>1.29</td><td class='num muted'>1.37</td><td class='num down'>-0.08</td></tr><tr><td>Piece card vs cloud zone</td><td class='num'>1.25</td><td class='num muted'>1.17</td><td class='num up'>+0.08</td></tr><tr><td>Hint box vs panel</td><td class='num'>1.34</td><td class='num muted'>1.23</td><td class='num up'>+0.11</td></tr><tr><td>Card edge vs card</td><td class='num'>1.66</td><td class='num muted'>1.00</td><td class='num up'>+0.66</td></tr><tr><td>Hill vs meadow</td><td class='num'>1.35</td><td class='num muted'>1.19</td><td class='num up'>+0.16</td></tr></tbody></table>
+    </div>
+  </div>
+  <div class="mocks">
+    <div class="screen mock-home" data-pal="twilight" data-mock="home"></div>
+    <div class="screen mock-level" data-pal="twilight" data-mock="level"></div>
+    <div class="screen mock-map" data-pal="twilight" data-mock="map"></div>
+  </div>
+</section>
+</main>
+<template id="tpl-home">
+  <div class="m-topbar">
+    <span class="m-wordmark"><svg class="ico" aria-hidden="true"><use href="#i-bolt"/></svg>Spark</span>
+    <span class="m-spacer"></span>
+    <button class="m-btn" type="button"><svg class="ico ico-sm" aria-hidden="true"><use href="#i-key"/></svg>Builder Key</button>
+    <button class="m-btn m-icon-btn m-theme-btn" type="button" aria-label="Theme: match my device" aria-haspopup="menu"><svg class="ico" aria-hidden="true"><use href="#i-THEMEICON"/></svg></button>
+    <button class="m-btn m-band" type="button"><svg class="ico ico-sm" aria-hidden="true"><use href="#i-bricks"/></svg>Builder <small>Grades 6–8</small></button>
+  </div>
+  <div class="m-home">
+    <div class="m-sky"></div>
+    <div class="m-scene" aria-hidden="true">
+      <svg viewBox="0 0 640 420" preserveAspectRatio="xMidYMax slice">
+        <circle cx="575" cy="70" r="34" fill="var(--orb)"/>
+        <g class="stars" fill="#f3e9c6"><circle cx="420" cy="40" r="1.6"/><circle cx="500" cy="120" r="1.2"/><circle cx="610" cy="150" r="1.4"/><circle cx="380" cy="110" r="1"/><circle cx="530" cy="30" r="1.1"/></g>
+        <path d="M0 300 Q160 240 330 280 T640 260 V420 H0z" fill="var(--meadow-2)"/>
+        <path d="M0 340 Q200 300 400 330 T640 320 V420 H0z" fill="var(--meadow)"/>
+        <ellipse cx="560" cy="385" rx="80" ry="18" fill="var(--pond)"/>
+        <path d="M330 70a40 40 0 0 1 76-10 34 34 0 0 1 62 20 30 30 0 0 1 8 58H350a34 34 0 0 1-20-68z" fill="var(--cloud)" stroke="var(--cloud-shade)" stroke-width="3"/>
+        <path d="M385 158 Q360 210 345 262" fill="none" stroke="var(--flow)" stroke-width="4" stroke-dasharray="9 8" stroke-linecap="round"/>
+        <path d="M460 158 Q520 220 560 300" fill="none" stroke="var(--flow)" stroke-width="4" stroke-dasharray="9 8" stroke-linecap="round"/>
+        <circle cx="365" cy="210" r="5" fill="var(--sun)"/><circle cx="515" cy="215" r="5" fill="var(--sun)"/>
+        <g transform="translate(300 262)"><path d="M-6 0 50 -30 106 0z" fill="var(--roof)"/><rect x="0" y="0" width="100" height="56" fill="var(--card)"/><rect x="12" y="12" width="16" height="14" rx="2" fill="var(--window)"/><rect x="42" y="12" width="16" height="14" rx="2" fill="var(--window)"/><rect x="72" y="12" width="16" height="14" rx="2" fill="var(--window)"/><rect x="42" y="32" width="16" height="24" fill="var(--roof-2)"/></g>
+        <g transform="translate(540 300)"><path d="M-4 0 22 -18 48 0z" fill="var(--pond-deep)"/><rect x="0" y="0" width="44" height="34" fill="var(--card)"/><rect x="15" y="10" width="14" height="12" rx="2" fill="var(--window)"/></g>
+        <g transform="translate(250 330)"><rect x="-3" y="10" width="6" height="16" fill="var(--roof-2)"/><circle r="14" fill="var(--meadow-deep)"/></g>
+      </svg>
+      <img src="../../public/icons/lambda.svg" alt="" style="position:absolute;left:58%;top:16%;width:34px;border-radius:6px">
+      <img src="../../public/icons/dynamodb.svg" alt="" style="position:absolute;left:66%;top:21%;width:34px;border-radius:6px">
+      <img src="../../public/icons/cloudfront.svg" alt="" style="position:absolute;left:73%;top:14%;width:34px;border-radius:6px">
+    </div>
+    <span class="m-house-label" style="left:52%;top:57%">Crumb &amp; Co.</span>
+    <div class="m-home-card">
+      <svg width="56" height="48" aria-hidden="true"><use href="#sparky"/></svg>
+      <h1>Spark <span>Cloud Builders</span></h1>
+      <p>Connect real AWS services, watch requests flow, and help a little town go online.</p>
+      <button class="m-mode" type="button"><span class="m-mode-icon story"><svg class="ico" aria-hidden="true"><use href="#i-book"/></svg></span><span><b>Story Mode</b><p>Help Baker Rosa bring the best bakery in Maple Hollow onto the internet.</p><span class="m-progress" style="--p:27%"><i></i>4/15</span></span><svg class="ico chev" aria-hidden="true"><use href="#i-chev"/></svg></button>
+      <button class="m-mode" type="button"><span class="m-mode-icon adv"><svg class="ico" aria-hidden="true"><use href="#i-cap"/></svg></span><span><b>Advanced Track <span class="m-tag">College and up</span></b><p>On call at Crumb &amp; Co.: real incidents, monthly budgets, and security reviews.</p></span><svg class="ico chev" aria-hidden="true"><use href="#i-chev"/></svg></button>
+      <button class="m-mode" type="button"><span class="m-mode-icon play"><svg class="ico" aria-hidden="true"><use href="#i-puzzle"/></svg></span><span><b>Playground</b><p>Build anything with 48 pieces. Only connections that make sense will snap together!</p></span><svg class="ico chev" aria-hidden="true"><use href="#i-chev"/></svg></button>
+      <button class="m-btn m-btn-primary m-btn-lg" type="button">Keep going<svg class="ico ico-sm" aria-hidden="true"><use href="#i-play"/></svg></button>
+    </div>
+  </div>
+</template><template id="tpl-level">
+  <div class="m-topbar">
+    <button class="m-btn" type="button"><svg class="ico ico-sm" aria-hidden="true"><use href="#i-back"/></svg>Map</button>
+    <div class="m-title" style="position:relative;padding-right:22px"><span class="m-eyebrow">Level 1 · Storage</span><h1>Open the Shop Window</h1></div>
+    <span class="m-spacer"></span>
+    <button class="m-btn" type="button"><svg class="ico ico-sm" aria-hidden="true"><use href="#i-restart"/></svg>Restart</button>
+    <button class="m-btn m-icon-btn" type="button" aria-label="Theme: match my device"><svg class="ico" aria-hidden="true"><use href="#i-THEMEICON"/></svg></button>
+  </div>
+  <div class="m-play">
+    <aside class="m-panel">
+      <div class="m-panel-head" style="position:relative"><button class="m-btn m-icon-btn" type="button" aria-label="Hide mission" style="box-shadow:none"><svg class="ico" aria-hidden="true"><use href="#i-panel"/></svg></button>Mission</div>
+      <div class="m-bubble"><svg width="48" height="42" aria-hidden="true"><use href="#sparky"/></svg><p>Drag S3 into the AWS Cloud and connect the Townsfolk to it.</p></div>
+      <div class="m-panel-head">Goals</div>
+      <div class="m-goal is-ok"><span class="m-goal-mark"><svg class="ico ico-sm" aria-hidden="true"><use href="#i-check"/></svg></span><div><b>Maple Hollow</b><p>20 visitors reach S3</p><span class="m-goal-status"><svg class="ico ico-sm" aria-hidden="true"><use href="#i-check"/></svg>Goal met</span></div></div>
+      <div class="m-hint"><svg class="ico" aria-hidden="true"><use href="#i-bulb"/></svg><span>Drag S3 from the tray at the bottom into the big cloud.</span></div>
+      <button class="m-btn" type="button" style="justify-self:start"><svg class="ico ico-sm" aria-hidden="true"><use href="#i-bulb"/></svg>Another hint</button>
+    </aside>
+    <div class="m-canvas">
+      <div class="m-zone"><span class="m-zone-tag">Town</span>
+        <div class="m-node" style="width:96px"><span class="m-mono" style="--icon:url(../../public/icons/users.svg)"></span><b>Townsfolk</b><small>Users</small></div>
+      </div>
+      <div class="m-region">
+        <span class="m-region-tag">AWS Cloud</span>
+        <div class="m-nodes">
+          <div class="m-node"><img src="../../public/icons/apigw.svg" alt=""><b>API Gateway</b><div class="m-meter"><i></i></div><small>25 / 1000</small></div>
+          <span class="m-wire"></span>
+          <div class="m-node is-slow"><img src="../../public/icons/lambda.svg" alt=""><b>Lambda</b><div class="m-meter"><i></i></div><span class="m-node-state"><svg class="ico ico-sm" aria-hidden="true"><use href="#i-alert"/></svg>Busy 880</span></div>
+          <span class="m-wire"></span>
+          <div class="m-node"><img src="../../public/icons/s3.svg" alt=""><b>S3</b><div class="m-meter"><i></i></div><small>5 / 3000</small></div>
+        </div>
+      </div>
+      <div class="m-flowctl"><button type="button" aria-label="Zoom in"><svg class="ico" aria-hidden="true"><use href="#i-plus"/></svg></button><button type="button" aria-label="Zoom out"><svg class="ico" aria-hidden="true"><use href="#i-minus"/></svg></button><button type="button" aria-label="Fit the whole map"><svg class="ico" aria-hidden="true"><use href="#i-fit"/></svg></button></div>
+      <div class="m-dock">
+        <div class="m-dock-piece"><img src="../../public/icons/s3.svg" alt=""><span class="m-dock-new">new</span><span class="m-dock-count">1</span></div>
+        <button class="m-btn m-btn-primary m-btn-run" type="button"><svg class="ico" aria-hidden="true"><use href="#i-play"/></svg>Run</button>
+      </div>
+    </div>
+  </div>
+</template><template id="tpl-map">
+  <div class="m-side">
+    <div class="m-bubble"><svg width="48" height="42" aria-hidden="true"><use href="#sparky"/></svg><p>Next up: “Ding! Bread’s Ready”. Save each order and send a “ready!” message to both Customer Phones and the Kitchen Tablet.</p></div>
+    <button class="m-btn m-btn-primary m-btn-lg" type="button" style="width:100%">Keep going<svg class="ico ico-sm" aria-hidden="true"><use href="#i-play"/></svg></button>
+    <div class="m-chapters" style="position:relative">
+      <button class="m-chapter is-current" type="button" aria-current="true"><svg class="ico" aria-hidden="true"><use href="#i-book"/></svg><span><b>Chapter 1</b><span>Crumb &amp; Co. Goes Online · 4 of 9</span></span></button>
+      <button class="m-chapter is-locked" type="button" aria-disabled="true"><svg class="ico" aria-hidden="true" style="color:var(--ink-soft)"><use href="#i-lock"/></svg><span><b>Chapter 2 · Locked</b><span>Maple Hollow Helps · opens after Chapter 1</span></span></button>
+      
+    </div>
+    <label class="m-check" style="position:relative"><input type="checkbox" /> Teacher mode: unlock every level</label>
+  </div>
+</template>
+<script>
+  document.querySelectorAll('.screen[data-mock]').forEach((el) => {
+    el.innerHTML = document.getElementById('tpl-' + el.dataset.mock).innerHTML.replaceAll('#i-THEMEICON', '#i-moon');
+  });
+  const btns = document.querySelectorAll('.seg button');
+  function show(k) {
+    document.body.classList.toggle('solo', k !== 'all');
+    document.querySelectorAll('.prop').forEach((s) => s.classList.toggle('is-shown', s.dataset.key === k));
+    btns.forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.show === k)));
+    try { localStorage.setItem('spark-dark-options', k); } catch {}
+  }
+  btns.forEach((b) => b.addEventListener('click', () => show(b.dataset.show)));
+  let saved = null;
+  try { saved = localStorage.getItem('spark-dark-options'); } catch {}
+  show(saved && document.querySelector(`.seg [data-show="${saved}"]`) ? saved : 'all');
+</script>
+</body>
+</html>

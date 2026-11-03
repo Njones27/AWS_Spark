@@ -59,6 +59,31 @@ img {
   stroke: #e8a800;
   stroke-width: 1.5;
 }
+/* Raised surfaces that have no border of their own get a hairline edge. --card-edge is transparent by day, where
+   shadows already lift them; at night shadows barely show, so the edge does that job. Outlines don't change layout. */
+:is(
+    .band-menu,
+    .modal,
+    .home-hero,
+    .stop-label,
+    .speech p,
+    .canvas-dock,
+    .service-card,
+    .plan-card,
+    .key-notice,
+    .judge-card,
+    .judge-answer,
+    .chapter-list,
+    .phone-menu-list,
+    .sheet,
+    .turn-tip,
+    .source-controls,
+    .edge-tools,
+    .mission-bar
+  ):not(:focus-visible) {
+  outline: 1px solid var(--card-edge);
+  outline-offset: -1px;
+}
 /* Stars come out over the title-screen town at night. */
 .night-stars {
   display: none;
@@ -489,7 +514,7 @@ img {
   border-radius: var(--r-lg);
   background: var(--card);
   text-decoration: none;
-  border: 3px solid var(--paper-2);
+  border: 3px solid var(--surface-edge);
   box-shadow: var(--shadow-sm);
   transition: transform 0.2s var(--ease-bounce), border-color 0.2s, box-shadow 0.2s;
   animation: rise 0.6s var(--ease-out) both;
@@ -829,7 +854,7 @@ img {
   display: grid;
   place-items: center;
   padding: 0;
-  border: 2px solid var(--paper-2);
+  border: 2px solid var(--surface-edge);
   border-radius: 10px;
   background: var(--card);
   color: var(--ink-soft);
@@ -905,7 +930,7 @@ img {
   background: var(--card);
   box-shadow: var(--shadow-sm);
   margin-bottom: 8px;
-  border: 2px solid transparent;
+  border: 2px solid var(--card-edge);
   transition: border-color 0.2s, background 0.2s;
 }
 .goal-mark {
@@ -1096,6 +1121,11 @@ img {
   inset: 0;
   filter: drop-shadow(0 8px 20px rgba(63, 151, 173, 0.12));
 }
+/* At night the cloud is close to the canvas colour, so it gets a 1px outline (--zone-edge is transparent by day). */
+.zone-cloud svg {
+  filter: drop-shadow(1px 0 0 var(--zone-edge)) drop-shadow(-1px 0 0 var(--zone-edge)) drop-shadow(0 1px 0 var(--zone-edge))
+    drop-shadow(0 -1px 0 var(--zone-edge)) drop-shadow(0 8px 20px rgba(63, 151, 173, 0.12));
+}
 .zone-tag {
   position: absolute;
   top: 80px;
@@ -1130,7 +1160,7 @@ img {
   padding: 12px 8px 10px;
   background: var(--card);
   border-radius: 22px;
-  border: 3px solid transparent;
+  border: 3px solid var(--card-edge);
   box-shadow: var(--shadow-md);
   text-align: center;
   transition: border-color 0.2s, box-shadow 0.2s;
@@ -1293,7 +1323,7 @@ img {
   background: var(--coral-fill);
 }
 .nub-plus {
-  color: var(--paper);
+  color: var(--card);
   font-family: var(--font-display);
   font-weight: 700;
   font-size: 20px;
@@ -1573,7 +1603,7 @@ img {
   touch-action: none;
   user-select: none;
   cursor: grab;
-  border: 2px solid var(--paper-2);
+  border: 2px solid var(--surface-edge);
   background: var(--card);
   transition: transform 0.15s var(--ease-bounce), border-color 0.15s;
 }
@@ -2312,7 +2342,7 @@ img {
   padding: 12px 14px;
   display: grid;
   gap: 8px;
-  border: 2px solid transparent;
+  border: 2px solid var(--card-edge);
 }
 .goal-card.is-met {
   border-color: var(--ok);
@@ -2407,7 +2437,7 @@ img {
   text-align: left;
   padding: 12px;
   border-radius: var(--r-md);
-  border: 3px solid var(--paper-2);
+  border: 3px solid var(--surface-edge);
   background: var(--paper);
   color: var(--ink);
   font: inherit;
@@ -2442,9 +2472,10 @@ img {
   outline: 3px solid var(--ring);
   outline-offset: 2px;
 }
-/* The picker takes focus when it opens so keyboard users start inside it; it needs no ring of its own. */
+/* The picker takes focus when it opens so keyboard users start inside it; it needs no ring of its own, only its edge. */
 .starter-picker:focus {
-  outline: none;
+  outline: 1px solid var(--card-edge);
+  outline-offset: -1px;
 }
 .starter-card strong {
   font-family: var(--font-display);

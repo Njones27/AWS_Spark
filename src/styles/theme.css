@@ -96,9 +96,12 @@
   --bad-fill: #c42b31;
   --on-bad: #ffffff;
 
-  /* edges and focus */
+  /* edges and focus (card, surface and zone edges only show at night, where shadows don't separate layers) */
   --border-control: #8a7a5c;
   --ring: #2a7286;
+  --card-edge: transparent;
+  --surface-edge: var(--paper-2);
+  --zone-edge: transparent;
 
   /* type */
   --font-display: 'Fredoka Variable', 'Fredoka', ui-rounded, 'Arial Rounded MT Bold', sans-serif;
@@ -124,44 +127,45 @@
 }
 
 :root[data-theme='dark'] {
+  /* "Night Map" (docs/design/dark-mode-proposals.html, option A), keeping the page and panel surfaces below */
   color-scheme: dark;
 
   --paper: #121826;
   --paper-2: #1a2232;
-  --paper-3: #2b3548;
-  --card: #1e2636;
-  --cloud: #2a3449;
-  --cloud-shade: #222c3e;
+  --paper-3: #33405a;
+  --card: #2b3651;
+  --cloud: #1c2741;
+  --cloud-shade: #34446a;
   --field: #141b29;
   --scrim: rgb(4 7 14 / 0.6);
 
   --ink: #eef1f6;
-  --ink-soft: #b7bfcd;
-  --ink-faint: #929bae;
+  --ink-soft: #b9c1cf;
+  --ink-faint: #a0a9bb;
 
-  --meadow: #1f3326;
-  --meadow-2: #27402e;
-  --meadow-deep: #3f6a3a;
-  --pond: #1d4a57;
+  --meadow: #26422e;
+  --meadow-2: #335a3c;
+  --meadow-deep: #4f8a4a;
+  --pond: #23596b;
   --pond-deep: #6cc4d8;
-  --road: #3a3428;
-  --roof: #b5604a;
-  --roof-2: #94493a;
-  --sky: #0b1222;
-  --hill: #1b2e22;
-  --hill-far: #22382a;
-  --tree-2: #345a33;
+  --road: #4a4130;
+  --roof: #c26a50;
+  --roof-2: #9c4f3d;
+  --sky: #090e1b;
+  --hill: #213a29;
+  --hill-far: #2b4833;
+  --tree-2: #3f7240;
   --trunk: #4d3b2b;
-  --wall: #cfc3ad;
-  --wall-warm: #d6c7ab;
+  --wall: #d8cdb7;
+  --wall-warm: #ddd0b6;
   --awning: #d8cdbb;
   --roof-orange: #a8703f;
   --roof-blue: #4e6a92;
   --window: #ffd77a;
   --orb: #f3e9c6;
   --shine: rgb(255 255 255 / 0.12);
-  --zone-cloud-top: #26314a;
-  --zone-cloud-bottom: #1f2940;
+  --zone-cloud-top: #1f2b48;
+  --zone-cloud-bottom: #1c2741;
   --source-tint: #2b2618;
 
   --coral: #ff8a6b;
@@ -173,13 +177,13 @@
   --coral-text: #ff9a7e;
   --coral-soft: #3d2420;
   --sun: #ffc531;
-  --sun-soft: #3a3020;
+  --sun-soft: #3d3218;
   --flow: #5fd0c0;
   --flow-text: #5fd0c0;
-  --flow-soft: #183d39;
+  --flow-soft: #163f3a;
   --plum: #c3a8ee;
   --plum-text: #c3a8ee;
-  --plum-soft: #2f2645;
+  --plum-soft: #322849;
   --plum-fill: #c3a8ee;
   --on-plum: #1b1230;
   --gremlin: #f080b4;
@@ -192,20 +196,23 @@
 
   --ok: #6fd69c;
   --ok-text: #6fd69c;
-  --ok-soft: #15352a;
+  --ok-soft: #163a2c;
   --ok-fill: #6fd69c;
   --on-ok: #0c2216;
   --warn: #f7c063;
   --warn-text: #f7c063;
-  --warn-soft: #3a2d16;
+  --warn-soft: #3d2f14;
   --bad: #ff8085;
   --bad-text: #ff8085;
-  --bad-soft: #3d1d24;
+  --bad-soft: #432028;
   --bad-fill: #ff8085;
   --on-bad: #2a0a0d;
 
-  --border-control: #6b7891;
+  --border-control: #71809c;
   --ring: #7fd0e2;
+  --card-edge: #4a5a80;
+  --surface-edge: #4a5a80;
+  --zone-edge: #34446a;
 
   --shadow-rgb: 0 0 0;
   --shadow-sm: 0 1px 0 rgb(0 0 0 / 0.2), 0 2px 6px rgb(0 0 0 / 0.25);

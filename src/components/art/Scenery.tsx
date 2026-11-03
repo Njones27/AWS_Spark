@@ -1,7 +1,23 @@
+import { useId, type ReactNode } from 'react';
 import { iconUrl } from '../../data/services';
 import { parkedMotion, useReducedMotion } from '../../motion';
 
 /* Flat, Balance-style landscape pieces shared by the title screen, the level map, and the canvas zones. */
+
+/** Clips its children to a rounded rectangle, so hills and trees drawn to the edges keep the corners round. */
+function Rounded({ width, height, r, children }: { width: number; height: number; r: number; children: ReactNode }) {
+  const id = `round-${useId().replace(/:/g, '')}`;
+  return (
+    <>
+      <defs>
+        <clipPath id={id}>
+          <rect width={width} height={height} rx={r} />
+        </clipPath>
+      </defs>
+      <g clipPath={`url(#${id})`}>{children}</g>
+    </>
+  );
+}
 
 export function House({ x, y, s = 1, roof = 'var(--roof)' }: { x: number; y: number; s?: number; roof?: string }) {
   return (
@@ -198,22 +214,24 @@ function CityScene({ road, done, end }: { road: string; done: string; end: { x: 
   ];
   return (
     <svg className="map-scene" viewBox="0 0 1000 600" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
-      <rect width="1000" height="600" rx="40" fill="#2c3550" />
-      <path d="M0 140 Q180 80 320 130 T640 110 T1000 140 V0 H0 Z" fill="#36405f" />
-      <ellipse cx="560" cy="520" rx="120" ry="34" fill="#3e5a86" />
-      {towers.map(([x, y, w, h], i) => (
-        <Tower key={i} x={x} y={y} w={w} h={h} tone={i % 2 ? '#46507a' : '#525d8a'} />
-      ))}
-      <path d={road} stroke="#4a5478" strokeWidth="34" fill="none" strokeLinecap="round" strokeLinejoin="round" />
-      <path d={road} stroke="#fff" strokeOpacity="0.35" strokeWidth="3" strokeDasharray="2 14" fill="none" strokeLinecap="round" />
-      <path d={done} className="flow-dash" stroke="var(--flow)" strokeWidth="5" fill="none" strokeLinecap="round" />
-      <g transform={`translate(${end.x + 80} ${end.y + 10})`}>
-        <Tower x={0} y={0} w={70} h={160} tone="#5d6aa0" />
-        <rect x="-44" y="-182" width="88" height="22" rx="11" fill="var(--coral)" />
-        <text x="0" y="-167" textAnchor="middle" fontFamily="var(--font-display)" fontWeight="600" fontSize="12" fill="#fff">
-          Crumb &amp; Co. HQ
-        </text>
-      </g>
+      <Rounded width={1000} height={600} r={40}>
+        <rect width="1000" height="600" fill="#2c3550" />
+        <path d="M0 140 Q180 80 320 130 T640 110 T1000 140 V0 H0 Z" fill="#36405f" />
+        <ellipse cx="560" cy="520" rx="120" ry="34" fill="#3e5a86" />
+        {towers.map(([x, y, w, h], i) => (
+          <Tower key={i} x={x} y={y} w={w} h={h} tone={i % 2 ? '#46507a' : '#525d8a'} />
+        ))}
+        <path d={road} stroke="#4a5478" strokeWidth="34" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+        <path d={road} stroke="#fff" strokeOpacity="0.35" strokeWidth="3" strokeDasharray="2 14" fill="none" strokeLinecap="round" />
+        <path d={done} className="flow-dash" stroke="var(--flow)" strokeWidth="5" fill="none" strokeLinecap="round" />
+        <g transform={`translate(${end.x + 80} ${end.y + 10})`}>
+          <Tower x={0} y={0} w={70} h={160} tone="#5d6aa0" />
+          <rect x="-44" y="-182" width="88" height="22" rx="11" fill="var(--coral-fill)" />
+          <text x="0" y="-167" textAnchor="middle" fontFamily="var(--font-display)" fontWeight="600" fontSize="12" fill="var(--on-coral)">
+            Crumb &amp; Co. HQ
+          </text>
+        </g>
+      </Rounded>
     </svg>
   );
 }
@@ -232,23 +250,25 @@ export function MapScene({
   if (variant === 'city') return <CityScene road={road} done={done} end={stops[stops.length - 1]} />;
   return (
     <svg className="map-scene" viewBox="0 0 1000 600" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
-      <rect width="1000" height="600" rx="40" fill="var(--meadow)" />
-      <path d="M0 120 Q160 60 300 110 T620 90 T1000 120 V0 H0 Z" fill="var(--hill-far)" />
-      <ellipse cx="560" cy="520" rx="120" ry="40" fill="var(--pond)" />
-      <ellipse cx="540" cy="512" rx="60" ry="10" fill="var(--shine)" />
-      <ellipse cx="90" cy="150" rx="70" ry="24" fill="var(--pond)" />
-      {[
-        [60, 360, 1.1], [420, 120, 0.9], [470, 380, 1], [700, 90, 1.2], [960, 520, 1], [300, 560, 0.9], [930, 260, 0.8], [640, 560, 0.8], [250, 120, 0.9],
-      ].map(([x, y, s], i) => (
-        <Tree key={i} x={x} y={y} s={s} tone={i % 2 ? 'var(--tree-2)' : 'var(--meadow-deep)'} />
-      ))}
-      <House x={40} y={540} s={0.8} />
-      <House x={380} y={480} s={0.7} roof="var(--roof-orange)" />
-      <House x={980} y={400} s={0.7} roof="var(--roof-blue)" />
-      <path d={road} stroke="var(--road)" strokeWidth="34" fill="none" strokeLinecap="round" strokeLinejoin="round" />
-      <path d={road} stroke="#fff" strokeOpacity="0.55" strokeWidth="3" strokeDasharray="2 14" fill="none" strokeLinecap="round" />
-      <path d={done} className="flow-dash" stroke="var(--flow)" strokeWidth="5" fill="none" strokeLinecap="round" />
-      <Bakery x={stops[stops.length - 1].x + 70} y={stops[stops.length - 1].y - 20} s={0.6} />
+      <Rounded width={1000} height={600} r={40}>
+        <rect width="1000" height="600" fill="var(--meadow)" />
+        <path d="M0 120 Q160 60 300 110 T620 90 T1000 120 V0 H0 Z" fill="var(--hill-far)" />
+        <ellipse cx="560" cy="520" rx="120" ry="40" fill="var(--pond)" />
+        <ellipse cx="540" cy="512" rx="60" ry="10" fill="var(--shine)" />
+        <ellipse cx="90" cy="150" rx="70" ry="24" fill="var(--pond)" />
+        {[
+          [60, 360, 1.1], [420, 120, 0.9], [470, 380, 1], [700, 90, 1.2], [960, 520, 1], [300, 560, 0.9], [930, 260, 0.8], [640, 560, 0.8], [250, 120, 0.9],
+        ].map(([x, y, s], i) => (
+          <Tree key={i} x={x} y={y} s={s} tone={i % 2 ? 'var(--tree-2)' : 'var(--meadow-deep)'} />
+        ))}
+        <House x={40} y={540} s={0.8} />
+        <House x={380} y={480} s={0.7} roof="var(--roof-orange)" />
+        <House x={980} y={400} s={0.7} roof="var(--roof-blue)" />
+        <path d={road} stroke="var(--road)" strokeWidth="34" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+        <path d={road} stroke="#fff" strokeOpacity="0.55" strokeWidth="3" strokeDasharray="2 14" fill="none" strokeLinecap="round" />
+        <path d={done} className="flow-dash" stroke="var(--flow)" strokeWidth="5" fill="none" strokeLinecap="round" />
+        <Bakery x={stops[stops.length - 1].x + 70} y={stops[stops.length - 1].y - 20} s={0.6} />
+      </Rounded>
     </svg>
   );
 }
@@ -290,11 +310,13 @@ export function TownZone({ width, height }: { width: number; height: number }) {
   return (
     <div className="zone zone-town" style={{ width, height }}>
       <svg width={width} height={height} viewBox={`0 0 ${width} ${height}`} aria-hidden="true">
-        <rect x="0" y="0" width={width} height={height} rx="44" fill="var(--meadow)" />
-        <path d={`M0 ${height - 90} Q${width / 2} ${height - 140} ${width} ${height - 80} V${height} H0 Z`} fill="var(--meadow-2)" opacity="0.6" />
-        <Tree x={width - 34} y={height - 52} s={0.9} />
-        <Tree x={28} y={height - 40} s={0.7} tone="var(--tree-2)" />
-        <House x={width / 2} y={height - 44} s={0.8} roof="var(--roof-orange)" />
+        <Rounded width={width} height={height} r={44}>
+          <rect width={width} height={height} fill="var(--meadow)" />
+          <path d={`M0 ${height - 90} Q${width / 2} ${height - 140} ${width} ${height - 80} V${height} H0 Z`} fill="var(--meadow-2)" opacity="0.6" />
+          <Tree x={width - 34} y={height - 52} s={0.9} />
+          <Tree x={28} y={height - 40} s={0.7} tone="var(--tree-2)" />
+          <House x={width / 2} y={height - 44} s={0.8} roof="var(--roof-orange)" />
+        </Rounded>
       </svg>
       <div className="zone-tag zone-tag-town">Town</div>
     </div>
