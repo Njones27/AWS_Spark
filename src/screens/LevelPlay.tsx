@@ -23,8 +23,18 @@ import { simulate, type SimResult } from '../engine/simulate';
 import { go, href } from '../router';
 import { BandOverride, useApp, useBand } from '../store';
 import { AdvancedChip } from './LevelMap';
+import { Icon } from '../components/Icon';
 
 const RAMP_MS = 2600;
+
+/** Goal marks are icons, so their state is spoken from here. */
+const MARK_LABEL = { ok: 'Done', bad: 'Needs a fix', pending: 'Not yet', live: 'Checking' } as const;
+
+type GoalState = keyof typeof MARK_LABEL;
+
+function GoalMark({ state }: { state: GoalState }) {
+  return state === 'ok' ? <Icon name="check" size={16} /> : state === 'bad' ? <Icon name="alert" size={16} /> : null;
+}
 const PIECE_W = 132;
 const PIECE_H = 150;
 
@@ -193,7 +203,8 @@ function LevelInner({ level }: { level: Level }) {
   const sourceState = (id: string) => {
     const res = sim?.sources[id];
     const ok = res && res.ok >= res.demand * 0.999 && res.demand > 0;
-    return { res, state: !res ? 'pending' : phase === 'running' ? 'live' : ok ? 'ok' : 'bad' };
+    const state: GoalState = !res ? 'pending' : phase === 'running' ? 'live' : ok ? 'ok' : 'bad';
+    return { res, state };
   };
 
   const panel = (
@@ -211,8 +222,8 @@ function LevelInner({ level }: { level: Level }) {
           const { res, state } = sourceState(n.id);
           return (
             <div key={n.id} className={`goal goal-${state}`}>
-              <span className="goal-mark" aria-hidden="true">
-                {state === 'ok' ? '✓' : state === 'bad' ? '!' : '○'}
+              <span className="goal-mark" role="img" aria-label={MARK_LABEL[state]}>
+                <GoalMark state={state} />
               </span>
               <div className="goal-body">
                 <strong>{n.data.label}</strong>
@@ -251,8 +262,8 @@ function LevelInner({ level }: { level: Level }) {
             const state = o.ok === null ? 'pending' : o.ok ? 'ok' : phase === 'fail' || o.id === 'budget' ? 'bad' : 'pending';
             return (
               <div key={o.id} className={`goal goal-${state}`}>
-                <span className="goal-mark" aria-hidden="true">
-                  {state === 'ok' ? '✓' : state === 'bad' ? '!' : '○'}
+                <span className="goal-mark" role="img" aria-label={MARK_LABEL[state]}>
+                  <GoalMark state={state} />
                 </span>
                 <div className="goal-body">
                   <strong>
@@ -273,12 +284,12 @@ function LevelInner({ level }: { level: Level }) {
       <section className="hints" aria-label="Hints">
         {level.hints.slice(0, hints).map((h, i) => (
           <p key={i} className="hint">
-            <span aria-hidden="true">💡</span> <Terms text={bt(h, band)} />
+            <Icon name="bulb" /> <Terms text={bt(h, band)} />
           </p>
         ))}
         {hints < level.hints.length && (
           <button className="btn btn-ghost btn-sm" onClick={() => setHints((h) => h + 1)}>
-            💡 {hints ? 'Another hint' : 'Need a hint?'}
+            <Icon name="bulb" /> {hints ? 'Another hint' : 'Need a hint?'}
           </button>
         )}
       </section>
@@ -296,11 +307,11 @@ function LevelInner({ level }: { level: Level }) {
   const runButton =
     phase === 'running' || phase === 'fail' ? (
       <button className="btn btn-run is-stop" onClick={stop}>
-        ■ {phase === 'fail' ? 'Keep building' : 'Stop'}
+        <Icon name="stop" /> {phase === 'fail' ? 'Keep building' : 'Stop'}
       </button>
     ) : (
       <button className="btn btn-run" onClick={run} disabled={phase === 'intro' || phase === 'win'}>
-        ▶ Run
+        <Icon name="play" /> Run
       </button>
     );
 
@@ -326,7 +337,7 @@ function LevelInner({ level }: { level: Level }) {
         hideBand={advanced}
       >
         <button className="btn btn-ghost" onClick={restart} title="Start this level over">
-          ↺ Restart
+          <Icon name="restart" /> Restart
         </button>
         {advanced && <AdvancedChip />}
       </TopBar>
@@ -441,15 +452,15 @@ function LevelInner({ level }: { level: Level }) {
                   </button>
                   {next ? (
                     <a className="btn btn-primary btn-lg" href={href.level(next.id)}>
-                      Next: {next.title} ›
+                      Next: {next.title} <Icon name="chevron" />
                     </a>
                   ) : nextChapter ? (
                     <a className="btn btn-primary btn-lg" href={href.chapter(nextChapter.id)}>
-                      Start {nextChapter.eyebrow}: {nextChapter.title} ›
+                      Start {nextChapter.eyebrow}: {nextChapter.title} <Icon name="chevron" />
                     </a>
                   ) : (
                     <a className="btn btn-primary btn-lg" href={href.chapter(chapter.id)}>
-                      Back to the map ›
+                      Back to the map <Icon name="chevron" />
                     </a>
                   )}
                 </div>
@@ -462,10 +473,10 @@ function LevelInner({ level }: { level: Level }) {
       {phone && (
         <nav className="phone-bar" aria-label="Level tools" inert={phase === 'intro' || phase === 'win' ? true : undefined}>
           <button className="phone-tab" aria-pressed={sheet === 'mission'} onClick={() => toggle('mission')}>
-            <span aria-hidden="true">🎯</span> Mission
+            <Icon name="target" /> Mission
           </button>
           <button className="phone-tab" aria-pressed={sheet === 'pieces'} onClick={() => toggle('pieces')}>
-            <span aria-hidden="true">🧩</span> Pieces
+            <Icon name="puzzle" /> Pieces
             {piecesLeft > 0 && <span className="phone-tab-count">{piecesLeft}</span>}
           </button>
           {runButton}
@@ -516,7 +527,7 @@ function StoryIntro({ level, beat, onNext, onSkip }: { level: Level; beat: numbe
             Skip
           </button>
           <button className="btn btn-primary btn-lg" onClick={onNext} autoFocus>
-            {last ? 'Let’s build! ▶' : 'Next ›'}
+            {last ? 'Let’s build!' : 'Next'} <Icon name={last ? 'play' : 'chevron'} />
           </button>
         </div>
       </div>

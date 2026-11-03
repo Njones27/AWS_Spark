@@ -7,6 +7,7 @@ import type { NodeResult } from '../../engine/simulate';
 import { useBand } from '../../store';
 import { useServiceTip } from '../ServiceTip';
 import { displayName, useSim, useUi, type PieceNode as PieceNodeType } from './model';
+import { Icon } from '../Icon';
 
 const fmt = (n: number) => (n >= 100 ? Math.round(n).toString() : n >= 10 ? Math.round(n).toString() : n.toFixed(n % 1 ? 1 : 0));
 
@@ -15,12 +16,22 @@ function Meter({ r, band }: { r: NodeResult; band: Band }) {
   const finite = Number.isFinite(r.capacity);
   const unit = band === 'architect' ? ' req/s' : '';
   if (r.blocked > 0.5) {
-    return <div className="meter-note note-blocked">🛡️ {fmt(r.blocked)} bots blocked</div>;
+    return (
+      <div className="meter-note note-blocked">
+        <Icon name="shield" /> {fmt(r.blocked)} bots blocked
+      </div>
+    );
   }
   if (!finite) {
     return (
       <div className="meter-note">
-        {band === 'explorer' ? '➜ passing through' : `${fmt(r.load)}${unit} passing`}
+        {band === 'explorer' ? (
+          <>
+            <Icon name="chevron" /> passing through
+          </>
+        ) : (
+          `${fmt(r.load)}${unit} passing`
+        )}
       </div>
     );
   }
@@ -34,7 +45,11 @@ function Meter({ r, band }: { r: NodeResult; band: Band }) {
       <div className="meter-text">
         {band === 'explorer' ? face : `${fmt(r.load - r.waiting)} / ${fmt(r.capacity)}${unit}`}
       </div>
-      {r.waiting > 0.5 && <div className="meter-wait">🎟️ {fmt(r.waiting)} waiting in line</div>}
+      {r.waiting > 0.5 && (
+        <div className="meter-wait">
+          <Icon name="ticket" /> {fmt(r.waiting)} waiting in line
+        </div>
+      )}
     </div>
   );
 }
@@ -67,7 +82,11 @@ function PieceNodeView({ id, data, selected }: NodeProps<PieceNodeType>) {
       <Handle type="target" position={Position.Left} className="target-cover" isConnectableStart={false} />
       <div className="piece-tile">
         <img src={iconUrl(data.service)} alt="" draggable={false} />
-        {data.source?.far && <span className="piece-badge badge-far" title="Far away">🌊 far</span>}
+        {data.source?.far && (
+          <span className="piece-badge badge-far" title="Far away">
+            <Icon name="globe" /> far
+          </span>
+        )}
         {badges[id] && (
           <span className="piece-badges">
             {badges[id].map((b) => {
@@ -82,8 +101,14 @@ function PieceNodeView({ id, data, selected }: NodeProps<PieceNodeType>) {
       {names.sub && <div className="piece-sub">{names.sub}</div>}
       {data.source && (
         <div className="piece-demand">
-          <span>👥 {data.source.demand}</span>
-          {!!data.source.bots && <span className="bots">👾 {data.source.bots}</span>}
+          <span>
+            <Icon name="users" /> {data.source.demand}
+          </span>
+          {!!data.source.bots && (
+            <span className="bots">
+              <Icon name="bot" /> {data.source.bots}
+            </span>
+          )}
         </div>
       )}
       {r && <Meter r={r} band={band} />}
@@ -97,10 +122,14 @@ function PieceNodeView({ id, data, selected }: NodeProps<PieceNodeType>) {
             deleteElements({ nodes: [{ id }] });
           }}
         >
-          ✕
+          <Icon name="close" />
         </button>
       )}
-      {data.locked && <span className="piece-pin" title="Part of the level">📌</span>}
+      {data.locked && (
+        <span className="piece-pin" title="Part of the level">
+          <Icon name="pin" />
+        </span>
+      )}
       {tip}
       {canSend && (
         <Handle type="source" position={Position.Right} className="nub" aria-label="Drag to connect">

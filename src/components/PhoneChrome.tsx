@@ -1,5 +1,6 @@
 import { useRef, useState, type MouseEvent, type ReactNode } from 'react';
 import { setLayoutChoice } from '../device';
+import { Icon } from './Icon';
 import { useDismiss } from './useDismiss';
 
 /** The phone top bar's "⋯" menu: the buttons a laptop shows in the top bar, plus a way back to the laptop layout. */
@@ -14,13 +15,13 @@ export function PhoneMenu({ children }: { children?: ReactNode }) {
   return (
     <div className="phone-menu" ref={ref}>
       <button className="btn btn-ghost btn-icon" aria-label="More" aria-expanded={open} onClick={() => setOpen((o) => !o)}>
-        <span aria-hidden="true">⋯</span>
+        <Icon name="more" />
       </button>
       {open && (
         <div className="phone-menu-list" onClick={pick}>
           {children}
           <button className="btn btn-ghost phone-menu-layout" onClick={() => setLayoutChoice('laptop')}>
-            <span aria-hidden="true">💻</span> Use the laptop layout
+            <Icon name="laptop" /> Use the laptop layout
           </button>
         </div>
       )}
@@ -64,7 +65,7 @@ export function Sheet({
             onClick={onClose}
             autoFocus
           >
-            <span aria-hidden="true">✕</span>
+            <Icon name="close" />
           </button>
           {hint && <p>{hint}</p>}
         </header>
@@ -96,7 +97,7 @@ export function TurnTip() {
   };
   return (
     <div className="turn-tip" role="note">
-      <span aria-hidden="true">📱</span>
+      <Icon name="phone" />
       <span>Turn your phone sideways for a bigger map.</span>
       <button className="btn btn-ghost btn-sm" onClick={dismiss}>
         Got it

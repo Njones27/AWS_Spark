@@ -6,6 +6,7 @@ import { iconUrl, SERVICES, shortName } from '../../data/services';
 import type { Band, ServiceId } from '../../data/types';
 import type { PlanInfo } from '../../store';
 import type { AppEdge, PieceNode } from '../canvas/model';
+import { Icon } from '../Icon';
 import { useEscape } from './ShareDialog';
 
 export const PLAN_SOURCES = 'Diagram made with Spark: Cloud Builders. Icons: AWS Architecture Icons, Amazon Web Services.';
@@ -60,6 +61,9 @@ export function planText(plan: PlanInfo, summary: PlanSummary): string {
   return lines.join('\n');
 }
 
+/** A colour from the theme in use, so the saved pictures look like what the team sees (light or dark). */
+const themeColor = (token: string) => getComputedStyle(document.documentElement).getPropertyValue(token).trim();
+
 const PIC_W = 1200;
 const PIC_H = 640;
 
@@ -79,7 +83,7 @@ export function PlanExport({ pieces, edges, plan, onPlan, band, onClose }: Props
       if (!viewport) return;
       const v = getViewportForBounds(getNodesBounds(getNodes()), PIC_W, PIC_H, 0.2, 2, 0.06);
       toPng(viewport, {
-        backgroundColor: '#f7f2e8',
+        backgroundColor: themeColor('--paper'),
         width: PIC_W,
         height: PIC_H,
         style: { width: `${PIC_W}px`, height: `${PIC_H}px`, transform: `translate(${v.x}px, ${v.y}px) scale(${v.zoom})` },
@@ -103,7 +107,7 @@ export function PlanExport({ pieces, edges, plan, onPlan, band, onClose }: Props
   const save = () => {
     if (!card.current) return;
     setStatus('Saving the picture…');
-    toPng(card.current, { backgroundColor: '#fffdf8', pixelRatio: 2 })
+    toPng(card.current, { backgroundColor: themeColor('--card'), pixelRatio: 2 })
       .then((url) => {
         const a = document.createElement('a');
         a.href = url;
@@ -118,7 +122,7 @@ export function PlanExport({ pieces, edges, plan, onPlan, band, onClose }: Props
     <div className="modal-backdrop" onClick={(e) => e.target === e.currentTarget && onClose()}>
       <div className="modal plan-export" role="dialog" aria-modal="true" aria-labelledby="plan-title">
         <button className="icon-btn plan-close" aria-label="Close" onClick={onClose}>
-          ✕
+          <Icon name="close" />
         </button>
         <div className="modal-scroll">
           <div className="plan-card" ref={card}>

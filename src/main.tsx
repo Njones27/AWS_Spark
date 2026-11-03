@@ -8,6 +8,7 @@ import { createRoot } from 'react-dom/client';
 import { App } from './App';
 import { startDeviceWatch } from './device';
 import { appSync } from './sync';
+import { startThemeWatch } from './theme';
 
 // After a deploy, a tab opened earlier can ask for a file that is gone. Reload once to get the new version.
 // The sessionStorage mark makes sure a file that is still missing after the reload can't cause a reload loop.
@@ -42,6 +43,8 @@ appSync.start();
 
 // Tags <html> with data-device="phone" or "laptop" before the first paint.
 startDeviceWatch();
+// Keeps data-theme="light" or "dark" on <html> in step with the Theme menu and the device setting.
+startThemeWatch();
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

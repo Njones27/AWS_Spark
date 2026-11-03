@@ -4,6 +4,7 @@ import { iconUrl, SERVICES } from '../data/services';
 import { ServiceChip } from './ServiceTip';
 import type { ServiceId } from '../data/types';
 import { useBand } from '../store';
+import { Icon } from './Icon';
 
 interface Props {
   service: ServiceId;
@@ -32,7 +33,7 @@ export function ServiceCard({ service, label, available, onClose, children }: Pr
         </div>
         {onClose && (
           <button className="icon-btn" aria-label="Close" onClick={onClose}>
-            ✕
+            <Icon name="close" />
           </button>
         )}
       </header>
@@ -56,7 +57,8 @@ export function ServiceCard({ service, label, available, onClose, children }: Pr
       ) : all.length > 0 ? (
         <p className="service-card-end">It can send arrows to other pieces, but none of them are in this tray.</p>
       ) : (
-        <p className="service-card-end">🏁 This is an end stop. Arrows go in, but not out.</p>
+        <p className="service-card-end">
+          <Icon name="flag" /> This is an end stop. Arrows go in, but not out.</p>
       )}
     </section>
   );

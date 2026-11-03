@@ -27,6 +27,7 @@ import { decodeDesign } from '../engine/share';
 import { simulate } from '../engine/simulate';
 import { href } from '../router';
 import { useApp, useBand, type PlanInfo, type SavedDiagram } from '../store';
+import { Icon } from '../components/Icon';
 
 const EMPTY_PLAN: PlanInfo = { title: '', uses: {} };
 
@@ -208,7 +209,15 @@ function PlaygroundInner({ share, shareId }: { share?: string; shareId?: string 
         setRunning((r) => !r);
       }}
     >
-      {running ? '■ Stop' : '▶ Run'}
+      {running ? (
+        <>
+          <Icon name="stop" /> Stop
+        </>
+      ) : (
+        <>
+          <Icon name="play" /> Run
+        </>
+      )}
     </button>
   );
   const pieceList = (
@@ -258,11 +267,11 @@ function PlaygroundInner({ share, shareId }: { share?: string; shareId?: string 
             setShowStarters(true);
           }}
         >
-          <span aria-hidden="true">🧹</span>
+          <Icon name="broom" />
           <span className="btn-label">Clear</span>
         </button>
         <button className="btn btn-ghost" title="Starters" aria-label="Starters" onClick={() => setShowStarters(true)}>
-          <span aria-hidden="true">✨</span>
+          <Icon name="sparkles" />
           <span className="btn-label">Starters</span>
         </button>
         <button
@@ -275,16 +284,16 @@ function PlaygroundInner({ share, shareId }: { share?: string; shareId?: string 
             setShowJudge((j) => !j);
           }}
         >
-          <span aria-hidden="true">🎤</span>
+          <Icon name="mic" />
           <span className="btn-label">Judge practice</span>
         </button>
         <button className="btn btn-ghost" title="Share" aria-label="Share" onClick={() => setShowShare(true)}>
-          <span aria-hidden="true">🔗</span>
+          <Icon name="link" />
           <span className="btn-label">Share</span>
         </button>
         {!phone && (
           <button className="btn btn-primary" title="Our AWS plan" aria-label="Our AWS plan" onClick={openPlan}>
-            <span aria-hidden="true">📄</span>
+            <Icon name="doc" />
             <span className="btn-label btn-label-main">Our AWS plan</span>
           </button>
         )}
@@ -357,7 +366,7 @@ function PlaygroundInner({ share, shareId }: { share?: string; shareId?: string 
               <section className="source-controls">
                 <label>
                   <span>
-                    👥 Visitors <strong>{selectedNode.data.source.demand}</strong>
+                    <Icon name="users" /> Visitors <strong>{selectedNode.data.source.demand}</strong>
                   </span>
                   <input
                     type="range"
@@ -370,7 +379,7 @@ function PlaygroundInner({ share, shareId }: { share?: string; shareId?: string 
                 </label>
                 <label>
                   <span>
-                    👾 Gremlin bots <strong>{selectedNode.data.source.bots ?? 0}</strong>
+                    <Icon name="bot" /> Gremlin bots <strong>{selectedNode.data.source.bots ?? 0}</strong>
                   </span>
                   <input
                     type="range"
@@ -390,10 +399,10 @@ function PlaygroundInner({ share, shareId }: { share?: string; shareId?: string 
       {phone && (
         <nav className="phone-bar" aria-label="Playground tools">
           <button className="phone-tab" aria-pressed={piecesOpen} onClick={() => setPiecesOpen((o) => !o)}>
-            <span aria-hidden="true">🧩</span> Pieces
+            <Icon name="puzzle" /> Pieces
           </button>
           <button className="phone-tab" onClick={openPlan}>
-            <span aria-hidden="true">📄</span> Our plan
+            <Icon name="doc" /> Our plan
           </button>
           {runButton}
         </nav>

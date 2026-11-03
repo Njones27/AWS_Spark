@@ -9,6 +9,7 @@ import { iconUrl } from '../data/services';
 import { bt } from '../data/text';
 import { href } from '../router';
 import { BandOverride, useApp, useBand } from '../store';
+import { Icon } from '../components/Icon';
 
 // Stop positions in the 1000×600 map space.
 const STOPS: Record<string, { x: number; y: number }[]> = {
@@ -107,8 +108,10 @@ function ChapterMap({ chapter }: { chapter: Chapter }) {
                 title={open ? `${chapter.unit} ${l.number}. ${l.title}` : `Finish the ${chapter.unit.toLowerCase()} before to unlock`}
               >
                 <span className="stop-disc">
-                  {open ? <img src={iconUrl(l.teaches[0])} alt="" /> : <span aria-hidden="true">🔒</span>}
-                  <span className="stop-num">{done ? '★' : l.number}</span>
+                  {open ? <img src={iconUrl(l.teaches[0])} alt="" /> : <Icon name="lock" size={22} />}
+                  <span className="stop-num" role={done ? 'img' : undefined} aria-label={done ? 'Done' : undefined}>
+                    {done ? <Icon name="star" size={14} /> : l.number}
+                  </span>
                 </span>
                 <span className="stop-label">
                   <strong>{l.title}</strong>
@@ -135,13 +138,14 @@ function ChapterMap({ chapter }: { chapter: Chapter }) {
           </div>
           {advanced && (
             <p className="term-hint">
-              <span aria-hidden="true">📖</span> Tap any <span className="term-sample">dotted word</span> to see what it means
+              <Icon name="book" /> Tap any <span className="term-sample">dotted word</span> to see what it means
               in plain words.
             </p>
           )}
           {nextIndex >= 0 && (
             <a className="btn btn-primary btn-lg" href={href.level(levels[nextIndex].id)}>
-              {progress ? 'Keep going' : advanced ? 'Start your first shift' : chapter === STORY[0] ? 'Start the story' : `Start ${chapter.eyebrow}`} ▶
+              {progress ? 'Keep going' : advanced ? 'Start your first shift' : chapter === STORY[0] ? 'Start the story' : `Start ${chapter.eyebrow}`}{' '}
+              <Icon name="play" />
             </a>
           )}
           {!advanced && (
@@ -157,7 +161,7 @@ function ChapterMap({ chapter }: { chapter: Chapter }) {
                     aria-current={c.id === chapter.id ? 'page' : undefined}
                     className={`chapter-link ${c.id === chapter.id ? 'is-current' : ''} ${open ? '' : 'is-locked'}`}
                   >
-                    <span aria-hidden="true">{done === c.levels.length ? '⭐' : open ? '📖' : '🔒'}</span>
+                    <Icon name={done === c.levels.length ? 'star' : open ? 'book' : 'lock'} />
                     <span>
                       <strong>{c.eyebrow}</strong>
                       {c.title} · {done} of {c.levels.length}
@@ -188,7 +192,7 @@ function ChapterMap({ chapter }: { chapter: Chapter }) {
 export function AdvancedChip() {
   return (
     <span className="btn btn-chip advanced-chip" title="The Advanced Track always uses real AWS names and numbers">
-      <span aria-hidden="true">🎓</span> Advanced
+      <Icon name="cap" /> Advanced
       <span className="band-grades">College & up</span>
     </span>
   );

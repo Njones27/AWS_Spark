@@ -1,13 +1,14 @@
 import { TownScene } from '../components/art/Scenery';
 import { Sparky } from '../components/art/Sparky';
 import { BuilderKeyButton } from '../components/BuilderKey';
-import { BandPicker, BandSwitch } from '../components/Chrome';
+import { BandPicker, BandSwitch, ThemeSwitch } from '../components/Chrome';
 import { ADVANCED } from '../data/advanced';
 import { STORY } from '../data/chapters';
 import { CHAPTER } from '../data/levels';
 import { iconUrl, SERVICE_LIST } from '../data/services';
 import { href } from '../router';
 import { useApp } from '../store';
+import { Icon } from '../components/Icon';
 
 export function Home() {
   const band = useApp((s) => s.band);
@@ -22,10 +23,13 @@ export function Home() {
       <TownScene />
       <div className="home-top">
         <span className="wordmark">
-          <span className="wordmark-spark" aria-hidden="true">⚡</span> Spark
+          <span className="wordmark-spark" aria-hidden="true">
+            <Icon name="bolt" size={24} />
+          </span> Spark
         </span>
         <div className="topbar-actions">
           <BuilderKeyButton variant="chip" />
+          <ThemeSwitch />
           <BandSwitch />
         </div>
       </div>
@@ -39,7 +43,9 @@ export function Home() {
         </div>
         <nav className="home-cards" aria-label="Choose a mode">
           <a className="mode-card mode-story" href={href.chapter(current.id)}>
-            <span className="mode-icon" aria-hidden="true">📖</span>
+            <span className="mode-icon" aria-hidden="true">
+              <Icon name="book" size={30} />
+            </span>
             <span className="mode-text">
               <strong>Story Mode</strong>
               <span>{current === STORY[0] ? CHAPTER.blurb : current.blurb}</span>
@@ -52,10 +58,14 @@ export function Home() {
                 </span>
               </span>
             </span>
-            <span className="mode-go" aria-hidden="true">›</span>
+            <span className="mode-go" aria-hidden="true">
+              <Icon name="chevron" size={28} />
+            </span>
           </a>
           <a className="mode-card mode-advanced" href={href.advanced}>
-            <span className="mode-icon" aria-hidden="true">🎓</span>
+            <span className="mode-icon" aria-hidden="true">
+              <Icon name="cap" size={30} />
+            </span>
             <span className="mode-text">
               <strong>
                 Advanced Track <span className="mode-tag">College & up</span>
@@ -70,7 +80,9 @@ export function Home() {
                 </span>
               </span>
             </span>
-            <span className="mode-go" aria-hidden="true">›</span>
+            <span className="mode-go" aria-hidden="true">
+              <Icon name="chevron" size={28} />
+            </span>
           </a>
           <a className="mode-card mode-play" href={href.playground}>
             <span className="mode-icon" aria-hidden="true">
@@ -80,7 +92,9 @@ export function Home() {
               <strong>Playground</strong>
               <span>Build anything with {SERVICE_LIST.length} pieces. Only connections that make sense will snap together!</span>
             </span>
-            <span className="mode-go" aria-hidden="true">›</span>
+            <span className="mode-go" aria-hidden="true">
+              <Icon name="chevron" size={28} />
+            </span>
           </a>
         </nav>
       </main>

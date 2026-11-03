@@ -4,6 +4,7 @@ import type { Route } from '../router';
 import { useApp, type Profile } from '../store';
 import { appSync, normalizeKey, type DesignChoice, type RecoverResult, type SyncStatus } from '../sync';
 import { useEscape } from './playground/ShareDialog';
+import { Icon } from './Icon';
 
 /** The small, calm save status. Sync problems only ever show up here. */
 export const SYNC_TEXT: Record<SyncStatus, string> = {
@@ -73,7 +74,7 @@ export function BuilderKeyButton({ variant }: { variant: 'chip' | 'row' }) {
       title={SYNC_TEXT[status]}
       onClick={() => setOpen(true)}
     >
-      <span aria-hidden="true">🔑</span>
+      <Icon name="key" />
       <span className="btn-label">Builder Key</span>
     </button>
   );
@@ -104,7 +105,7 @@ export function KeyNotice({ route }: { route: Route['name'] }) {
       {keyNoticeDue(profile, route) && (
         <aside className="key-notice" aria-labelledby="key-notice-title">
           <span className="key-notice-icon" aria-hidden="true">
-            🔑
+            <Icon name="key" size={26} />
           </span>
           <div className="key-notice-body">
             <p id="key-notice-title" role="status">

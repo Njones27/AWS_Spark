@@ -1,0 +1,757 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="color-scheme" content="light dark" />
+<title>Spark UI Audit Drafts</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Lexend:wght@400;500;600&display=swap" rel="stylesheet" />
+<style>
+/* ════════════════════════════════════════════════════════════════════
+   PROPOSED TOKENS — this block is the draft for src/styles/theme.css.
+   Light keeps today's look, with the text/fill pairs that failed WCAG AA
+   replaced. Dark is "Maple Hollow at night": navy sky, lit windows.
+   Every text pair below was checked at ≥ 4.5:1, every UI edge at ≥ 3:1.
+   ════════════════════════════════════════════════════════════════════ */
+[data-theme='light'] {
+  color-scheme: light;
+  --paper: #f7f2e8;
+  --paper-2: #efe7d7;
+  --paper-3: #e4d8c2;
+  --card: #fffdf8;
+  --cloud: #ffffff;
+  --cloud-shade: #dfe9f3;
+  --region: #f3f7fb;
+  --sky-top: #c9dfee;
+  --sky-bottom: #eef4f4;
+
+  --ink: #263043;
+  --ink-soft: #5b6475;
+  --ink-faint: #606879;          /* was #8b93a3 (2.77:1) → 5.01:1 */
+
+  --meadow: #cfe5b8;
+  --meadow-2: #b4d69a;
+  --meadow-deep: #6fa35a;        /* art only */
+  --meadow-fill: #4f7f3d;        /* NEW tag fill → 4.73:1 with white */
+  --on-meadow: #ffffff;
+  --pond: #a9dbe6;
+  --pond-deep: #3f97ad;
+  --road: #ead9b8;
+  --roof: #e07a5f;
+  --roof-2: #c8644a;
+  --window: #a9dbe6;
+  --orb: #ffc531;                /* sun by day */
+
+  --coral: #ef6f4f;              /* art + borders only */
+  --coral-fill: #cc4a2e;         /* NEW button fill → 4.58:1 with white (was 2.98) */
+  --coral-hover: #bb4228;        /* hover darkens; today it lightens to 2.7:1 */
+  --coral-press: #a23820;
+  --on-coral: #ffffff;
+  --coral-text: #b23f25;         /* NEW eyebrow/label text → 5.18:1 (was 3.65) */
+  --sun: #ffc531;
+  --sun-soft: #ffe7a3;
+  --flow: #2a9d8f;               /* request lines only */
+  --flow-text: #1d7a6f;          /* NEW → 5.08:1 */
+  --flow-soft: #bfe6df;
+  --plum: #7b5ea7;
+  --plum-text: #634689;          /* NEW → 5.55:1 on plum-soft */
+  --plum-soft: #e3d8f2;
+  --ok: #3ba776;
+  --ok-text: #1f6e47;            /* NEW → 5.13:1 on ok-soft */
+  --ok-soft: #d4f0e1;
+  --warn: #f0a33a;
+  --warn-text: #8a5a00;          /* NEW → 4.99:1 */
+  --warn-soft: #fde9c8;
+  --bad: #e5484d;
+  --bad-text: #b0242a;           /* NEW → 5.12:1 on bad-soft */
+  --bad-soft: #fbd9da;
+
+  --field: #ffffff;
+  --border: #e4d8c2;             /* decorative card edges */
+  --border-control: #8a7a5c;     /* NEW input/checkbox edge → 4.1:1 (was 1.3) */
+  --ring: #2a7286;               /* focus ring → 4.89:1 on paper */
+  --tag-dark: #263043;
+  --on-tag-dark: #ffffff;
+
+  --shadow-rgb: 38, 48, 67;
+  --shadow-a: 1;
+}
+
+[data-theme='dark'] {
+  color-scheme: dark;
+  --paper: #121826;
+  --paper-2: #1a2232;
+  --paper-3: #2b3548;
+  --card: #1e2636;
+  --cloud: #2a3449;
+  --cloud-shade: #222c3e;
+  --region: #182133;
+  --sky-top: #0b1222;
+  --sky-bottom: #1c2a45;
+
+  --ink: #eef1f6;                /* 13.4:1 on card */
+  --ink-soft: #b7bfcd;           /* 8.2:1 */
+  --ink-faint: #929bae;          /* 5.4:1 */
+
+  --meadow: #1f3326;
+  --meadow-2: #27402e;
+  --meadow-deep: #4f7f3d;
+  --meadow-fill: #8fcf74;
+  --on-meadow: #10200b;          /* 9.2:1 */
+  --pond: #1d4a57;
+  --pond-deep: #6cc4d8;
+  --road: #3a3428;
+  --roof: #b5604a;
+  --roof-2: #94493a;
+  --window: #ffd77a;             /* lights on at night */
+  --orb: #f3e9c6;                /* moon */
+
+  --coral: #ff8a6b;
+  --coral-fill: #ff8a6b;         /* light fill + dark label → 8.0:1 */
+  --coral-hover: #ff9d82;
+  --coral-press: #c9573b;
+  --on-coral: #1a120e;
+  --coral-text: #ff9a7e;         /* 7.3:1 */
+  --sun: #ffc531;
+  --sun-soft: #3a3020;
+  --flow: #5fd0c0;
+  --flow-text: #5fd0c0;
+  --flow-soft: #183d39;
+  --plum: #c3a8ee;
+  --plum-text: #c3a8ee;
+  --plum-soft: #2f2645;
+  --ok: #6fd69c;
+  --ok-text: #6fd69c;
+  --ok-soft: #15352a;
+  --warn: #f7c063;
+  --warn-text: #f7c063;
+  --warn-soft: #3a2d16;
+  --bad: #ff8085;
+  --bad-text: #ff8085;
+  --bad-soft: #3d1d24;
+
+  --field: #141b29;
+  --border: #2b3548;
+  --border-control: #6b7891;     /* 3.9:1 */
+  --ring: #7fd0e2;               /* 10.2:1 on paper */
+  --tag-dark: #eef1f6;
+  --on-tag-dark: #121826;
+
+  --shadow-rgb: 0, 0, 0;
+  --shadow-a: 2.2;
+}
+
+/* shared, theme-independent */
+:root {
+  --font-display: 'Fredoka', ui-rounded, 'Arial Rounded MT Bold', sans-serif;
+  --font-body: 'Lexend', ui-sans-serif, system-ui, sans-serif;
+  --r-sm: 10px;
+  --r-md: 16px;
+  --r-lg: 24px;
+  --tap: 44px;
+  --shadow-sm: 0 1px 0 rgba(var(--shadow-rgb), calc(0.06 * var(--shadow-a))), 0 2px 6px rgba(var(--shadow-rgb), calc(0.08 * var(--shadow-a)));
+  --shadow-md: 0 2px 0 rgba(var(--shadow-rgb), calc(0.06 * var(--shadow-a))), 0 8px 24px rgba(var(--shadow-rgb), calc(0.12 * var(--shadow-a)));
+  /* Sparky is a character: same colours in both themes */
+  --sparky-body: #ffffff;
+  --sparky-edge: #c9d6e3;
+  --sparky-ink: #263043;
+  --sparky-cheek: #ef6f4f;
+}
+
+/* ── doc chrome (not part of the proposal) ─────────────────────────── */
+html { --doc-bg: #f4f1ec; --doc-fg: #1d2330; --doc-muted: #545c6b; --doc-line: #dcd6cb; --doc-card: #ffffff; --doc-accent: #5b3fd6; --doc-on-accent: #fff; }
+@media (prefers-color-scheme: dark) {
+  html:not([data-doc='light']) { --doc-bg: #0e131d; --doc-fg: #e9edf3; --doc-muted: #a7b0bf; --doc-line: #273042; --doc-card: #161d2a; --doc-accent: #b6a6ff; --doc-on-accent: #160f33; }
+}
+html[data-doc='dark'] { --doc-bg: #0e131d; --doc-fg: #e9edf3; --doc-muted: #a7b0bf; --doc-line: #273042; --doc-card: #161d2a; --doc-accent: #b6a6ff; --doc-on-accent: #160f33; }
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--doc-bg); color: var(--doc-fg); font: 15px/1.55 var(--font-body); }
+a { color: var(--doc-accent); }
+:focus-visible { outline: 3px solid var(--doc-accent); outline-offset: 2px; }
+.doc-head { position: sticky; top: 0; z-index: 50; background: var(--doc-bg); border-bottom: 1px solid var(--doc-line); }
+.doc-head-in { max-width: 1320px; margin: 0 auto; padding: 12px 16px; display: flex; flex-wrap: wrap; gap: 12px 20px; align-items: center; }
+.doc-title { font: 600 20px/1.2 var(--font-display); margin: 0; }
+.doc-title small { display: block; font: 400 13px/1.3 var(--font-body); color: var(--doc-muted); }
+.doc-nav { display: flex; gap: 4px 14px; flex-wrap: wrap; font-size: 14px; }
+.doc-tools { margin-left: auto; display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+.seg { display: inline-flex; border: 1px solid var(--doc-line); border-radius: 999px; padding: 3px; background: var(--doc-card); }
+.seg button { min-height: 36px; padding: 0 14px; border: 0; border-radius: 999px; background: none; color: var(--doc-fg); font: 500 14px var(--font-body); cursor: pointer; }
+.seg button[aria-pressed='true'] { background: var(--doc-accent); color: var(--doc-on-accent); }
+.notes-toggle { display: inline-flex; gap: 8px; align-items: center; font-size: 14px; min-height: 44px; cursor: pointer; }
+.notes-toggle input { width: 18px; height: 18px; accent-color: var(--doc-accent); }
+main { max-width: 1320px; margin: 0 auto; padding: 8px 16px 80px; }
+section { padding-top: 36px; scroll-margin-top: 80px; }
+h2.doc-h { font: 600 26px/1.2 var(--font-display); margin: 0 0 6px; }
+.doc-lede { color: var(--doc-muted); margin: 0 0 18px; max-width: 75ch; }
+.summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin: 18px 0 0; }
+.stat { background: var(--doc-card); border: 1px solid var(--doc-line); border-radius: 14px; padding: 14px 16px; }
+.stat b { display: block; font: 600 28px/1 var(--font-display); }
+.stat span { color: var(--doc-muted); font-size: 13px; }
+.tbl-wrap { overflow-x: auto; border: 1px solid var(--doc-line); border-radius: 14px; background: var(--doc-card); }
+table { border-collapse: collapse; width: 100%; font-size: 14px; }
+th, td { text-align: left; vertical-align: top; padding: 10px 12px; border-bottom: 1px solid var(--doc-line); }
+th { font-weight: 600; font-size: 12.5px; text-transform: uppercase; letter-spacing: .04em; color: var(--doc-muted); }
+tr:last-child td { border-bottom: 0; }
+td code, p code, li code { font-size: 12.5px; background: color-mix(in srgb, var(--doc-line) 55%, transparent); padding: 1px 5px; border-radius: 5px; }
+.sev { display: inline-block; font: 600 12px/1 var(--font-body); padding: 5px 8px; border-radius: 999px; white-space: nowrap; }
+.sev-high { background: #fbd9da; color: #8c1d22; }
+.sev-med { background: #fde9c8; color: #6e4700; }
+.sev-low { background: #dfe9f3; color: #234a63; }
+.fid { display: inline-grid; place-items: center; width: 24px; height: 24px; border-radius: 50%; background: var(--doc-accent); color: var(--doc-on-accent); font: 600 12px var(--font-body); }
+.pairs { display: grid; gap: 18px; grid-template-columns: 1fr; }
+@media (min-width: 1180px) { body[data-view='both'] .pairs { grid-template-columns: 1fr 1fr; } }
+body[data-view='light'] .stage[data-theme='dark'], body[data-view='dark'] .stage[data-theme='light'] { display: none; }
+.stage-label { font: 600 13px var(--font-body); color: var(--doc-muted); margin: 0 0 6px; display: flex; gap: 8px; align-items: center; }
+.stage-label::before { content: ''; width: 12px; height: 12px; border-radius: 50%; border: 1px solid var(--doc-line); }
+.stage[data-theme='light'] .stage-label::before { background: #f7f2e8; }
+.stage[data-theme='dark'] .stage-label::before { background: #121826; }
+.stage { min-width: 0; }
+.stage > .screen { border-radius: 18px; overflow: hidden; border: 1px solid var(--doc-line); box-shadow: 0 6px 24px rgba(0,0,0,.08); }
+.pin { position: absolute; z-index: 30; display: grid; place-items: center; width: 24px; height: 24px; border-radius: 50%; background: #5b3fd6; color: #fff; font: 700 12px var(--font-body); box-shadow: 0 0 0 3px rgba(255,255,255,.9); pointer-events: none; }
+body.no-notes .pin { display: none; }
+.legend { display: flex; gap: 10px 22px; flex-wrap: wrap; font-size: 13.5px; color: var(--doc-muted); margin: 10px 0 0; }
+.legend .pin { position: static; display: inline-grid; margin-right: 6px; vertical-align: middle; }
+.plan-list { margin: 0; padding-left: 20px; max-width: 85ch; }
+.plan-list li { margin: 6px 0; }
+.ratio { font-variant-numeric: tabular-nums; font-weight: 600; }
+.fail { color: #c42b31; } html[data-doc='dark'] .fail { color: #ff8085; }
+.pass { color: #1f6e47; } html[data-doc='dark'] .pass { color: #6fd69c; }
+@media (prefers-color-scheme: dark) { html:not([data-doc='light']) .fail { color: #ff8085; } html:not([data-doc='light']) .pass { color: #6fd69c; } }
+.swatch { display: inline-block; width: 16px; height: 16px; border-radius: 4px; vertical-align: -3px; margin-right: 6px; border: 1px solid rgba(127,127,127,.4); }
+
+/* ════════════════════════════════════════════════════════════════════
+   MOCK UI — mirrors app.css but uses only the semantic tokens above.
+   ════════════════════════════════════════════════════════════════════ */
+.screen { container-type: inline-size; position: relative; background: var(--paper); color: var(--ink); font-family: var(--font-body); font-size: 16px; line-height: 1.45; }
+.screen h1, .screen h2, .screen h3 { font-family: var(--font-display); font-weight: 600; line-height: 1.1; margin: 0; }
+.screen p { margin: 0; }
+.screen :focus-visible { outline: 3px solid var(--ring); outline-offset: 2px; }
+.ico { width: 20px; height: 20px; flex: none; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.ico-sm { width: 16px; height: 16px; }
+
+.m-topbar { display: flex; align-items: center; gap: 10px; padding: 12px 14px; border-bottom: 1px solid var(--border); background: var(--paper); flex-wrap: wrap; }
+.m-wordmark { display: inline-flex; gap: 6px; align-items: center; font: 600 20px var(--font-display); }
+.m-wordmark .ico { color: var(--sun); stroke: none; fill: currentColor; }
+[data-theme='light'] .m-wordmark .ico { color: #e8a800; }
+.m-spacer { flex: 1; }
+.m-title { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.m-title h1 { font-size: 20px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.m-eyebrow { font: 600 13px var(--font-display); letter-spacing: .06em; text-transform: uppercase; color: var(--coral-text); }
+
+.m-btn { position: relative; display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: var(--tap); padding: 0 16px; border-radius: 999px; border: 2px solid var(--border); background: var(--card); color: var(--ink); font: 600 15px var(--font-display); cursor: pointer; white-space: nowrap; box-shadow: var(--shadow-sm); }
+.m-btn:hover { background: var(--paper-2); }
+.m-btn-primary { background: var(--coral-fill); color: var(--on-coral); border-color: transparent; box-shadow: 0 4px 0 var(--coral-press); }
+.m-btn-primary:hover { background: var(--coral-hover); }
+.m-btn-lg { min-height: 54px; font-size: 18px; padding: 0 24px; }
+.m-btn-run { min-height: 64px; min-width: 120px; border-radius: 20px; font-size: 22px; }
+.m-btn-link { background: none; border: 0; box-shadow: none; color: var(--ink-soft); text-decoration: underline; text-underline-offset: 3px; font-family: var(--font-body); font-weight: 500; }
+.m-icon-btn { width: var(--tap); height: var(--tap); padding: 0; border-radius: 50%; }
+.m-band { display: inline-flex; gap: 6px; align-items: center; }
+.m-band small { font: 400 12px var(--font-body); color: var(--ink-soft); }
+.is-focus { outline: 3px solid var(--ring); outline-offset: 2px; }
+
+/* home */
+.m-home { position: relative; min-height: 470px; overflow: hidden; }
+.m-sky { position: absolute; inset: 0; background: linear-gradient(var(--sky-top), var(--sky-bottom) 70%); }
+.m-scene { position: absolute; inset: 0; }
+.m-scene svg { width: 100%; height: 100%; display: block; }
+.m-home-card { position: relative; z-index: 2; margin: 18px 14px; width: min(320px, calc(100% - 28px)); background: color-mix(in srgb, var(--card) 94%, transparent); border-radius: var(--r-lg); padding: 18px; box-shadow: var(--shadow-md); display: grid; gap: 12px; }
+.m-home-card h1 { font-size: 34px; }
+.m-home-card h1 span { display: block; font-size: 20px; color: var(--coral-text); margin-top: 2px; }
+.m-home-card > p { color: var(--ink-soft); font-size: 14px; }
+.m-mode { position: relative; display: grid; grid-template-columns: 44px 1fr 20px; gap: 12px; align-items: center; padding: 12px; border-radius: var(--r-md); background: var(--card); border: 2px solid var(--border); text-align: left; color: var(--ink); font: inherit; cursor: pointer; width: 100%; }
+.m-mode:hover { border-color: var(--border-control); }
+.m-mode-icon { width: 44px; height: 44px; border-radius: 12px; display: grid; place-items: center; }
+.m-mode-icon.story { background: var(--sun-soft); color: var(--warn-text); }
+.m-mode-icon.adv { background: var(--plum-soft); color: var(--plum-text); }
+.m-mode-icon.play { background: var(--flow-soft); color: var(--flow-text); }
+.m-mode b { font: 600 17px var(--font-display); display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+.m-mode p { font-size: 13px; color: var(--ink-soft); }
+.m-tag { font: 600 12px var(--font-body); padding: 2px 8px; border-radius: 999px; background: var(--plum-soft); color: var(--plum-text); }
+.m-progress { display: flex; align-items: center; gap: 8px; margin-top: 6px; font-size: 12px; color: var(--ink-soft); }
+.m-progress i { flex: 1; height: 6px; border-radius: 99px; background: var(--paper-3); overflow: hidden; }
+.m-progress i::before { content: ''; display: block; width: var(--p, 0%); height: 100%; background: var(--ok); }
+.m-mode .chev { color: var(--ink-soft); }
+.m-house-label { position: absolute; z-index: 1; font: 600 12px var(--font-body); background: var(--tag-dark); color: var(--on-tag-dark); padding: 4px 10px; border-radius: 999px; }
+
+/* level play */
+.m-play { display: grid; grid-template-columns: 220px 1fr; min-height: 470px; }
+.m-panel { border-right: 1px solid var(--border); padding: 12px; display: grid; gap: 12px; align-content: start; background: var(--paper); }
+.m-panel-head { display: flex; align-items: center; gap: 6px; font: 600 13px var(--font-body); letter-spacing: .06em; text-transform: uppercase; color: var(--ink-soft); }
+.m-bubble { display: grid; grid-template-columns: 48px 1fr; gap: 8px; align-items: start; }
+.m-bubble p { background: var(--card); border-radius: 14px; padding: 10px 12px; font-size: 14px; box-shadow: var(--shadow-sm); }
+.m-goal { background: var(--card); border-radius: 14px; padding: 10px 12px; display: grid; grid-template-columns: 26px 1fr; gap: 8px; box-shadow: var(--shadow-sm); }
+.m-goal b { font: 600 15px var(--font-display); }
+.m-goal p { font-size: 13px; color: var(--ink-soft); }
+.m-goal-mark { width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; border: 2px solid var(--border-control); color: var(--ink-soft); }
+.m-goal.is-ok .m-goal-mark { background: var(--ok-soft); border-color: var(--ok-text); color: var(--ok-text); }
+.m-goal-status { font: 600 13px var(--font-body); color: var(--ok-text); display: flex; gap: 4px; align-items: center; }
+.m-hint { background: var(--sun-soft); border: 1px solid color-mix(in srgb, var(--sun) 55%, transparent); border-radius: 14px; padding: 10px 12px; font-size: 14px; display: grid; grid-template-columns: 20px 1fr; gap: 8px; }
+.m-hint .ico { color: var(--warn-text); }
+.m-canvas { position: relative; background: var(--paper); background-image: radial-gradient(color-mix(in srgb, var(--ink) 14%, transparent) 1px, transparent 1px); background-size: 18px 18px; padding: 14px 64px 100px 14px; display: grid; grid-template-columns: 120px 1fr; gap: 14px; align-items: stretch; }
+.m-zone { border-radius: 22px; background: var(--meadow); padding: 10px; display: grid; justify-items: center; align-content: start; gap: 12px; position: relative; }
+.m-zone-tag { font: 600 12px var(--font-body); background: var(--meadow-fill); color: var(--on-meadow); padding: 3px 10px; border-radius: 999px; }
+.m-region { position: relative; border-radius: 22px; background: var(--region); border: 2px solid var(--cloud-shade); padding: 12px; display: grid; align-content: start; gap: 14px; }
+.m-region-tag { justify-self: start; display: inline-flex; gap: 6px; align-items: center; font: 600 12px var(--font-body); background: var(--tag-dark); color: var(--on-tag-dark); padding: 3px 10px; border-radius: 8px; }
+.m-nodes { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+.m-node { width: 104px; background: var(--card); border: 2px solid var(--ok); border-radius: 14px; padding: 8px; display: grid; justify-items: center; gap: 4px; box-shadow: var(--shadow-sm); position: relative; }
+.m-node img { width: 40px; height: 40px; border-radius: 8px; }
+.m-node b { font: 600 13px var(--font-display); }
+/* Mono AWS icons (users, phone, aws-cloud) ship with #242F3E fills; draw them as a mask so they take the ink colour. */
+.m-mono { width: 40px; height: 40px; background: var(--ink); -webkit-mask: var(--icon) center / contain no-repeat; mask: var(--icon) center / contain no-repeat; }
+.m-node small { font-size: 12px; color: var(--ink-soft); }
+.m-meter { width: 100%; height: 6px; border-radius: 99px; background: var(--paper-3); overflow: hidden; }
+.m-meter i { display: block; height: 100%; width: 40%; background: var(--ok); }
+.m-node.is-slow { border-color: var(--warn); }
+.m-node.is-slow .m-meter i { width: 88%; background: var(--warn); }
+.m-node-state { display: inline-flex; gap: 4px; align-items: center; font: 600 12px var(--font-body); color: var(--warn-text); }
+.m-wire { flex: none; width: 28px; height: 3px; background: repeating-linear-gradient(90deg, var(--flow) 0 6px, transparent 6px 10px); }
+.m-dock { position: absolute; left: 50%; bottom: 12px; transform: translateX(-50%); display: flex; gap: 10px; align-items: center; background: var(--card); padding: 8px; border-radius: 18px; box-shadow: var(--shadow-md); }
+.m-dock-piece { position: relative; width: 56px; height: 56px; border-radius: 14px; border: 2px solid var(--border); display: grid; place-items: center; background: var(--paper); }
+.m-dock-piece img { width: 36px; height: 36px; border-radius: 8px; }
+.m-dock-new { position: absolute; top: -9px; left: -6px; font: 600 12px var(--font-body); background: var(--sun); color: #263043; padding: 1px 6px; border-radius: 99px; }
+.m-dock-count { position: absolute; top: -9px; right: -9px; min-width: 24px; height: 24px; display: grid; place-items: center; border-radius: 99px; background: var(--tag-dark); color: var(--on-tag-dark); font: 600 12px var(--font-body); }
+.m-flowctl { position: absolute; right: 10px; top: 10px; display: grid; background: var(--card); border-radius: 12px; box-shadow: var(--shadow-sm); overflow: hidden; }
+.m-flowctl button { width: 44px; height: 44px; border: 0; border-bottom: 1px solid var(--border); background: none; color: var(--ink); display: grid; place-items: center; cursor: pointer; }
+.m-flowctl button:last-child { border-bottom: 0; }
+
+/* map side panel */
+.m-side { padding: 14px; display: grid; gap: 12px; max-width: 360px; }
+.m-chapters { background: var(--card); border-radius: var(--r-md); padding: 6px; display: grid; gap: 4px; box-shadow: var(--shadow-sm); }
+.m-chapter { display: grid; grid-template-columns: 24px 1fr; gap: 10px; padding: 10px; border-radius: 12px; align-items: start; text-align: left; border: 0; background: none; color: var(--ink); font: inherit; width: 100%; cursor: pointer; }
+.m-chapter b { font: 600 16px var(--font-display); display: block; }
+.m-chapter > span > span { font-size: 13px; color: var(--ink-soft); }
+.m-chapter.is-current { background: var(--sun-soft); }
+.m-chapter.is-locked { cursor: default; }
+.m-chapter.is-locked b { color: var(--ink-soft); }
+.m-chapter.is-locked > span > span { color: var(--ink-faint); }
+.m-check { display: flex; gap: 10px; align-items: center; min-height: var(--tap); font-size: 14px; color: var(--ink-soft); cursor: pointer; }
+.m-check input { appearance: none; width: 22px; height: 22px; margin: 0; border: 2px solid var(--border-control); border-radius: 6px; background: var(--field); display: grid; place-items: center; }
+.m-check input:checked { background: var(--flow-text); border-color: var(--flow-text); }
+.m-check input:checked::after { content: ''; width: 10px; height: 6px; border: solid var(--paper); border-width: 0 0 2.5px 2.5px; transform: translateY(-1px) rotate(-45deg); }
+
+/* components */
+.m-sheet { padding: 18px; display: grid; gap: 22px; }
+.m-row { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
+.m-sub { font: 600 12px var(--font-body); letter-spacing: .06em; text-transform: uppercase; color: var(--ink-soft); margin-bottom: 8px; }
+.m-field { display: grid; gap: 6px; max-width: 320px; }
+.m-field label { font: 600 13px var(--font-body); color: var(--ink-soft); }
+.m-field input { min-height: var(--tap); border: 2px solid var(--border-control); border-radius: var(--r-sm); padding: 8px 12px; background: var(--field); color: var(--ink); font: 15px var(--font-body); }
+.m-field input::placeholder { color: var(--ink-faint); }
+.m-field input.is-focus { outline: 3px solid var(--ring); outline-offset: 1px; border-color: var(--ring); }
+.m-field .help { font-size: 13px; color: var(--ink-soft); }
+.m-field.has-error input { border-color: var(--bad-text); }
+.m-field .err { display: flex; gap: 6px; align-items: center; font: 500 13px var(--font-body); color: var(--bad-text); }
+.m-pill { display: inline-flex; gap: 6px; align-items: center; min-height: 30px; padding: 0 12px; border-radius: 999px; font: 600 13px var(--font-body); }
+.m-pill.ok { background: var(--ok-soft); color: var(--ok-text); }
+.m-pill.warn { background: var(--warn-soft); color: var(--warn-text); }
+.m-pill.bad { background: var(--bad-soft); color: var(--bad-text); }
+.m-pill.plum { background: var(--plum-soft); color: var(--plum-text); }
+.m-starters { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 12px; }
+.m-starter { position: relative; text-align: left; padding: 14px; border-radius: var(--r-md); border: 2px solid var(--border); background: var(--card); color: var(--ink); font: inherit; cursor: pointer; display: grid; gap: 4px; }
+.m-starter b { font: 600 16px var(--font-display); }
+.m-starter span { font-size: 13px; color: var(--ink-soft); }
+.m-starter[aria-pressed='true'] { border-color: var(--coral-fill); box-shadow: 0 0 0 1px var(--coral-fill); }
+.m-starter .m-starter-check { position: absolute; top: 10px; right: 10px; display: none; gap: 4px; align-items: center; font: 600 12px var(--font-body); color: var(--on-coral); background: var(--coral-fill); padding: 3px 8px 3px 6px; border-radius: 99px; }
+.m-starter[aria-pressed='true'] .m-starter-check { display: inline-flex; color: var(--on-coral); }
+.m-story { background: var(--card); border-radius: var(--r-lg); padding: 20px; box-shadow: var(--shadow-md); display: grid; gap: 14px; max-width: 460px; position: relative; border: 1px solid var(--border); }
+.m-story .who { font: 600 13px var(--font-display); color: var(--coral-text); }
+.m-story-body { display: grid; grid-template-columns: 64px 1fr; gap: 14px; align-items: start; }
+.m-story-foot { display: flex; align-items: center; gap: 12px; }
+.m-dots { display: flex; gap: 6px; }
+.m-dots i { width: 8px; height: 8px; border-radius: 99px; background: var(--border-control); }
+.m-dots i:first-child { width: 22px; background: var(--coral-fill); }
+.m-theme-btn[aria-pressed='true'] { background: var(--paper-2); }
+.m-theme-menu { background: var(--card); border-radius: 14px; padding: 6px; box-shadow: var(--shadow-md); display: grid; gap: 2px; width: 220px; border: 1px solid var(--border); }
+.m-theme-menu [role='menuitemradio'] { display: grid; grid-template-columns: 20px 1fr 18px; gap: 10px; align-items: center; min-height: var(--tap); padding: 0 10px; border-radius: 10px; border: 0; background: none; color: var(--ink); font: 500 15px var(--font-body); text-align: left; cursor: pointer; }
+.m-theme-menu [aria-checked='true'] { background: var(--paper-2); }
+.m-theme-menu [aria-checked='false'] .tick { visibility: hidden; }
+.m-theme-menu .tick { color: var(--flow-text); }
+.m-type { display: grid; gap: 4px; }
+.m-type div { display: flex; gap: 14px; align-items: baseline; }
+.m-type code { font-size: 12px; color: var(--ink-soft); width: 56px; flex: none; }
+
+@media (max-width: 700px) {
+  .doc-head { position: static; }
+  .m-play { grid-template-columns: 1fr; }
+  .m-panel { border-right: 0; border-bottom: 1px solid var(--border); }
+  .m-canvas { grid-template-columns: 1fr; padding-bottom: 96px; }
+  .m-zone { grid-template-columns: auto auto; justify-content: start; }
+}
+@container (max-width: 620px) {
+  .m-house-label { display: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; scroll-behavior: auto !important; }
+}
+</style>
+</head>
+<body data-view="both">
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <symbol id="i-bolt" viewBox="0 0 24 24"><path d="M13 2 4 14h7l-1 8 9-12h-7z"/></symbol>
+    <symbol id="i-key" viewBox="0 0 24 24"><circle cx="7.5" cy="15.5" r="4.5"/><path d="m10.7 12.3 9.8-9.8M17 6l3 3M14.5 8.5l2 2"/></symbol>
+    <symbol id="i-book" viewBox="0 0 24 24"><path d="M4 19.5V5a2 2 0 0 1 2-2h14v15H6.5A2.5 2.5 0 0 0 4 20.5 2.5 2.5 0 0 0 6.5 23H20"/></symbol>
+    <symbol id="i-cap" viewBox="0 0 24 24"><path d="M22 9 12 4 2 9l10 5 10-5z"/><path d="M6 11.5V16c0 1.5 2.7 3 6 3s6-1.5 6-3v-4.5M22 9v6"/></symbol>
+    <symbol id="i-puzzle" viewBox="0 0 24 24"><path d="M19.4 14.6a2 2 0 1 0 0-3.2V7a1 1 0 0 0-1-1h-4.4a2 2 0 1 0-3.2 0H6.4a1 1 0 0 0-1 1v4.4a2 2 0 1 1 0 3.2V19a1 1 0 0 0 1 1h4.4a2 2 0 1 1 3.2 0h4.4a1 1 0 0 0 1-1z"/></symbol>
+    <symbol id="i-chev" viewBox="0 0 24 24"><path d="m9 6 6 6-6 6"/></symbol>
+    <symbol id="i-back" viewBox="0 0 24 24"><path d="M19 12H5m6-6-6 6 6 6"/></symbol>
+    <symbol id="i-bulb" viewBox="0 0 24 24"><path d="M9 18h6M10 22h4M12 2a7 7 0 0 0-4 12.7c.6.5 1 1.3 1 2.3h6c0-1 .4-1.8 1-2.3A7 7 0 0 0 12 2z"/></symbol>
+    <symbol id="i-play" viewBox="0 0 24 24"><path d="M7 4v16l13-8z" fill="currentColor"/></symbol>
+    <symbol id="i-lock" viewBox="0 0 24 24"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24"><path d="m5 12 5 5 9-10"/></symbol>
+    <symbol id="i-alert" viewBox="0 0 24 24"><path d="M12 8v5M12 16.5v.5"/><circle cx="12" cy="12" r="9.5"/></symbol>
+    <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></symbol>
+    <symbol id="i-moon" viewBox="0 0 24 24"><path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/></symbol>
+    <symbol id="i-device" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4"/></symbol>
+    <symbol id="i-restart" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></symbol>
+    <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+    <symbol id="i-minus" viewBox="0 0 24 24"><path d="M5 12h14"/></symbol>
+    <symbol id="i-fit" viewBox="0 0 24 24"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></symbol>
+    <symbol id="i-panel" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M9 4v16"/></symbol>
+    <symbol id="i-bricks" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="1.5"/><path d="M3 12h18M9 5v7M15 12v7"/></symbol>
+    <symbol id="sparky" viewBox="0 0 64 56">
+      <path d="M32 4c1 3 3 4 5 4-2 1-4 3-5 6-1-3-3-5-5-6 2 0 4-1 5-4z" fill="#ffc531" stroke="#e8a800" stroke-width="1.2" stroke-linejoin="round"/>
+      <path d="M16 48a11 11 0 0 1-1-22 14 14 0 0 1 27-5 10 10 0 0 1 9 15 7 7 0 0 1-3 12z" fill="var(--sparky-body)" stroke="var(--sparky-edge)" stroke-width="2"/>
+      <circle cx="25" cy="33" r="2.6" fill="var(--sparky-ink)"/><circle cx="39" cy="33" r="2.6" fill="var(--sparky-ink)"/>
+      <path d="M28 38.5q4 3.5 8 0" fill="none" stroke="var(--sparky-ink)" stroke-width="2" stroke-linecap="round"/>
+      <circle cx="20" cy="38" r="2.6" fill="var(--sparky-cheek)" opacity=".45"/><circle cx="44" cy="38" r="2.6" fill="var(--sparky-cheek)" opacity=".45"/>
+    </symbol>
+  </defs>
+</svg>
+
+<header class="doc-head">
+  <div class="doc-head-in">
+    <h1 class="doc-title">Spark UI audit drafts <small>Accessibility + formatting fixes, and a proposed dark mode · 2026-11-02</small></h1>
+    <nav class="doc-nav" aria-label="Sections">
+      <a href="#findings">Findings</a><a href="#tokens">Tokens</a><a href="#home">Home</a><a href="#level">Level</a><a href="#map">Map panel</a><a href="#parts">Components</a><a href="#plan">Build plan</a>
+    </nav>
+    <div class="doc-tools">
+      <div class="seg" role="group" aria-label="Show drafts in">
+        <button type="button" data-view="both" aria-pressed="true">Side by side</button>
+        <button type="button" data-view="light" aria-pressed="false">Light</button>
+        <button type="button" data-view="dark" aria-pressed="false">Dark</button>
+      </div>
+      <label class="notes-toggle"><input type="checkbox" id="notes" checked /> Numbered notes</label>
+    </div>
+  </div>
+</header>
+
+<main>
+<section id="findings" aria-labelledby="h-findings">
+  <h2 class="doc-h" id="h-findings">Findings</h2>
+  <p class="doc-lede">Audited the live app (Home, Story map, Level 1, Advanced, Playground) at 1280×800 with a script that measured every visible text node's contrast against its real background and every control's hit size, plus a read of <code>theme.css</code>, <code>app.css</code> and the screens. The base is solid: every control has an accessible name, decorative emoji are already <code>aria-hidden</code>, dialogs are labelled and modal, and pieces can be placed by keyboard tap instead of drag. The gaps are colour pairs, a few small sizes, and no dark theme.</p>
+  <div class="summary">
+    <div class="stat"><b>11</b><span>text/background pairs under 4.5:1 across 4 screens</span></div>
+    <div class="stat"><b>2.98:1</b><span>white on coral, the main "go" button on every screen</span></div>
+    <div class="stat"><b>21</b><span>CSS rules set text below 13px (lowest 10.5px)</span></div>
+    <div class="stat"><b>0</b><span>dark-mode rules; 18 hard-coded <code>#fff</code> to replace</span></div>
+  </div>
+
+  <div class="tbl-wrap" style="margin-top:18px">
+  <table>
+    <thead><tr><th>#</th><th>Severity</th><th>Finding</th><th>Where</th><th>Proposed fix</th></tr></thead>
+    <tbody>
+      <tr><td><span class="fid">1</span></td><td><span class="sev sev-high">High · 1.4.3</span></td><td>White label on coral is <span class="ratio fail">2.98:1</span> on every primary action: Start the story, Next, Keep going, Our AWS plan, Run, Start with this plan. Hover lightens it further to ~2.7:1.</td><td><code>app.css:83</code> <code>.btn-primary</code>, <code>:1662</code> <code>.btn-run</code></td><td>New <code>--coral-fill #cc4a2e</code> <span class="ratio pass">4.58:1</span>; hover darkens (<code>--coral-hover</code>). Keep <code>--coral</code> for art and borders.</td></tr>
+      <tr><td><span class="fid">2</span></td><td><span class="sev sev-high">High · 1.4.3</span></td><td>Coral text labels ("LEVEL 1", "CHAPTER 1", "Sparky", "Cloud Builders") use <code>--coral-deep</code> at <span class="ratio fail">3.65–4.00:1</span>.</td><td><code>.eyebrow</code>, <code>.story-who</code>, map header <code>small</code></td><td><code>--coral-text #b23f25</code> <span class="ratio pass">5.18:1</span>.</td></tr>
+      <tr><td><span class="fid">3</span></td><td><span class="sev sev-high">High · 1.4.3</span></td><td>Locked items fade to <span class="ratio fail">2.77–3.04:1</span>: "Chapter 2 · Maple Hollow Helps" uses <code>--ink-faint</code>; locked map stops drop their labels to 60% opacity. Students still need to read what is coming.</td><td><code>app.css:2950</code>, <code>:643</code></td><td><code>--ink-faint #606879</code> <span class="ratio pass">5.01:1</span>, no opacity on text; show "locked" with the lock icon and a line like "Opens after Chapter 1".</td></tr>
+      <tr><td><span class="fid">4</span></td><td><span class="sev sev-high">High · 1.4.3</span></td><td>Coloured text and tags: "Town" zone tag white on meadow <span class="ratio fail">2.97</span>; "Goal met" green <span class="ratio fail">2.70</span>; starter step numbers teal <span class="ratio fail">2.98</span>; overload meter red <span class="ratio fail">3.51</span>; wait meter plum <span class="ratio fail">3.84</span>; mode "go" coral <span class="ratio fail">2.67</span>.</td><td><code>.zone-tag</code> <code>.goal-result</code> <code>.starter-step i</code> <code>.meter-text</code> <code>.meter-wait</code> <code>.mode-go</code></td><td>Split each hue into an art token and a <code>-text</code>/<code>-fill</code> token (table below). Components use the text token only.</td></tr>
+      <tr><td><span class="fid">5</span></td><td><span class="sev sev-high">High · request</span></td><td>No dark mode. No <code>prefers-color-scheme</code>, no <code>color-scheme</code>, one light <code>theme-color</code>; 18 hard-coded <code>#fff</code> and 19 shadow <code>rgba(38,48,67…)</code> in app.css; Sparky has 6 fixed hex colours; React Flow runs in its light default.</td><td><code>theme.css</code>, <code>app.css</code>, <code>index.html:6</code>, <code>Sparky.tsx</code>, <code>BuilderCanvas.tsx</code></td><td>Theme tokens under <code>[data-theme]</code> + system default, a Theme menu in the top bar, React Flow <code>colorMode</code>, and a light-only export for the plan picture. See <a href="#plan">Build plan</a>.</td></tr>
+      <tr><td><span class="fid">6</span></td><td><span class="sev sev-med">Medium · formatting</span></td><td>Text below 12px: <code>.dock-new</code> 10.5px, <code>.mode-tag</code> 11px, <code>.stop-label em</code> 11px, <code>.piece-badge</code> 11px, <code>.piece-sub</code>/<code>.meter-note</code>/band sample 11.5px. 28 distinct font sizes including half pixels.</td><td>See <code>grep font-size app.css</code></td><td>12px floor (13px for anything a student must read), and a 10-step scale: 12 · 13 · 14 · 16 · 18 · 20 · 24 · 30 · 40 · 56.</td></tr>
+      <tr><td><span class="fid">7</span></td><td><span class="sev sev-med">Medium · 2.5.8</span></td><td>Targets under 44px: <code>.btn-sm</code> 38px (Builder Key, Another hint), <code>.panel-toggle</code> 32px, <code>.icon-btn</code> close 36px, React Flow zoom 36px, Teacher-mode checkbox 20px with an unpadded label, "Style guide" link 17px tall.</td><td><code>app.css:114</code>, <code>:124</code>, panel toggle, <code>.react-flow__controls</code></td><td><code>.btn-sm</code> min-height 44 (keep the smaller type), icon buttons 44, checkbox row 44 tall, React Flow controls 44.</td></tr>
+      <tr><td><span class="fid">8</span></td><td><span class="sev sev-med">Medium · 2.4.7 / 1.4.11</span></td><td>Inputs remove the focus outline and only change border colour (teal on white 3.27:1, same 2px width). Input borders are <code>--paper-3</code> on white, about 1.3:1, so the field edge is hard to see.</td><td><code>app.css:2222</code>, <code>:2294</code>, <code>:2462</code></td><td>Keep the shared 3px <code>--ring</code> outline on inputs; <code>--border-control #8a7a5c</code> (4.1:1) for field and checkbox edges.</td></tr>
+      <tr><td><span class="fid">9</span></td><td><span class="sev sev-med">Medium · 2.3.3</span></td><td>16 keyframe animations, but reduced-motion only stops 9 selectors. Card pop-ins, shake, wiggle, falling bits, badge pop and the bouncy button easing still run.</td><td><code>app.css:1998</code>, <code>:2137</code>, <code>:3489</code></td><td>One global reduced-motion rule (shortens all animation/transition), keep the existing per-feature rules for anything that should still fade.</td></tr>
+      <tr><td><span class="fid">10</span></td><td><span class="sev sev-med">Medium · consistency</span></td><td>Emoji used as UI icons (🔑 💡 📖 🎓 🧹 ✨ 🎤 🔗 📄 🔒 ▶). They look different on Chromebooks, Windows and iPads, can't follow the theme colour, and two are read aloud: "👥 Visitors" and "👾 Gremlin bots" in the Playground inspector.</td><td><code>Playground.tsx:360</code>, <code>:373</code>, toolbar, Home, LevelMap</td><td>One small inline SVG icon set using <code>currentColor</code> (drafted below). Keep emoji in story text, where they are content.</td></tr>
+      <tr><td><span class="fid">11</span></td><td><span class="sev sev-med">Medium · 1.4.1</span></td><td>The chosen starter plan is shown only by a coral border.</td><td><code>StarterPicker.tsx</code></td><td>Add a "Chosen" check badge and <code>aria-pressed</code>/<code>aria-checked</code> on the card.</td></tr>
+      <tr><td><span class="fid">13</span></td><td><span class="sev sev-high">High · dark mode</span></td><td>Three icons are near-black line art (<code>users.svg</code>, <code>phone.svg</code>, <code>aws-cloud.svg</code>, fill <code>#242F3E</code>). On a dark card the Townsfolk and Mobile devices pieces disappear (found while checking these drafts).</td><td><code>public/icons/</code>, <code>PieceNode.tsx:69</code>, <code>PieceDock.tsx:87</code></td><td>Render those three as a CSS mask filled with <code>--ink</code> (drafted on the Townsfolk piece), or add a <code>-dark</code> variant in <code>scripts/import-icons.mjs</code>.</td></tr>
+      <tr><td><span class="fid">12</span></td><td><span class="sev sev-low">Low · polish</span></td><td>Uppercase "College &amp; up" tag at 11px is hard to read; the map header eyebrow and title sit on different baselines; primary hover state lightens instead of darkening.</td><td><code>.mode-tag</code>, map header</td><td>Sentence case 12px tag; stack eyebrow above the title (drafted in the Level top bar).</td></tr>
+    </tbody>
+  </table>
+  </div>
+</section>
+
+<section id="tokens" aria-labelledby="h-tokens">
+  <h2 class="doc-h" id="h-tokens">Tokens that change</h2>
+  <p class="doc-lede">Bright hues stay for art, lines and borders. Text and button fills get their own tokens so the two jobs stop fighting. Ratios are measured on <code>--card</code> unless noted.</p>
+  <div class="tbl-wrap">
+  <table>
+    <thead><tr><th>Token</th><th>Light today</th><th>Light proposed</th><th>Dark proposed</th></tr></thead>
+    <tbody>
+      <tr><td><code>--coral-fill</code> + <code>--on-coral</code></td><td><span class="swatch" style="background:#ef6f4f"></span>#ef6f4f / white <span class="ratio fail">2.98</span></td><td><span class="swatch" style="background:#cc4a2e"></span>#cc4a2e / white <span class="ratio pass">4.58</span></td><td><span class="swatch" style="background:#ff8a6b"></span>#ff8a6b / #1a120e <span class="ratio pass">8.00</span></td></tr>
+      <tr><td><code>--coral-text</code></td><td><span class="swatch" style="background:#d4553a"></span>#d4553a <span class="ratio fail">3.65</span></td><td><span class="swatch" style="background:#b23f25"></span>#b23f25 <span class="ratio pass">5.69</span></td><td><span class="swatch" style="background:#ff9a7e"></span>#ff9a7e <span class="ratio pass">7.34</span></td></tr>
+      <tr><td><code>--ink-faint</code></td><td><span class="swatch" style="background:#8b93a3"></span>#8b93a3 <span class="ratio fail">3.04</span></td><td><span class="swatch" style="background:#606879"></span>#606879 <span class="ratio pass">5.4</span></td><td><span class="swatch" style="background:#929bae"></span>#929bae <span class="ratio pass">5.43</span></td></tr>
+      <tr><td><code>--meadow-fill</code> + <code>--on-meadow</code></td><td><span class="swatch" style="background:#6fa35a"></span>#6fa35a / white <span class="ratio fail">2.97</span></td><td><span class="swatch" style="background:#4f7f3d"></span>#4f7f3d / white <span class="ratio pass">4.73</span></td><td><span class="swatch" style="background:#8fcf74"></span>#8fcf74 / #10200b <span class="ratio pass">9.20</span></td></tr>
+      <tr><td><code>--flow-text</code></td><td><span class="swatch" style="background:#2a9d8f"></span>#2a9d8f <span class="ratio fail">3.27</span></td><td><span class="swatch" style="background:#1d7a6f"></span>#1d7a6f <span class="ratio pass">5.08</span></td><td><span class="swatch" style="background:#5fd0c0"></span>#5fd0c0 <span class="ratio pass">8.13</span></td></tr>
+      <tr><td><code>--ok-text</code> on <code>--ok-soft</code></td><td><span class="swatch" style="background:#3ba776"></span>#3ba776 <span class="ratio fail">2.70</span></td><td><span class="swatch" style="background:#1f6e47"></span>#1f6e47 <span class="ratio pass">5.13</span></td><td><span class="swatch" style="background:#6fd69c"></span>#6fd69c <span class="ratio pass">7.48</span></td></tr>
+      <tr><td><code>--bad-text</code> on <code>--bad-soft</code></td><td><span class="swatch" style="background:#e5484d"></span>#e5484d <span class="ratio fail">3.51</span></td><td><span class="swatch" style="background:#b0242a"></span>#b0242a <span class="ratio pass">5.12</span></td><td><span class="swatch" style="background:#ff8085"></span>#ff8085 <span class="ratio pass">6.20</span></td></tr>
+      <tr><td><code>--warn-text</code> on <code>--warn-soft</code></td><td><span class="swatch" style="background:#f0a33a"></span>#f0a33a <span class="ratio fail">≈1.9</span></td><td><span class="swatch" style="background:#8a5a00"></span>#8a5a00 <span class="ratio pass">4.99</span></td><td><span class="swatch" style="background:#f7c063"></span>#f7c063 <span class="ratio pass">8.09</span></td></tr>
+      <tr><td><code>--plum-text</code> on <code>--plum-soft</code></td><td><span class="swatch" style="background:#7b5ea7"></span>#7b5ea7 <span class="ratio fail">3.84</span></td><td><span class="swatch" style="background:#634689"></span>#634689 <span class="ratio pass">5.55</span></td><td><span class="swatch" style="background:#c3a8ee"></span>#c3a8ee <span class="ratio pass">6.84</span></td></tr>
+      <tr><td><code>--border-control</code> (UI edge, needs 3:1)</td><td><span class="swatch" style="background:#e4d8c2"></span>#e4d8c2 <span class="ratio fail">1.3</span></td><td><span class="swatch" style="background:#8a7a5c"></span>#8a7a5c <span class="ratio pass">4.18</span></td><td><span class="swatch" style="background:#6b7891"></span>#6b7891 <span class="ratio pass">3.87</span></td></tr>
+      <tr><td><code>--ring</code> (focus, on page)</td><td><span class="swatch" style="background:#3f97ad"></span>#3f97ad <span class="ratio">3.3</span></td><td><span class="swatch" style="background:#2a7286"></span>#2a7286 <span class="ratio pass">4.89</span></td><td><span class="swatch" style="background:#7fd0e2"></span>#7fd0e2 <span class="ratio pass">10.15</span></td></tr>
+      <tr><td>Surfaces <code>--paper / --card / --ink</code></td><td colspan="2">unchanged: #f7f2e8 / #fffdf8 / #263043</td><td><span class="swatch" style="background:#121826"></span>#121826 / <span class="swatch" style="background:#1e2636"></span>#1e2636 / <span class="swatch" style="background:#eef1f6"></span>#eef1f6 <span class="ratio pass">13.39</span></td></tr>
+    </tbody>
+  </table>
+  </div>
+</section>
+
+<section id="home" aria-labelledby="h-home">
+  <h2 class="doc-h" id="h-home">Home</h2>
+  <p class="doc-lede">Same layout. Night version turns the sun into a moon, lights the windows, and keeps Sparky white so the character reads the same in both themes. The new Theme button sits between Builder Key and the grade band.</p>
+  <div class="pairs">
+    <div class="stage" data-theme="light"><p class="stage-label">Light</p>
+      <div class="screen" data-mock="home"></div></div>
+    <div class="stage" data-theme="dark"><p class="stage-label">Dark</p>
+      <div class="screen" data-mock="home"></div></div>
+  </div>
+  <div class="legend"><span><span class="pin">1</span>Primary actions pass in both themes</span><span><span class="pin">5</span>Theme button (opens the menu in Components)</span><span><span class="pin">10</span>SVG icons replace emoji</span><span><span class="pin">12</span>Sentence-case 12px tag</span></div>
+</section>
+
+<section id="level" aria-labelledby="h-level">
+  <h2 class="doc-h" id="h-level">Level play</h2>
+  <p class="doc-lede">Mission panel, canvas and dock. Tags use their own fill tokens; zoom controls and the panel toggle grow to 44px; the "slow" piece says so in words, not only amber.</p>
+  <div class="pairs">
+    <div class="stage" data-theme="light"><p class="stage-label">Light</p>
+      <div class="screen" data-mock="level"></div></div>
+    <div class="stage" data-theme="dark"><p class="stage-label">Dark</p>
+      <div class="screen" data-mock="level"></div></div>
+  </div>
+  <div class="legend"><span><span class="pin">2</span>Eyebrow uses <code>--coral-text</code>, stacked above the title</span><span><span class="pin">4</span>Zone tag and status text use fill/text tokens</span><span><span class="pin">6</span>Badges at 12px</span><span><span class="pin">7</span>44px controls</span><span><span class="pin">13</span>Mono icon follows the ink colour</span></div>
+</section>
+
+<section id="map" aria-labelledby="h-map">
+  <h2 class="doc-h" id="h-map">Story map side panel</h2>
+  <p class="doc-lede">Locked chapters stay readable and say when they open. Teacher mode gets a full-height row so the whole label is the target.</p>
+  <div class="pairs">
+    <div class="stage" data-theme="light"><p class="stage-label">Light</p>
+      <div class="screen" data-mock="map"></div></div>
+    <div class="stage" data-theme="dark"><p class="stage-label">Dark</p>
+      <div class="screen" data-mock="map"></div></div>
+  </div>
+  <div class="legend"><span><span class="pin">3</span>Locked text at 5:1, lock icon + reason</span><span><span class="pin">7</span>44px checkbox row with a visible edge</span></div>
+</section>
+
+<section id="parts" aria-labelledby="h-parts">
+  <h2 class="doc-h" id="h-parts">Components</h2>
+  <p class="doc-lede">States drawn statically so they can be compared: the outlined items show the shared focus ring.</p>
+  <div class="pairs">
+    <div class="stage" data-theme="light"><p class="stage-label">Light</p>
+      <div class="screen" data-mock="parts"></div></div>
+    <div class="stage" data-theme="dark"><p class="stage-label">Dark</p>
+      <div class="screen" data-mock="parts"></div></div>
+  </div>
+  <div class="legend"><span><span class="pin">5</span>Theme menu: Match my device (default), Light, Dark</span><span><span class="pin">8</span>Focus ring kept on inputs; visible field edge</span><span><span class="pin">11</span>Chosen state has a badge, not only colour</span></div>
+</section>
+
+<section id="plan" aria-labelledby="h-plan">
+  <h2 class="doc-h" id="h-plan">Build plan</h2>
+  <p class="doc-lede">How these drafts would land in the app, in order. Nothing in <code>src/</code> has been changed yet.</p>
+  <ol class="plan-list">
+    <li><b>Tokens.</b> Add the new <code>-text</code>, <code>-fill</code>, <code>on-*</code>, <code>--border-control</code>, <code>--ring</code>, <code>--region</code>, <code>--window</code>, <code>--orb</code> and <code>--shadow-rgb</code> tokens to <code>theme.css</code>. Light values go on <code>:root</code>; dark values under <code>:root[data-theme='dark']</code> and under <code>@media (prefers-color-scheme: dark) { :root:not([data-theme='light']) }</code>. Set <code>color-scheme</code> on each.</li>
+    <li><b>Sweep app.css.</b> Replace the 18 <code>#fff</code> with <code>--on-coral</code>/<code>--cloud</code>/<code>--field</code>, the 19 <code>rgba(38,48,67,…)</code> with <code>--shadow-rgb</code>, and every component that sets <code>color: var(--coral|flow|ok|bad|warn|plum)</code> with the matching <code>-text</code> token. Fix <code>.btn-primary:hover</code>.</li>
+    <li><b>Sizes.</b> Apply the 12px floor and the type scale; set <code>.btn-sm</code>, <code>.icon-btn</code>, <code>.panel-toggle</code> and <code>.react-flow__controls-button</code> to 44px; wrap the teacher-mode checkbox in a 44px label row.</li>
+    <li><b>Focus and motion.</b> Remove the three <code>outline: none</code> input overrides; add the global reduced-motion rule.</li>
+    <li><b>Theme switch.</b> Store <code>theme: 'system' | 'light' | 'dark'</code> in the zustand store (persisted with the profile), write it to <code>document.documentElement.dataset.theme</code>, and set it before first paint with a tiny inline script in <code>index.html</code> so dark users don't see a light flash. Add the Theme button + menu to <code>Chrome.tsx</code> and the phone menu in <code>PhoneChrome.tsx</code>. Two <code>theme-color</code> metas with <code>media</code>.</li>
+    <li><b>Canvas and art.</b> Pass <code>colorMode</code> to <code>&lt;ReactFlow&gt;</code>; move Sparky's fixed hex to the <code>--sparky-*</code> constants; swap Scenery's sun for <code>--orb</code> and windows for <code>--window</code>; draw the three mono icons (users, phone, aws-cloud) as an <code>--ink</code> mask. Saved plan pictures in <code>PlanExport.tsx</code> use the theme in use, so they look like what the team sees (forcing light would flash the screen during capture).</li>
+    <li><b>Icons.</b> Add a small SVG icon component and replace emoji in buttons, chips and the inspector (<code>Playground.tsx:360</code>, <code>:373</code>).</li>
+    <li><b>Check.</b> Rerun the contrast/target script on every screen in both themes, open each overlay in dark (story card, win card, phone sheets, dialogs, menus) per the z-index lesson, and add a <code>/styleguide</code> theme toggle so both themes can be eyeballed together.</li>
+  </ol>
+</section>
+</main>
+
+<template id="tpl-home">
+  <div class="m-topbar">
+    <span class="m-wordmark"><svg class="ico" aria-hidden="true"><use href="#i-bolt"/></svg>Spark</span>
+    <span class="m-spacer"></span>
+    <button class="m-btn" type="button"><svg class="ico ico-sm" aria-hidden="true"><use href="#i-key"/></svg>Builder Key</button>
+    <button class="m-btn m-icon-btn m-theme-btn" type="button" aria-label="Theme: match my device" aria-haspopup="menu"><svg class="ico" aria-hidden="true"><use href="#i-THEMEICON"/></svg><span class="pin" style="top:-8px;right:-8px">5</span></button>
+    <button class="m-btn m-band" type="button"><svg class="ico ico-sm" aria-hidden="true"><use href="#i-bricks"/></svg>Builder <small>Grades 6–8</small></button>
+  </div>
+  <div class="m-home">
+    <div class="m-sky"></div>
+    <div class="m-scene" aria-hidden="true">
+      <svg viewBox="0 0 640 420" preserveAspectRatio="xMidYMax slice">
+        <circle cx="575" cy="70" r="34" fill="var(--orb)"/>
+        <g class="stars" fill="#f3e9c6"><circle cx="420" cy="40" r="1.6"/><circle cx="500" cy="120" r="1.2"/><circle cx="610" cy="150" r="1.4"/><circle cx="380" cy="110" r="1"/><circle cx="530" cy="30" r="1.1"/></g>
+        <path d="M0 300 Q160 240 330 280 T640 260 V420 H0z" fill="var(--meadow-2)"/>
+        <path d="M0 340 Q200 300 400 330 T640 320 V420 H0z" fill="var(--meadow)"/>
+        <ellipse cx="560" cy="385" rx="80" ry="18" fill="var(--pond)"/>
+        <path d="M330 70a40 40 0 0 1 76-10 34 34 0 0 1 62 20 30 30 0 0 1 8 58H350a34 34 0 0 1-20-68z" fill="var(--cloud)" stroke="var(--cloud-shade)" stroke-width="3"/>
+        <path d="M385 158 Q360 210 345 262" fill="none" stroke="var(--flow)" stroke-width="4" stroke-dasharray="9 8" stroke-linecap="round"/>
+        <path d="M460 158 Q520 220 560 300" fill="none" stroke="var(--flow)" stroke-width="4" stroke-dasharray="9 8" stroke-linecap="round"/>
+        <circle cx="365" cy="210" r="5" fill="var(--sun)"/><circle cx="515" cy="215" r="5" fill="var(--sun)"/>
+        <g transform="translate(300 262)"><path d="M-6 0 50 -30 106 0z" fill="var(--roof)"/><rect x="0" y="0" width="100" height="56" fill="var(--card)"/><rect x="12" y="12" width="16" height="14" rx="2" fill="var(--window)"/><rect x="42" y="12" width="16" height="14" rx="2" fill="var(--window)"/><rect x="72" y="12" width="16" height="14" rx="2" fill="var(--window)"/><rect x="42" y="32" width="16" height="24" fill="var(--roof-2)"/></g>
+        <g transform="translate(540 300)"><path d="M-4 0 22 -18 48 0z" fill="var(--pond-deep)"/><rect x="0" y="0" width="44" height="34" fill="var(--card)"/><rect x="15" y="10" width="14" height="12" rx="2" fill="var(--window)"/></g>
+        <g transform="translate(250 330)"><rect x="-3" y="10" width="6" height="16" fill="var(--roof-2)"/><circle r="14" fill="var(--meadow-deep)"/></g>
+      </svg>
+      <img src="../../public/icons/lambda.svg" alt="" style="position:absolute;left:58%;top:16%;width:34px;border-radius:6px">
+      <img src="../../public/icons/dynamodb.svg" alt="" style="position:absolute;left:66%;top:21%;width:34px;border-radius:6px">
+      <img src="../../public/icons/cloudfront.svg" alt="" style="position:absolute;left:73%;top:14%;width:34px;border-radius:6px">
+    </div>
+    <span class="m-house-label" style="left:52%;top:57%">Crumb &amp; Co.</span>
+    <div class="m-home-card">
+      <svg width="56" height="48" aria-hidden="true"><use href="#sparky"/></svg>
+      <h1>Spark <span>Cloud Builders</span></h1>
+      <p>Connect real AWS services, watch requests flow, and help a little town go online.</p>
+      <button class="m-mode" type="button"><span class="m-mode-icon story"><svg class="ico" aria-hidden="true"><use href="#i-book"/></svg></span><span><b>Story Mode</b><p>Help Baker Rosa bring the best bakery in Maple Hollow onto the internet.</p><span class="m-progress" style="--p:27%"><i></i>4/15</span></span><svg class="ico chev" aria-hidden="true"><use href="#i-chev"/></svg><span class="pin" style="top:-8px;left:-8px">10</span></button>
+      <button class="m-mode" type="button"><span class="m-mode-icon adv"><svg class="ico" aria-hidden="true"><use href="#i-cap"/></svg></span><span><b>Advanced Track <span class="m-tag">College and up</span></b><p>On call at Crumb &amp; Co.: real incidents, monthly budgets, and security reviews.</p></span><svg class="ico chev" aria-hidden="true"><use href="#i-chev"/></svg><span class="pin" style="top:6px;right:34px">12</span></button>
+      <button class="m-mode" type="button"><span class="m-mode-icon play"><svg class="ico" aria-hidden="true"><use href="#i-puzzle"/></svg></span><span><b>Playground</b><p>Build anything with 48 pieces. Only connections that make sense will snap together!</p></span><svg class="ico chev" aria-hidden="true"><use href="#i-chev"/></svg></button>
+      <button class="m-btn m-btn-primary m-btn-lg" type="button">Keep going<svg class="ico ico-sm" aria-hidden="true"><use href="#i-play"/></svg><span class="pin" style="top:-10px;right:-10px">1</span></button>
+    </div>
+  </div>
+</template>
+
+<template id="tpl-level">
+  <div class="m-topbar">
+    <button class="m-btn" type="button"><svg class="ico ico-sm" aria-hidden="true"><use href="#i-back"/></svg>Map</button>
+    <div class="m-title" style="position:relative;padding-right:22px"><span class="m-eyebrow">Level 1 · Storage</span><h1>Open the Shop Window</h1><span class="pin" style="top:-8px;right:-6px">2</span></div>
+    <span class="m-spacer"></span>
+    <button class="m-btn" type="button"><svg class="ico ico-sm" aria-hidden="true"><use href="#i-restart"/></svg>Restart</button>
+    <button class="m-btn m-icon-btn" type="button" aria-label="Theme: match my device"><svg class="ico" aria-hidden="true"><use href="#i-THEMEICON"/></svg></button>
+  </div>
+  <div class="m-play">
+    <aside class="m-panel">
+      <div class="m-panel-head" style="position:relative"><button class="m-btn m-icon-btn" type="button" aria-label="Hide mission" style="box-shadow:none"><svg class="ico" aria-hidden="true"><use href="#i-panel"/></svg></button>Mission<span class="pin" style="top:-6px;left:30px">7</span></div>
+      <div class="m-bubble"><svg width="48" height="42" aria-hidden="true"><use href="#sparky"/></svg><p>Drag S3 into the AWS Cloud and connect the Townsfolk to it.</p></div>
+      <div class="m-panel-head">Goals</div>
+      <div class="m-goal is-ok"><span class="m-goal-mark"><svg class="ico ico-sm" aria-hidden="true"><use href="#i-check"/></svg></span><div><b>Maple Hollow</b><p>20 visitors reach S3</p><span class="m-goal-status"><svg class="ico ico-sm" aria-hidden="true"><use href="#i-check"/></svg>Goal met</span></div></div>
+      <div class="m-hint"><svg class="ico" aria-hidden="true"><use href="#i-bulb"/></svg><span>Drag S3 from the tray at the bottom into the big cloud.</span></div>
+      <button class="m-btn" type="button" style="justify-self:start"><svg class="ico ico-sm" aria-hidden="true"><use href="#i-bulb"/></svg>Another hint</button>
+    </aside>
+    <div class="m-canvas">
+      <div class="m-zone"><span class="m-zone-tag">Town</span><span class="pin" style="top:2px;right:2px">4</span>
+        <div class="m-node" style="width:96px"><span class="m-mono" style="--icon:url(../../public/icons/users.svg)"></span><span class="pin" style="top:-10px;left:-10px">13</span><b>Townsfolk</b><small>Users</small></div>
+      </div>
+      <div class="m-region">
+        <span class="m-region-tag">AWS Cloud</span>
+        <div class="m-nodes">
+          <div class="m-node"><img src="../../public/icons/apigw.svg" alt=""><b>API Gateway</b><div class="m-meter"><i></i></div><small>25 / 1000</small></div>
+          <span class="m-wire"></span>
+          <div class="m-node is-slow"><img src="../../public/icons/lambda.svg" alt=""><b>Lambda</b><div class="m-meter"><i></i></div><span class="m-node-state"><svg class="ico ico-sm" aria-hidden="true"><use href="#i-alert"/></svg>Busy 880</span><span class="pin" style="top:-10px;right:-10px">6</span></div>
+          <span class="m-wire"></span>
+          <div class="m-node"><img src="../../public/icons/s3.svg" alt=""><b>S3</b><div class="m-meter"><i></i></div><small>5 / 3000</small></div>
+        </div>
+      </div>
+      <div class="m-flowctl"><button type="button" aria-label="Zoom in"><svg class="ico" aria-hidden="true"><use href="#i-plus"/></svg></button><button type="button" aria-label="Zoom out"><svg class="ico" aria-hidden="true"><use href="#i-minus"/></svg></button><button type="button" aria-label="Fit the whole map"><svg class="ico" aria-hidden="true"><use href="#i-fit"/></svg></button></div>
+      <div class="m-dock">
+        <div class="m-dock-piece"><img src="../../public/icons/s3.svg" alt=""><span class="m-dock-new">new</span><span class="m-dock-count">1</span></div>
+        <button class="m-btn m-btn-primary m-btn-run" type="button"><svg class="ico" aria-hidden="true"><use href="#i-play"/></svg>Run</button>
+      </div>
+    </div>
+  </div>
+</template>
+
+<template id="tpl-map">
+  <div class="m-side">
+    <div class="m-bubble"><svg width="48" height="42" aria-hidden="true"><use href="#sparky"/></svg><p>Next up: “Ding! Bread’s Ready”. Save each order and send a “ready!” message to both Customer Phones and the Kitchen Tablet.</p></div>
+    <button class="m-btn m-btn-primary m-btn-lg" type="button" style="width:100%">Keep going<svg class="ico ico-sm" aria-hidden="true"><use href="#i-play"/></svg></button>
+    <div class="m-chapters" style="position:relative">
+      <button class="m-chapter is-current" type="button" aria-current="true"><svg class="ico" aria-hidden="true"><use href="#i-book"/></svg><span><b>Chapter 1</b><span>Crumb &amp; Co. Goes Online · 4 of 9</span></span></button>
+      <button class="m-chapter is-locked" type="button" aria-disabled="true"><svg class="ico" aria-hidden="true" style="color:var(--ink-soft)"><use href="#i-lock"/></svg><span><b>Chapter 2 · Locked</b><span>Maple Hollow Helps · opens after Chapter 1</span></span></button>
+      <span class="pin" style="bottom:14px;right:10px">3</span>
+    </div>
+    <label class="m-check" style="position:relative"><input type="checkbox" /> Teacher mode: unlock every level<span class="pin" style="top:10px;right:-4px">7</span></label>
+  </div>
+</template>
+
+<template id="tpl-parts">
+  <div class="m-sheet">
+    <div>
+      <div class="m-sub">Buttons · 44px minimum · focus ring</div>
+      <div class="m-row">
+        <button class="m-btn m-btn-primary" type="button">Start the story</button>
+        <button class="m-btn m-btn-primary is-focus" type="button">Next<svg class="ico ico-sm" aria-hidden="true"><use href="#i-chev"/></svg></button>
+        <button class="m-btn" type="button">Restart</button>
+        <button class="m-btn is-focus" type="button"><svg class="ico ico-sm" aria-hidden="true"><use href="#i-key"/></svg>Builder Key</button>
+        <button class="m-btn m-btn-link" type="button">Skip</button>
+      </div>
+    </div>
+    <div class="m-row" style="align-items:flex-start;gap:24px">
+      <div>
+        <div class="m-sub">Theme menu</div>
+        <div class="m-theme-menu" role="menu" aria-label="Theme" style="position:relative">
+          <button role="menuitemradio" aria-checked="true" type="button"><svg class="ico" aria-hidden="true"><use href="#i-device"/></svg>Match my device<svg class="ico ico-sm tick" aria-hidden="true"><use href="#i-check"/></svg></button>
+          <button role="menuitemradio" aria-checked="false" type="button"><svg class="ico" aria-hidden="true"><use href="#i-sun"/></svg>Light<svg class="ico ico-sm tick" aria-hidden="true"><use href="#i-check"/></svg></button>
+          <button role="menuitemradio" aria-checked="false" type="button"><svg class="ico" aria-hidden="true"><use href="#i-moon"/></svg>Dark<svg class="ico ico-sm tick" aria-hidden="true"><use href="#i-check"/></svg></button>
+          <span class="pin" style="top:-8px;right:-8px">5</span>
+        </div>
+      </div>
+      <div style="flex:1;min-width:240px;display:grid;gap:14px">
+        <div class="m-sub" style="margin:0">Fields</div>
+        <div class="m-field" style="position:relative"><label for="f-team">Team name</label><input id="f-team" class="is-focus" value="Maple Makers" /><span class="help">Shown on your plan picture.</span><span class="pin" style="top:22px;right:-10px">8</span></div>
+        <div class="m-field has-error"><label for="f-goal">Goal</label><input id="f-goal" placeholder="50 townsfolk can…" aria-invalid="true" aria-describedby="f-goal-err" /><span class="err" id="f-goal-err"><svg class="ico ico-sm" aria-hidden="true"><use href="#i-alert"/></svg>Add what townsfolk can do.</span></div>
+      </div>
+    </div>
+    <div>
+      <div class="m-sub">Status · icon + words, never colour alone</div>
+      <div class="m-row">
+        <span class="m-pill ok"><svg class="ico ico-sm" aria-hidden="true"><use href="#i-check"/></svg>50 of 50 · Goal met</span>
+        <span class="m-pill warn"><svg class="ico ico-sm" aria-hidden="true"><use href="#i-alert"/></svg>Waiting in line</span>
+        <span class="m-pill bad"><svg class="ico ico-sm" aria-hidden="true"><use href="#i-alert"/></svg>Overloaded</span>
+        <span class="m-pill plum">College and up</span>
+      </div>
+    </div>
+    <div>
+      <div class="m-sub">Starter plans · chosen state</div>
+      <div class="m-starters" style="position:relative">
+        <button class="m-starter" type="button" aria-pressed="false"><b>Share information</b><span>Library events, club news, a town guide</span></button>
+        <button class="m-starter" type="button" aria-pressed="true"><span class="m-starter-check"><svg class="ico ico-sm" aria-hidden="true"><use href="#i-check"/></svg>Chosen</span><b>Collect sign-ups</b><span>Volunteers, pothole reports, lost pets</span></button>
+        <span class="pin" style="top:-8px;right:-8px">11</span>
+      </div>
+    </div>
+    <div>
+      <div class="m-sub">Story card</div>
+      <div class="m-story">
+        <span class="m-eyebrow">Level 1 · Storage</span>
+        <h2 style="font-size:26px">Open the Shop Window</h2>
+        <div class="m-story-body"><svg width="64" height="56" aria-hidden="true"><use href="#sparky"/></svg><div><span class="who">Sparky</span><p>Hi, I’m Sparky! Welcome to Maple Hollow. Baker Rosa runs Crumb &amp; Co., the best bakery in town.</p></div></div>
+        <div class="m-story-foot"><span class="m-dots" aria-hidden="true"><i></i><i></i><i></i></span><span class="m-spacer"></span><button class="m-btn m-btn-link" type="button">Skip</button><button class="m-btn m-btn-primary" type="button">Next<svg class="ico ico-sm" aria-hidden="true"><use href="#i-chev"/></svg></button></div>
+      </div>
+    </div>
+    <div>
+      <div class="m-sub">Type scale · 12px floor</div>
+      <div class="m-type">
+        <div><code>12</code><span style="font-size:12px">Badges, counts, tags</span></div>
+        <div><code>13</code><span style="font-size:13px">Helper text, piece sub-labels</span></div>
+        <div><code>14</code><span style="font-size:14px">Panel body, hints</span></div>
+        <div><code>16</code><span style="font-size:16px">Body, buttons</span></div>
+        <div><code>20</code><span style="font:600 20px var(--font-display)">Screen titles</span></div>
+        <div><code>30</code><span style="font:600 30px var(--font-display)">Card headings</span></div>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script>
+  // Stamp each mock from its template; theme icons follow the stage.
+  document.querySelectorAll('.screen[data-mock]').forEach((el) => {
+    const theme = el.closest('.stage').dataset.theme;
+    const html = document.getElementById('tpl-' + el.dataset.mock).innerHTML
+      .replaceAll('#i-THEMEICON', theme === 'dark' ? '#i-moon' : '#i-sun')
+      .replaceAll(' id="f-', ' id="' + theme + '-f-').replaceAll(' for="f-', ' for="' + theme + '-f-')
+      .replaceAll('aria-describedby="f-', 'aria-describedby="' + theme + '-f-');
+    el.innerHTML = html;
+    if (theme === 'light') el.querySelectorAll('.stars').forEach((s) => s.remove());
+  });
+
+  const store = {
+    get(k) { try { return localStorage.getItem(k); } catch { return null; } },
+    set(k, v) { try { localStorage.setItem(k, v); } catch {} },
+  };
+  const segBtns = document.querySelectorAll('.seg button');
+  function setView(v) {
+    document.body.dataset.view = v;
+    if (v === 'both') delete document.documentElement.dataset.doc;
+    else document.documentElement.dataset.doc = v;
+    segBtns.forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.view === v)));
+    store.set('spark-audit-view', v);
+  }
+  segBtns.forEach((b) => b.addEventListener('click', () => setView(b.dataset.view)));
+  setView(store.get('spark-audit-view') || 'both');
+
+  const notes = document.getElementById('notes');
+  notes.addEventListener('change', () => document.body.classList.toggle('no-notes', !notes.checked));
+</script>
+</body>
+</html>
