@@ -30,12 +30,12 @@ and one stage's five stacks.
 
 | Config | Stack | What it holds | Deployed by |
 |---|---|---|---|
-| account-dev / account-prod | `Spark-Account-GitHubOidc` | GitHub Actions OIDC provider, monthly AWS Budgets ($10, $25) | `setup_initial.sh`, once per account |
+| account-dev / account-prod | `Spark-Account-GitHubOidc` | GitHub Actions OIDC provider, monthly AWS Budgets ($10, $25) that email the account alert address | `setup_initial.sh`, once per account |
 | dev / prod | `Spark-<Stage>-Cicd` | IAM role `Spark-<Stage>-GitHubDeploy` that the deploy workflow assumes | `setup_initial.sh` only, never CI |
 | dev / prod | `Spark-<Stage>-Data` | DynamoDB table (`pk`/`sk`, on-demand, TTL `ttl`). Prod: PITR, deletion protection, retained on delete | CI |
-| dev / prod | `Spark-<Stage>-Api` | HTTP API (7 routes under `/api`, stage + route throttles, access logs), the Node 24 arm64 Lambda (JSON logs), an error-line metric filter | CI |
+| dev / prod | `Spark-<Stage>-Api` | HTTP API (9 routes under `/api`, stage + route throttles, access logs), the Node 24 arm64 Lambda (JSON logs), metric filters for error lines, Builder Key misses and throttled requests | CI |
 | dev / prod | `Spark-<Stage>-Web` | Private S3 bucket, CloudFront (OAC, `/api/*` to the HTTP API, security headers), `dist/` upload | CI |
-| dev / prod | `Spark-<Stage>-Ops` | SNS alarm topic, 5 alarms, a CloudWatch dashboard | CI |
+| dev / prod | `Spark-<Stage>-Ops` | SNS alarm topic emailing the account alert address, 7 alarms, a CloudWatch dashboard | CI |
 
 The deploy order is Data → Api → Web → Ops, set with explicit stack dependencies. The stacks share values
 through SSM parameters named `<Project>-<Stage>-<Key>`, for example `Spark-Dev-TableName`.
@@ -47,6 +47,8 @@ CloudFormation resolves those parameters **at deploy time**, so `cdk synth` need
 | `ApiId`, `ApiDomain`, `FunctionName` | Api | Web (`ApiDomain`), Ops |
 | `WebBucketName`, `DistributionId`, `DistributionDomain` | Web | Ops, the deploy smoke test |
 | `OriginVerifySecret` | `setup_initial.sh` (plain String, 32 random bytes in hex) | Api (Lambda env), Web (CloudFront origin header) |
+| `BuilderKeyPepper` | `setup_initial.sh` (plain String, 32 random bytes in hex, **never replaced**) | Api (Lambda env): keys the Builder Key hashes |
+| `Spark-Account-AlertEmail` (one per account, no stage) | `setup_initial.sh` (looked up from the account) | Ops (alarm emails), GitHubOidc (budget emails) |
 | `DeployRoleArn` | Cicd | `setup_initial.sh` (prints it) |
 
 ### Config keys
@@ -63,10 +65,14 @@ The shapes are in `docs/aws/CONTRACT.md`. Settings that differ by stage:
 | `Api.SaveRateLimit` (`PUT /api/profiles/me`, rps) | 10 | 200 |
 | `Api.ReservedConcurrency` (hard cap on Lambda spend; `0` or missing = none) | 0 | 0 for now; set to 100 once the Lambda quota increase is granted |
 | `Api.LogRetentionDays` | 14 | 30 |
-| `Web.CspReportOnly` | true | true for the first deploys (see [Enforcing the CSP](#enforcing-the-csp)) |
+| `Web.CspReportOnly` | false (enforced) | false (enforced; see [The CSP](#the-csp)) |
 | `Web.DomainName`, `Web.HostedZoneId` | "" | "" (see [Adding a domain](#adding-a-domain-later)) |
 | `Ops.Api5xxThreshold` (5xx responses in 5 minutes that page) | 5 | 1 |
-| `Ops.AlarmEmail`, `GitHubOidc.BudgetEmail` | "" (no email subscription) | "" |
+| `Ops.RecoverMissThreshold` (Builder Keys that matched nobody in 5 minutes: key guessing) | 50 | 200 |
+| `Ops.ThrottledThreshold` (requests API Gateway throttled in 5 minutes) | 50 | 50 |
+
+There is no email setting in the configs: this repo is public, so alarms and budgets email the address in the
+account's `Spark-Account-AlertEmail` SSM parameter, which `setup_initial.sh` fills in (see step 6 below).
 
 The per-route rates get a burst of twice the rate. They are a cost guardrail as much as abuse protection.
 The write routes are what fill the table and invoke the Lambda most.
@@ -84,13 +90,13 @@ Synth fails with a `[config] ...` error if a value is missing or has the wrong t
 not one CloudWatch offers, or if a stack key is unknown. A typo cannot silently drop a throttle. If `dist/` has
 not been built, synth fails with a `[web] ...` error.
 
-### Enforcing the CSP
+### The CSP
 
-Both stages start with `Web.CspReportOnly: true`. Browsers then report CSP violations in the devtools console
-but block nothing. After a soak with no violations in dev and prod (including the Playground's image export),
-enforce it: in a PR, set `"CspReportOnly": false` in `app-config-prod.json`, and in `app-config-dev.json`
-first if you want dev to lead. The Web stack then sends `Content-Security-Policy` instead of
-`Content-Security-Policy-Report-Only`. The policy string itself is unchanged.
+Both stages enforce the Content-Security-Policy (`Web.CspReportOnly: false`): only Spark's own scripts, styles,
+fonts and API, no plugins, no form posts elsewhere, and no framing (`frame-ancestors 'none'`, plus
+`X-Frame-Options: DENY` for older browsers). The built app was checked page by page under this exact policy,
+including the Playground's image export, with no violations. If a future change needs to loosen it, set
+`"CspReportOnly": true` on dev first: browsers then report violations in the devtools console but block nothing.
 
 ## Everyday commands
 
@@ -157,12 +163,19 @@ The script is safe to re-run. It does the following:
 5. Runs `cdk bootstrap aws://<account>/us-east-1 --cloudformation-execution-policies
    arn:aws:iam::<account>:policy/Spark-CdkCfnExec,arn:aws:iam::<account>:policy/Spark-CdkCfnExecWebOps`, so the
    CloudFormation execution role never gets `AdministratorAccess`.
-6. Deploys `Spark-Account-GitHubOidc` with your own (admin) credentials, not through the exec role, which holds the OIDC provider and the budgets. The budgets get an
-   email notification (ACTUAL > 100%) once `BudgetEmail` is set. A new account has no GitHub OIDC provider, so both
+6. Stores the account's alert email in `Spark-Account-AlertEmail`. It looks, in order, at `ALERT_EMAIL` from the
+   environment, the account's own email in AWS Organizations (readable from the management account), then the
+   account's operations, security and billing alternate contacts, and asks if none is set. A standalone account's
+   root email cannot be read through any AWS API, so set an alternate contact (Account settings in the console) or
+   pass `ALERT_EMAIL=...`. An existing value is kept unless you pass `ALERT_EMAIL`. AWS emails that address a link to
+   confirm the alarm subscription after the Ops stack deploys: click it, or alarms are not delivered.
+   Then deploys `Spark-Account-GitHubOidc` with your own (admin) credentials, not through the exec role, which holds the OIDC provider and the budgets. Each budget
+   emails the alert address when actual spend passes 100%. A new account has no GitHub OIDC provider, so both
    account configs have `CreateProvider: true`. An account holds only one provider per URL: if one already exists,
    set `CreateProvider: false` and `ExistingProviderArn`.
 7. For the stage:
-   - creates `Spark-<Stage>-OriginVerifySecret` if it does not exist yet
+   - creates `Spark-<Stage>-OriginVerifySecret` and `Spark-<Stage>-BuilderKeyPepper` if they do not exist yet. The
+     pepper is never replaced: every Builder Key hash depends on it, so a new pepper would lock every student out
    - deploys `Spark-<Stage>-Cicd`, also with your own credentials. CDK asks you to confirm the IAM changes.
    - prints the GitHub environment variables, plus the matching `gh variable set` commands
 
@@ -178,7 +191,9 @@ In the repo, open **Settings → Environments** and create `dev` and `prod`. Giv
 | `AWS_ACCOUNT_ID` | `166147842278` (prod: `027729116436`) |
 | `APP_CONFIG` | `config/app-config-dev.json` (prod: `config/app-config-prod.json`; relative to `infra/`) |
 
-On `prod`, limit **Deployment branches** to `main` and add **Required reviewers** (the owner). Leave `dev`
+On `prod`, limit **Deployment branches and tags** to `main` (choose *Selected branches and tags* and add `main`)
+and add **Required reviewers** (the owner). This matters more than it looks: the prod deploy role trusts any job
+that names the `prod` environment, and only this setting stops a workflow on another branch from doing so. Leave `dev`
 open to all branches, because open PRs deploy there (see [How deploys flow](#how-deploys-flow)). Both options
 are free on public repos, and [Security notes](#security-notes) explains the trade-off.
 
@@ -257,6 +272,16 @@ updates the stack. `/api/*` returns 403 for the few minutes between the Api upda
 | `LambdaErrors` | the Lambda crashes or times out at least once |
 | `LambdaThrottles` | at least one invocation is throttled (reserved concurrency or the account quota) |
 | `CloudFront5xxRate` | CloudFront's 5xx error rate reaches 5% |
+| `RecoverMisses` | at least `Ops.RecoverMissThreshold` recoveries name a Builder Key nobody has: someone may be guessing keys |
+| `ApiThrottled` | at least `Ops.ThrottledThreshold` requests are throttled: someone may be using up the shared rate limits |
+
+All of them email the account alert address (the SNS subscription needs its confirmation link clicked once).
+
+**When to add AWS WAF.** The API Gateway throttles are shared by everyone, so one noisy machine can use them up and
+make syncing pause for every student (progress stays safe on each computer meanwhile). AWS WAF on the distribution
+would add per-IP rate limits in front of them, for about $10 a month per stage. It is not deployed yet. If
+`RecoverMisses` or `ApiThrottled` start firing, that is the signal it is worth paying for. Schools often share one
+public IP address, so set any per-IP limit high enough for a whole class signing in at once.
 
 The handler turns every exception into a 500 response. Lambda's own `Errors` metric therefore stays flat for
 handled failures, and `ApiLoggedErrors` and `Api5xx` are the alarms that see them.
@@ -295,6 +320,10 @@ if it ever writes JSON lines directly.
   boundary) and every OIDC provider write, so even a CI deploy that targeted those stacks would fail.
   `deploy.yml` and `deploy_stacks.sh` leave Cicd out anyway.
 - **Known gaps, accepted for now:**
+  - `npm audit` reports a moderate denial-of-service advisory in `minimatch` (GHSA-g3hv-75wg-m249). The copy is bundled
+    inside `aws-cdk-lib`, so an npm override cannot replace it, and no `aws-cdk-lib` release has a fixed copy yet. It
+    only runs during `cdk synth`, on asset glob patterns written in this repo, and never ships to the Lambda or the
+    browser. Dependabot will raise the `aws-cdk-lib` update once AWS releases one.
   - `logs:PutResourcePolicy` is allowed on `*` because HTTP API access logging needs it and the action has no
     resource-level permissions. A deploy could therefore change CloudWatch Logs resource policies account-wide.
   - `s3:PutBucketPublicAccessBlock` and `s3:PutBucketPolicy` on `spark-*` buckets mean a deploy could make the site
@@ -360,8 +389,8 @@ The exec permissions are two policies only because a managed policy holds at mos
   - `Spark-CdkCfnExec` also denies every change to `role/Spark-*-GitHubDeploy` and every OIDC provider write (see
     [Security notes](#security-notes)); those are deployed with admin credentials.
 - **The boundaries** allow exactly what the roles use, read from the synthesized role policies:
-  - API Lambda: the table read/write actions on `table/Spark-*` (Query, GetItem, PutItem, UpdateItem, DeleteItem,
-    BatchWriteItem, ConditionCheckItem; transactions are authorized per item), and CloudWatch Logs writes on Spark log
+  - API Lambda: the table read/write actions on `table/Spark-*` that the store sends (GetItem, PutItem, UpdateItem,
+    DeleteItem, ConditionCheckItem; transactions are authorized per item), and CloudWatch Logs writes on Spark log
     groups.
   - BucketDeployment: read the CDK assets bucket, write objects to `spark-*` buckets, `kms:Decrypt` via S3,
     `cloudfront:CreateInvalidation`/`GetInvalidation` on distributions.
@@ -430,7 +459,7 @@ prints the commands to remove them:
 
 - prod's DynamoDB table (retained, deletion protection on)
 - prod's site bucket (retained)
-- the `OriginVerifySecret` parameter
+- the `OriginVerifySecret` and `BuilderKeyPepper` parameters (delete the pepper only together with the table)
 
 The account-level pieces stay too: `Spark-Account-GitHubOidc` (destroy it with the account config), the `CDKToolkit`
 bootstrap stack and the four `Spark-*` managed policies from `setup_initial.sh`.
@@ -484,8 +513,12 @@ Account IDs live only in `infra/config/*.json` and in the GitHub environment var
 
 ## Troubleshooting
 
-- **`Unable to fetch parameters [Spark-Dev-OriginVerifySecret]`** (or `TableName` ...): `setup_initial.sh`
-  has not run for this stage, or a stack earlier in the order has not been deployed yet.
+- **`Unable to fetch parameters [Spark-Dev-OriginVerifySecret]`** (or `BuilderKeyPepper`, `Spark-Account-AlertEmail`,
+  `TableName` ...): `setup_initial.sh` has not run for this stage since that parameter was added, or a stack earlier
+  in the order has not been deployed yet. Re-running it is safe.
+- **Every `/api/*` request answers 403 and `ApiLoggedErrors` fires**: the Lambda has no `ORIGIN_VERIFY_SECRET` (or one
+  under 32 characters). The API refuses everything rather than run unprotected. Re-run `setup_initial.sh`, then
+  redeploy Api and Web.
 - **`ReservedConcurrentExecutions ... decreases account's UnreservedConcurrentExecution below its minimum`**:
   the account quota is below that stage's reservation plus 100. Request the quota increase that
   `setup_initial.sh` prints, or set `Api.ReservedConcurrency` to 0 for that stage until it is granted.

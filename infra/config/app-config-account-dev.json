@@ -11,7 +11,6 @@
       "Name": "GitHubOidc",
       "CreateProvider": true,
       "ExistingProviderArn": "",
-      "BudgetEmail": "",
       "BudgetLimitsUsd": [
         10,
         25

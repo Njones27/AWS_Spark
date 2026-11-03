@@ -12,9 +12,9 @@ import {
 } from '@aws-sdk/lib-dynamodb';
 import { describe, expect, it } from 'vitest';
 import { createHandler } from '../src/handler';
-import { sha256Hex } from '../src/lib/auth';
+import { builderKeyHash, sha256Hex } from '../src/lib/auth';
 import { addTokenHash, DynamoStore, MAX_TOKENS, type ProfileRecord } from '../src/lib/store';
-import { event } from './helpers';
+import { event, PEPPER, TEST_ENV } from './helpers';
 
 // DynamoStore against a fake client: checks the requests it sends and how it reads DynamoDB's answers and errors.
 
@@ -242,11 +242,100 @@ describe('DynamoStore', () => {
 });
 
 // The whole path, handler to DynamoStore, when DynamoDB reports a conflict once: re-read, merge, retry, then 200.
+describe('DynamoStore key changes and deletes', () => {
+  const rotation = {
+    expectedKeyHash: 'old',
+    newKeyHash: 'new',
+    expectedTokens: ['t1', 'mine', 't3'],
+    keepTokenHash: 'mine',
+    createdAt: 'now',
+    ttl: 9,
+  };
+
+  it('rotates a key in one transaction: profile, both keys, and every other sign-in', async () => {
+    const { client, sent } = fakeClient();
+    expect(await new DynamoStore('table', client).rotateKey('p-1', rotation)).toBe('ok');
+    expect((sent[0] as TransactWriteCommand).input.TransactItems).toEqual([
+      {
+        Update: {
+          TableName: 'table',
+          Key: { pk: 'PROFILE#p-1', sk: 'META' },
+          UpdateExpression: 'SET keyHash = :new, #tokens = :keep, #ttl = :ttl',
+          ConditionExpression: 'keyHash = :old AND #tokens = :expected',
+          ExpressionAttributeNames: { '#tokens': 'tokens', '#ttl': 'ttl' },
+          ExpressionAttributeValues: { ':new': 'new', ':old': 'old', ':keep': ['mine'], ':expected': rotation.expectedTokens, ':ttl': 9 },
+        },
+      },
+      { Delete: { TableName: 'table', Key: { pk: 'KEY#old', sk: 'META' } } },
+      {
+        Put: {
+          TableName: 'table',
+          Item: { pk: 'KEY#new', sk: 'META', profileId: 'p-1', createdAt: 'now' },
+          ConditionExpression: 'attribute_not_exists(pk)',
+        },
+      },
+      { Delete: { TableName: 'table', Key: { pk: 'TOKEN#t1', sk: 'META' } } },
+      { Delete: { TableName: 'table', Key: { pk: 'TOKEN#t3', sk: 'META' } } },
+    ]);
+  });
+
+  it.each([
+    ['the new key is taken', cancelled('None', 'None', 'ConditionalCheckFailed'), 'key_taken'],
+    ['the profile changed', cancelled('ConditionalCheckFailed', 'None', 'None'), 'conflict'],
+    ['another write collided', writeConflict(), 'conflict'],
+  ])('answers a rotation where %s', async (_, error, want) => {
+    const { client } = fakeClient(() => error);
+    expect(await new DynamoStore('table', client).rotateKey('p-1', rotation)).toBe(want);
+  });
+
+  it('never sends a rotation that touches one key item twice', async () => {
+    const { client, sent } = fakeClient();
+    expect(await new DynamoStore('table', client).rotateKey('p-1', { ...rotation, newKeyHash: 'old' })).toBe('key_taken');
+    expect(sent).toHaveLength(0);
+  });
+
+  it('upgrades a key hash only while the profile and old key still belong together', async () => {
+    const { client, sent } = fakeClient();
+    const store = new DynamoStore('table', client);
+    expect(await store.upgradeKeyHash('p-1', { from: 'legacy', to: 'peppered', createdAt: 'now' })).toBe('ok');
+    const items = (sent[0] as TransactWriteCommand).input.TransactItems ?? [];
+    expect(items[0].Update?.ConditionExpression).toBe('keyHash = :from');
+    expect(items[1].Delete).toMatchObject({ Key: { pk: 'KEY#legacy', sk: 'META' }, ConditionExpression: 'profileId = :profileId' });
+    expect(items[2].Put).toMatchObject({ Item: { pk: 'KEY#peppered', profileId: 'p-1' }, ConditionExpression: 'attribute_not_exists(pk)' });
+    const raced = fakeClient(() => cancelled('ConditionalCheckFailed', 'None', 'None'));
+    expect(await new DynamoStore('table', raced.client).upgradeKeyHash('p-1', { from: 'a', to: 'b', createdAt: 'now' })).toBe('conflict');
+  });
+
+  it('deletes a profile with its key and sign-ins, only if nothing changed since it was read', async () => {
+    const { client, sent } = fakeClient();
+    const seen = { keyHash: 'k', tokens: ['t1', 't2'] };
+    expect(await new DynamoStore('table', client).deleteProfile('p-1', seen)).toBe('ok');
+    expect((sent[0] as TransactWriteCommand).input.TransactItems).toEqual([
+      {
+        Delete: {
+          TableName: 'table',
+          Key: { pk: 'PROFILE#p-1', sk: 'META' },
+          ConditionExpression: 'keyHash = :keyHash AND #tokens = :tokens',
+          ExpressionAttributeNames: { '#tokens': 'tokens' },
+          ExpressionAttributeValues: { ':keyHash': 'k', ':tokens': ['t1', 't2'] },
+        },
+      },
+      { Delete: { TableName: 'table', Key: { pk: 'KEY#k', sk: 'META' } } },
+      { Delete: { TableName: 'table', Key: { pk: 'TOKEN#t1', sk: 'META' } } },
+      { Delete: { TableName: 'table', Key: { pk: 'TOKEN#t2', sk: 'META' } } },
+    ]);
+    const raced = fakeClient(() => cancelled('ConditionalCheckFailed', 'None', 'None', 'None'));
+    expect(await new DynamoStore('table', raced.client).deleteProfile('p-1', seen)).toBe('conflict');
+    const broken = fakeClient(() => new Error('AccessDeniedException'));
+    await expect(new DynamoStore('table', broken.client).deleteProfile('p-1', seen)).rejects.toThrow('AccessDenied');
+  });
+});
+
 describe('write conflicts through the handler', () => {
   const token = 'A'.repeat(43);
   const tokenHash = sha256Hex(token);
   const builderKey = 'MAPLE-OTTER-4821';
-  const stored = { ...profile, tokens: [tokenHash], keyHash: sha256Hex(builderKey) };
+  const stored = { ...profile, tokens: [tokenHash], keyHash: builderKeyHash(builderKey, PEPPER) };
   const profileItem = {
     pk: 'PROFILE#p-1',
     sk: 'META',
@@ -275,7 +364,7 @@ describe('write conflicts through the handler', () => {
       }
       return {};
     });
-    const handler = createHandler({ env: {}, store: new DynamoStore('table', fake.client), logError: () => {} });
+    const handler = createHandler({ env: TEST_ENV, store: new DynamoStore('table', fake.client), logError: () => {} });
     return { handler, sent: fake.sent };
   }
 

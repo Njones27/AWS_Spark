@@ -1,5 +1,6 @@
 // Alarms and a small dashboard for one stage. Resource names/IDs come from SSM (written by Api and Web);
-// the logged-errors metric comes from the metric filter in the Api stack.
+// the logged-errors, recover-miss and throttled metrics come from metric filters in the Api stack. Alarms email the
+// address in the account's `<Project>-Account-AlertEmail` SSM parameter (written by script/setup_initial.sh).
 
 import * as cdk from 'aws-cdk-lib';
 import * as cloudwatch from 'aws-cdk-lib/aws-cloudwatch';
@@ -10,8 +11,15 @@ import * as subscriptions from 'aws-cdk-lib/aws-sns-subscriptions';
 import { AppContext } from '../lib/template/app-context';
 import { StackConfig } from '../lib/template/app-config';
 import { BaseStack } from '../lib/template/stack/base/base-stack';
-import { configPositiveInt, configString } from '../lib/config-values';
-import { API_LOGGED_ERRORS_METRIC, stageNamespace } from '../lib/metrics';
+import { configPositiveInt } from '../lib/config-values';
+import {
+    ALERT_EMAIL_KEY,
+    alertEmailPrefix,
+    API_LOGGED_ERRORS_METRIC,
+    API_THROTTLED_METRIC,
+    RECOVER_MISSES_METRIC,
+    stageNamespace,
+} from '../lib/metrics';
 
 const FIVE_MINUTES = cdk.Duration.minutes(5);
 
@@ -29,10 +37,10 @@ export class OpsStack extends BaseStack {
             topicName: this.withProjectPrefix('Alarms'),
             displayName: `Spark ${this.stage} alarms`,
         });
-        const alarmEmail = configString(stackConfig, 'AlarmEmail', '');
-        if (alarmEmail.length > 0) {
-            this.alarmTopic.addSubscription(new subscriptions.EmailSubscription(alarmEmail));
-        }
+        // The subscription stays "pending confirmation" until someone clicks the link AWS emails to this address.
+        const projectName = this.commonProps.appConfig.Project.Name;
+        const alertEmail = this.getParameter(ALERT_EMAIL_KEY, true, alertEmailPrefix(projectName));
+        this.alarmTopic.addSubscription(new subscriptions.EmailSubscription(alertEmail));
 
         const lambdaMetric = (metricName: string, statistic = 'Sum') => new cloudwatch.Metric({
             namespace: 'AWS/Lambda',
@@ -57,13 +65,18 @@ export class OpsStack extends BaseStack {
             period: FIVE_MINUTES,
         });
 
-        const loggedErrors = new cloudwatch.Metric({
-            namespace: stageNamespace(this.commonProps.appConfig.Project.Name, this.commonProps.appConfig.Project.Stage),
-            metricName: API_LOGGED_ERRORS_METRIC,
+        const stageMetric = (metricName: string) => new cloudwatch.Metric({
+            namespace: stageNamespace(projectName, this.commonProps.appConfig.Project.Stage),
+            metricName,
             statistic: 'Sum',
             period: FIVE_MINUTES,
         });
+        const loggedErrors = stageMetric(API_LOGGED_ERRORS_METRIC);
+        const recoverMisses = stageMetric(RECOVER_MISSES_METRIC);
+        const throttled = stageMetric(API_THROTTLED_METRIC);
         const api5xxThreshold = configPositiveInt(stackConfig, 'Api5xxThreshold');
+        const recoverMissThreshold = configPositiveInt(stackConfig, 'RecoverMissThreshold');
+        const throttledThreshold = configPositiveInt(stackConfig, 'ThrottledThreshold');
 
         const alarmAction = new cloudwatchActions.SnsAction(this.alarmTopic);
         const alarm = (id: string, metric: cloudwatch.Metric, threshold: number, description: string) => {
@@ -87,6 +100,11 @@ export class OpsStack extends BaseStack {
         alarm('LambdaThrottles', lambdaMetric('Throttles'), 1,
             'API Lambda hit its reserved concurrency; raise Api.ReservedConcurrency if this repeats');
         alarm('Api5xx', apiMetric('5xx'), api5xxThreshold, `HTTP API returned ${api5xxThreshold} or more 5xx responses in 5 minutes`);
+        // Abuse signals. Either one firing is the cue to consider AWS WAF per-IP rate limits (see infra/README.md).
+        alarm('RecoverMisses', recoverMisses, recoverMissThreshold,
+            `${recoverMissThreshold} or more Builder Keys that matched nobody in 5 minutes: someone may be guessing keys`);
+        alarm('ApiThrottled', throttled, throttledThreshold,
+            `${throttledThreshold} or more requests throttled in 5 minutes: someone may be using up the shared rate limits`);
         if (this.region === 'us-east-1') {
             alarm('CloudFront5xxRate', cloudFrontMetric('5xxErrorRate'), 5, 'CloudFront 5xx error rate at or above 5%');
         } else {
@@ -122,6 +140,13 @@ export class OpsStack extends BaseStack {
                         left: [cloudFrontMetric('Requests', 'Sum')],
                         right: [cloudFrontMetric('4xxErrorRate'), cloudFrontMetric('5xxErrorRate')],
                         width: 12,
+                    }),
+                ],
+                [
+                    new cloudwatch.GraphWidget({
+                        title: 'Abuse signals: Builder Keys that matched nobody, throttled requests',
+                        left: [recoverMisses, throttled],
+                        width: 24,
                     }),
                 ],
             ],

@@ -31,6 +31,10 @@ export function addTokenHash(tokens: readonly string[], tokenHash: string): { to
   return { tokens: all.slice(cut), evicted: all.slice(0, cut) };
 }
 
+/** The tokens a key change signs out: all of them but the one kept, without repeats. */
+export const signedOut = (tokens: readonly string[], keep: string): string[] =>
+  [...new Set(tokens)].filter((hash) => hash !== keep);
+
 export interface ProfileRecord {
   profileId: string;
   /** SHA-256 hex of each token that works, oldest first. */
@@ -64,6 +68,23 @@ export interface TokenChange {
   ttl: number;
 }
 
+/** A new Builder Key for a profile, replacing `expectedKeyHash`. Every token but `keepTokenHash` is signed out. */
+export interface KeyChange {
+  expectedKeyHash: string;
+  newKeyHash: string;
+  /** The token list the caller read. */
+  expectedTokens: string[];
+  keepTokenHash: string;
+  createdAt: string;
+  ttl: number;
+}
+
+/** What a profile looked like when the caller read it, so a delete only goes ahead if nothing changed since. */
+export interface ProfileSnapshot {
+  keyHash: string;
+  tokens: string[];
+}
+
 export interface Store {
   /** Writes the profile with its Builder Key and first token lookup, all or nothing. `key_taken`: pick another key. */
   createProfile(profile: ProfileRecord, ttl: number): Promise<'ok' | 'key_taken'>;
@@ -80,6 +101,18 @@ export interface Store {
    * (with its TOKEN# item) once there would be more than MAX_TOKENS. `conflict`: read again, retry.
    */
   addToken(profileId: string, change: TokenChange): Promise<'ok' | 'conflict'>;
+  /**
+   * Gives the profile a new Builder Key and signs out every other computer, all or nothing: the old KEY# and the other
+   * TOKEN# items are deleted. `key_taken`: pick another key. `conflict`: read again, retry.
+   */
+  rotateKey(profileId: string, change: KeyChange): Promise<'ok' | 'key_taken' | 'conflict'>;
+  /**
+   * Re-files a Builder Key under a new hash (a legacy SHA-256 key moving to the peppered hash), if the profile still
+   * has `from`. `conflict`: something changed; look the key up again.
+   */
+  upgradeKeyHash(profileId: string, change: { from: string; to: string; createdAt: string }): Promise<'ok' | 'conflict'>;
+  /** Deletes the profile, its KEY# and all its TOKEN# items, if it still matches `seen`. `conflict`: read again, retry. */
+  deleteProfile(profileId: string, seen: ProfileSnapshot): Promise<'ok' | 'conflict'>;
   getShare(id: string): Promise<ShareRecord | null>;
   /**
    * Stores a share. `ok` also when the id already holds this same code (a replay): nothing changes, not even
@@ -277,6 +310,112 @@ export class DynamoStore implements Store {
     }
   }
 
+  async rotateKey(profileId: string, change: KeyChange): Promise<'ok' | 'key_taken' | 'conflict'> {
+    const { expectedKeyHash, newKeyHash, expectedTokens, keepTokenHash, createdAt, ttl } = change;
+    // One transaction may not touch an item twice; a new key that hashes the same as the old is just "taken".
+    if (newKeyHash === expectedKeyHash) return 'key_taken';
+    try {
+      await this.db.send(
+        new TransactWriteCommand({
+          TransactItems: [
+            {
+              Update: {
+                TableName: this.tableName,
+                Key: keys.profile(profileId),
+                UpdateExpression: 'SET keyHash = :new, #tokens = :keep, #ttl = :ttl',
+                ConditionExpression: 'keyHash = :old AND #tokens = :expected',
+                ExpressionAttributeNames: { '#tokens': 'tokens', '#ttl': 'ttl' },
+                ExpressionAttributeValues: {
+                  ':new': newKeyHash,
+                  ':old': expectedKeyHash,
+                  ':keep': [keepTokenHash],
+                  ':expected': expectedTokens,
+                  ':ttl': ttl,
+                },
+              },
+            },
+            { Delete: { TableName: this.tableName, Key: keys.key(expectedKeyHash) } },
+            {
+              Put: {
+                TableName: this.tableName,
+                Item: keyItem(newKeyHash, profileId, createdAt),
+                ConditionExpression: NOT_EXISTS,
+              },
+            },
+            ...signedOut(expectedTokens, keepTokenHash).map((hash) => ({
+              Delete: { TableName: this.tableName, Key: keys.token(hash) },
+            })),
+          ],
+        }),
+      );
+      return 'ok';
+    } catch (err) {
+      if (onlyConditionFailed(err, 2)) return 'key_taken';
+      if (onlyConditionFailed(err, 0) || isWriteConflict(err)) return 'conflict';
+      throw err;
+    }
+  }
+
+  async upgradeKeyHash(profileId: string, { from, to, createdAt }: { from: string; to: string; createdAt: string }) {
+    if (from === to) return 'conflict' as const;
+    try {
+      await this.db.send(
+        new TransactWriteCommand({
+          TransactItems: [
+            {
+              Update: {
+                TableName: this.tableName,
+                Key: keys.profile(profileId),
+                UpdateExpression: 'SET keyHash = :to',
+                ConditionExpression: 'keyHash = :from',
+                ExpressionAttributeValues: { ':to': to, ':from': from },
+              },
+            },
+            {
+              Delete: {
+                TableName: this.tableName,
+                Key: keys.key(from),
+                ConditionExpression: 'profileId = :profileId',
+                ExpressionAttributeValues: { ':profileId': profileId },
+              },
+            },
+            { Put: { TableName: this.tableName, Item: keyItem(to, profileId, createdAt), ConditionExpression: NOT_EXISTS } },
+          ],
+        }),
+      );
+      return 'ok' as const;
+    } catch (err) {
+      if (cancellationCodes(err) !== null || isWriteConflict(err)) return 'conflict' as const;
+      throw err;
+    }
+  }
+
+  async deleteProfile(profileId: string, { keyHash, tokens }: ProfileSnapshot) {
+    try {
+      await this.db.send(
+        new TransactWriteCommand({
+          TransactItems: [
+            {
+              Delete: {
+                TableName: this.tableName,
+                Key: keys.profile(profileId),
+                ConditionExpression: 'keyHash = :keyHash AND #tokens = :tokens',
+                ExpressionAttributeNames: { '#tokens': 'tokens' },
+                ExpressionAttributeValues: { ':keyHash': keyHash, ':tokens': tokens },
+              },
+            },
+            { Delete: { TableName: this.tableName, Key: keys.key(keyHash) } },
+            ...tokens.map((hash) => ({ Delete: { TableName: this.tableName, Key: keys.token(hash) } })),
+          ],
+        }),
+      );
+      return 'ok' as const;
+    } catch (err) {
+      if (onlyConditionFailed(err, 0) || isWriteConflict(err)) return 'conflict' as const;
+      throw err;
+    }
+  }
+
   async getShare(id: string): Promise<ShareRecord | null> {
     const item = await this.get(keys.share(id));
     return item ? toShare(item) : null;
@@ -357,6 +496,42 @@ export class MemoryStore implements Store {
     this.write({ ...item, tokens, ttl });
     this.write(tokenItem(tokenHash, profileId, createdAt, ttl));
     evicted.forEach((hash) => this.items.delete(keys.token(hash).pk));
+    return 'ok' as const;
+  }
+
+  async rotateKey(profileId: string, change: KeyChange) {
+    const { expectedKeyHash, newKeyHash, expectedTokens, keepTokenHash, createdAt, ttl } = change;
+    if (newKeyHash === expectedKeyHash) return 'key_taken' as const;
+    const item = this.read(keys.profile(profileId));
+    if (this.items.has(keys.key(newKeyHash).pk)) return 'key_taken' as const;
+    if (!item || item.keyHash !== expectedKeyHash || JSON.stringify(item.tokens) !== JSON.stringify(expectedTokens)) {
+      return 'conflict' as const;
+    }
+    this.write({ ...item, keyHash: newKeyHash, tokens: [keepTokenHash], ttl });
+    this.items.delete(keys.key(expectedKeyHash).pk);
+    this.write(keyItem(newKeyHash, profileId, createdAt));
+    signedOut(expectedTokens, keepTokenHash).forEach((hash) => this.items.delete(keys.token(hash).pk));
+    return 'ok' as const;
+  }
+
+  async upgradeKeyHash(profileId: string, { from, to, createdAt }: { from: string; to: string; createdAt: string }) {
+    const item = this.read(keys.profile(profileId));
+    const old = this.read(keys.key(from));
+    if (from === to || !item || item.keyHash !== from || old?.profileId !== profileId || this.items.has(keys.key(to).pk)) {
+      return 'conflict' as const;
+    }
+    this.write({ ...item, keyHash: to });
+    this.items.delete(keys.key(from).pk);
+    this.write(keyItem(to, profileId, createdAt));
+    return 'ok' as const;
+  }
+
+  async deleteProfile(profileId: string, { keyHash, tokens }: ProfileSnapshot) {
+    const item = this.read(keys.profile(profileId));
+    if (!item || item.keyHash !== keyHash || JSON.stringify(item.tokens) !== JSON.stringify(tokens)) return 'conflict' as const;
+    this.items.delete(keys.profile(profileId).pk);
+    this.items.delete(keys.key(keyHash).pk);
+    tokens.forEach((hash) => this.items.delete(keys.token(hash).pk));
     return 'ok' as const;
   }
 

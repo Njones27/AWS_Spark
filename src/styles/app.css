@@ -2753,6 +2753,14 @@ img {
 .key-choice-actions .btn {
   white-space: normal;
 }
+.key-safety {
+  display: grid;
+  gap: 6px;
+  margin-top: 6px;
+}
+.key-safety h3 {
+  font-size: 17px;
+}
 /* One-time "You earned a Builder Key!" card: bottom-left, above the screen but below dialogs. */
 .key-notice {
   position: fixed;

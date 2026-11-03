@@ -5,6 +5,13 @@ import { MemoryStore } from '../src/lib/store';
 
 export const NOW = new Date('2026-10-30T12:00:00.000Z');
 
+/** What CloudFront sends as `x-origin-verify` in tests, and the Lambda's matching env value. */
+export const ORIGIN_SECRET = 'test-origin-secret-0123456789abcdef0123456789';
+/** The Builder Key pepper in tests. */
+export const PEPPER = 'test-pepper-0123456789abcdef0123456789abcdef';
+/** The env a deployed stage has. */
+export const TEST_ENV = { STAGE: 'test', APP_VERSION: 'abc123', ORIGIN_VERIFY_SECRET: ORIGIN_SECRET, BUILDER_KEY_PEPPER: PEPPER };
+
 interface EventInit {
   body?: unknown;
   /** Sent as is instead of JSON.stringify(body). */
@@ -13,11 +20,18 @@ interface EventInit {
   token?: string;
   isBase64Encoded?: boolean;
   pathParameters?: Record<string, string>;
+  /** The `x-origin-verify` header CloudFront adds. Defaults to ORIGIN_SECRET; null sends none. */
+  origin?: string | null;
 }
 
 /** A payload format 2.0 event, as API Gateway's HTTP API sends it. */
 export function event(method: string, path: string, init: EventInit = {}): APIGatewayProxyEventV2 {
-  const headers: Record<string, string> = { 'content-type': 'application/json', ...init.headers };
+  const origin = init.origin === undefined ? ORIGIN_SECRET : init.origin;
+  const headers: Record<string, string> = {
+    'content-type': 'application/json',
+    ...(origin === null ? {} : { 'x-origin-verify': origin }),
+    ...init.headers,
+  };
   if (init.token) headers.authorization = `Bearer ${init.token}`;
   const body = init.rawBody ?? (init.body === undefined ? undefined : JSON.stringify(init.body));
   return {
@@ -50,7 +64,7 @@ export function setup(deps: Omit<Deps, 'store'> & { store?: MemoryStore } = {}) 
   const clock = { now: NOW };
   const errors: { message: string; detail: Record<string, unknown> }[] = [];
   const handler = createHandler({
-    env: { STAGE: 'test', APP_VERSION: 'abc123' },
+    env: TEST_ENV,
     now: () => clock.now,
     logError: (message, detail) => errors.push({ message, detail }),
     store,

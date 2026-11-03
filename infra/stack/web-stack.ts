@@ -26,6 +26,8 @@ export const CONTENT_SECURITY_POLICY = [
     "connect-src 'self'",
     "frame-ancestors 'none'",
     "base-uri 'self'",
+    "object-src 'none'",
+    "form-action 'self'",
 ].join('; ');
 
 /** Hashed Vite output: safe to cache forever. */
@@ -63,7 +65,7 @@ export class WebStack extends BaseStack {
 
         const securityHeaders = new cloudfront.ResponseHeadersPolicy(this, 'SecurityHeaders', {
             responseHeadersPolicyName: this.withProjectPrefix('SecurityHeaders'),
-            comment: `Spark ${this.stage}: HSTS, nosniff, referrer policy, CSP${cspReportOnly ? ' (report-only)' : ''}`,
+            comment: `Spark ${this.stage}: HSTS, nosniff, frame DENY, referrer policy, CSP${cspReportOnly ? ' (report-only)' : ''}`,
             securityHeadersBehavior: {
                 strictTransportSecurity: {
                     accessControlMaxAge: cdk.Duration.days(730),
@@ -71,6 +73,8 @@ export class WebStack extends BaseStack {
                     override: true,
                 },
                 contentTypeOptions: { override: true },
+                // Older browsers ignore CSP frame-ancestors; this keeps Spark out of other sites' frames there too.
+                frameOptions: { frameOption: cloudfront.HeadersFrameOption.DENY, override: true },
                 referrerPolicy: {
                     referrerPolicy: cloudfront.HeadersReferrerPolicy.STRICT_ORIGIN_WHEN_CROSS_ORIGIN,
                     override: true,

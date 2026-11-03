@@ -11,9 +11,14 @@
 # 3. creates or updates the managed policies in infra/policies/ (Spark-RoleBoundary, Spark-DeployRoleBoundary,
 #    Spark-CdkCfnExec, Spark-CdkCfnExecWebOps), then runs `cdk bootstrap aws://<account>/<region>` with the two exec
 #    policies as the CloudFormation execution policies, instead of the default AdministratorAccess
-# 4. deploys the account config (GitHub OIDC provider, budgets)
-# 5. creates the <Project>-<Stage>-OriginVerifySecret SSM parameter (once), deploys <Project>-<Stage>-Cicd, and
-#    prints the GitHub environment variables to set
+# 4. stores the account's alert email in the <Project>-Account-AlertEmail SSM parameter (see "AlertEmail" below),
+#    then deploys the account config (GitHub OIDC provider, budgets that email it)
+# 5. creates the <Project>-<Stage>-OriginVerifySecret and <Project>-<Stage>-BuilderKeyPepper SSM parameters (once
+#    each, never replaced), deploys <Project>-<Stage>-Cicd, and prints the GitHub environment variables to set
+#
+# The alert email is looked up, in order: ALERT_EMAIL from the environment, the account's own email in AWS
+# Organizations (works from the management account), then the account's operations, security or billing alternate
+# contact. If none is found it asks (or stops, without a terminal). It is kept in SSM, never in this public repo.
 # The account and Cicd stacks use CliCredentialsStackSynthesizer: they deploy with the credentials this script runs
 # with, never through the CDK exec role (which is denied changes to the deploy role and the OIDC provider).
 #
@@ -111,6 +116,46 @@ APP_CONFIG="$ACCOUNT_CONFIG" npx cdk bootstrap "aws://$ACCOUNT/$REGION" \
   --cloudformation-execution-policies "$EXEC_POLICIES" -c APP_CONFIG="$ACCOUNT_CONFIG"
 echo
 
+echo "==--------AlertEmail---------=="
+# Alarms (Ops stack) and budgets (account stack) email this address. One per account, read at deploy time.
+ALERT_PARAM="$(config_get "$ACCOUNT_CONFIG" Project.Name)-Account-AlertEmail"
+looks_like_email() { [[ "$1" =~ ^[^[:space:]@]+@[^[:space:]@]+\.[^[:space:]@]+$ ]]; }
+lookup_alert_email() {
+  local found
+  found="$(aws organizations describe-account --account-id "$ACCOUNT" --query Account.Email --output text 2>/dev/null || true)"
+  if looks_like_email "$found"; then echo "$found"; return; fi
+  for kind in OPERATIONS SECURITY BILLING; do
+    found="$(aws account get-alternate-contact --alternate-contact-type "$kind" \
+      --query AlternateContact.EmailAddress --output text 2>/dev/null || true)"
+    if looks_like_email "$found"; then echo "$found"; return; fi
+  done
+}
+CURRENT_EMAIL="$(aws ssm get-parameter --name "$ALERT_PARAM" --region "$REGION" --query Parameter.Value --output text 2>/dev/null || true)"
+if [ -n "${ALERT_EMAIL:-}" ]; then
+  WANT_EMAIL="$ALERT_EMAIL"
+elif looks_like_email "$CURRENT_EMAIL"; then
+  WANT_EMAIL="$CURRENT_EMAIL"
+else
+  WANT_EMAIL="$(lookup_alert_email)"
+  if [ -z "$WANT_EMAIL" ] && [ -t 0 ]; then
+    echo "No email found for account $ACCOUNT in AWS Organizations or its alternate contacts."
+    read -r -p "Email for alarms and budget alerts: " WANT_EMAIL
+  fi
+fi
+if ! looks_like_email "$WANT_EMAIL"; then
+  echo "No alert email for account $ACCOUNT. Re-run with ALERT_EMAIL=you@example.com $0 $*" >&2
+  exit 1
+fi
+if [ "$WANT_EMAIL" = "$CURRENT_EMAIL" ]; then
+  echo "SSM parameter $ALERT_PARAM already set, keeping it."
+else
+  aws ssm put-parameter --name "$ALERT_PARAM" --type String --overwrite --region "$REGION" \
+    --description "Where Spark alarms and budget alerts for this account are emailed" \
+    --value "$WANT_EMAIL" >/dev/null
+  echo "Set SSM parameter $ALERT_PARAM. AWS will email that address a link to confirm the alarm subscription."
+fi
+echo
+
 echo "==--------DeployAccountStacks---------=="
 # With this shell's credentials (CliCredentialsStackSynthesizer), not the exec role.
 npx cdk deploy --all "${APPROVAL[@]}" -c APP_CONFIG="$ACCOUNT_CONFIG"
@@ -132,6 +177,19 @@ else
     --description "CloudFront -> API origin verify header for $PREFIX" \
     --value "$(openssl rand -hex 32)" >/dev/null
   echo "Created SSM parameter $SECRET_NAME."
+fi
+
+# Keys the Builder Key hashes. Created once and NEVER replaced: a new pepper would make every saved key stop working.
+PEPPER_NAME="$PREFIX-BuilderKeyPepper"
+if aws ssm get-parameter --name "$PEPPER_NAME" --region "$REGION" --query Parameter.Name --output text >/dev/null 2>&1; then
+  echo "SSM parameter $PEPPER_NAME already exists, keeping it (replacing it would break every Builder Key)."
+else
+  # Plain String for the same reason as the origin secret: the value also sits in the Lambda config. What it guards
+  # against is a copy of the table (a backup or export) leaking on its own.
+  aws ssm put-parameter --name "$PEPPER_NAME" --type String --region "$REGION" \
+    --description "Builder Key hash pepper for $PREFIX. Never change: every saved key depends on it" \
+    --value "$(openssl rand -hex 32)" >/dev/null
+  echo "Created SSM parameter $PEPPER_NAME."
 fi
 
 # With this shell's credentials (CliCredentialsStackSynthesizer): CI and the exec role cannot change this role.

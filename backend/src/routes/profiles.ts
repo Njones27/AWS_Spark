@@ -1,5 +1,13 @@
 import { randomUUID } from 'node:crypto';
-import { hashesEqual, newToken, parseBearer, sha256Hex } from '../lib/auth';
+import {
+  builderKeyHash,
+  hashesEqual,
+  legacyBuilderKeyHash,
+  MIN_SECRET_LENGTH,
+  newToken,
+  parseBearer,
+  sha256Hex,
+} from '../lib/auth';
 import { isBuilderKey, newBuilderKey, normalizeBuilderKey } from '../lib/codes';
 import { fail, json, MESSAGES, type ApiRequest, type Reply } from '../lib/http';
 import { mergeState } from '../lib/merge';
@@ -25,9 +33,43 @@ const bearerHash = (req: ApiRequest): string | null => {
   return token ? sha256Hex(token) : null;
 };
 
+/** The stage's Builder Key pepper. A deploy without one is broken, so this throws (a logged 500) rather than guess. */
+function pepperOf(req: ApiRequest): string {
+  const pepper = req.env.BUILDER_KEY_PEPPER ?? '';
+  if (pepper.length < MIN_SECRET_LENGTH) throw new Error('BUILDER_KEY_PEPPER is missing or too short');
+  return pepper;
+}
+
+/** The signed-in profile and this request's token hash, or null when the token doesn't (or no longer) work. */
+async function signedIn(req: ApiRequest): Promise<{ store: Store; tokenHash: string; profile: ProfileRecord } | null> {
+  const tokenHash = bearerHash(req);
+  if (!tokenHash) return null;
+  const store = req.store();
+  const profile = await profileFor(store, tokenHash);
+  return profile ? { store, tokenHash, profile } : null;
+}
+
+/**
+ * The profile a Builder Key opens, looked up by its peppered hash. A key filed under the old plain SHA-256 is found
+ * too and moved to the peppered hash on the spot, so the table stops holding hashes anyone could reverse.
+ */
+async function profileIdForKey(store: Store, builderKey: string, pepper: string, now: Date): Promise<string | null> {
+  const keyHash = builderKeyHash(builderKey, pepper);
+  const found = await store.getProfileIdByKey(keyHash);
+  if (found) return found;
+  const legacyHash = legacyBuilderKeyHash(builderKey);
+  const legacyId = await store.getProfileIdByKey(legacyHash);
+  const legacy = legacyId ? await store.getProfile(legacyId) : null;
+  if (!legacy || !hashesEqual(legacy.keyHash, legacyHash)) return null;
+  await store.upgradeKeyHash(legacy.profileId, { from: legacyHash, to: keyHash, createdAt: now.toISOString() });
+  // Upgraded now, or by another recovery a moment ago: either way the key is filed under the new hash.
+  return store.getProfileIdByKey(keyHash);
+}
+
 /** `POST /api/profiles`: a new anonymous profile. The token and Builder Key are returned this once, never stored. */
 export async function createProfile(req: ApiRequest): Promise<Reply> {
   if (!parseCreateProfile(req.body).ok) return badRequest();
+  const pepper = pepperOf(req);
   const store = req.store();
   const createdAt = req.now.toISOString();
   for (let attempt = 0; attempt < WRITE_ATTEMPTS; attempt++) {
@@ -36,7 +78,7 @@ export async function createProfile(req: ApiRequest): Promise<Reply> {
     const profile: ProfileRecord = {
       profileId: randomUUID(),
       tokens: [sha256Hex(token)],
-      keyHash: sha256Hex(builderKey),
+      keyHash: builderKeyHash(builderKey, pepper),
       state: newState(),
       createdAt,
       updatedAt: createdAt,
@@ -88,9 +130,10 @@ export async function recover(req: ApiRequest): Promise<Reply> {
   const builderKey = normalizeBuilderKey(input.value);
   if (!isBuilderKey(builderKey)) return fail('bad_request', MESSAGES.badKey);
 
+  const pepper = pepperOf(req);
   const store = req.store();
-  const keyHash = sha256Hex(builderKey);
-  const profileId = await store.getProfileIdByKey(keyHash);
+  const keyHash = builderKeyHash(builderKey, pepper);
+  const profileId = await profileIdForKey(store, builderKey, pepper, req.now);
   for (let attempt = 0; attempt < WRITE_ATTEMPTS; attempt++) {
     const profile = profileId ? await store.getProfile(profileId) : null;
     if (!profile || !hashesEqual(profile.keyHash, keyHash)) return fail('not_found', MESSAGES.keyNotFound);
@@ -112,4 +155,56 @@ export async function recover(req: ApiRequest): Promise<Reply> {
     }
   }
   throw new Error(`Tokens kept changing during ${WRITE_ATTEMPTS} recoveries`);
+}
+
+/**
+ * `POST /api/profiles/me/key`: a new Builder Key for this profile, for when the old one was seen by someone else.
+ * The old key stops working at once, and every other computer is signed out; this one stays signed in. The new key
+ * is returned this once, never stored.
+ */
+export async function rotateKey(req: ApiRequest): Promise<Reply> {
+  if (!parseCreateProfile(req.body).ok) return badRequest();
+  const pepper = pepperOf(req);
+  let session = await signedIn(req);
+  if (!session) return unauthorized();
+  const createdAt = req.now.toISOString();
+  for (let attempt = 0; attempt < WRITE_ATTEMPTS; attempt++) {
+    const { store, tokenHash, profile } = session;
+    const builderKey = newBuilderKey();
+    const result = await store.rotateKey(profile.profileId, {
+      expectedKeyHash: profile.keyHash,
+      newKeyHash: builderKeyHash(builderKey, pepper),
+      expectedTokens: profile.tokens,
+      keepTokenHash: tokenHash,
+      createdAt,
+      ttl: ttlFrom(req.now),
+    });
+    if (result === 'ok') {
+      return json(200, { profileId: profile.profileId, builderKey, state: profile.state, updatedAt: profile.updatedAt });
+    }
+    // Taken: the next try picks another key. Conflict: another computer changed the profile, so read it again.
+    if (result === 'conflict') {
+      session = await signedIn(req);
+      if (!session) return unauthorized();
+    }
+  }
+  throw new Error(`Key change kept failing during ${WRITE_ATTEMPTS} tries`);
+}
+
+/**
+ * `DELETE /api/profiles/me`: removes the profile, its Builder Key and every computer's sign-in from Spark. The
+ * progress saved on each computer itself is untouched; the next save there starts a new Builder Key.
+ */
+export async function deleteMe(req: ApiRequest): Promise<Reply> {
+  let session = await signedIn(req);
+  if (!session) return unauthorized();
+  for (let attempt = 0; attempt < WRITE_ATTEMPTS; attempt++) {
+    const { store, profile } = session;
+    const result = await store.deleteProfile(profile.profileId, { keyHash: profile.keyHash, tokens: profile.tokens });
+    if (result === 'ok') return json(200, { deleted: true });
+    session = await signedIn(req);
+    // Gone already (deleted from another computer a moment ago): this computer's token no longer works either.
+    if (!session) return unauthorized();
+  }
+  throw new Error(`Profile kept changing during ${WRITE_ATTEMPTS} deletes`);
 }

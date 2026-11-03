@@ -77,17 +77,15 @@ function synthAll(): SynthedStack[] {
     const variants: Array<{ config: string; file: string }> = [
         ...CONFIG_NAMES.map((name) => ({ config: name, file: configPath(name) })),
         ...(['dev', 'prod'] as const).map((name) => ({
-            config: `${name}+domain+email`,
+            config: `${name}+domain`,
             file: writeConfigCopy(name, (config) => {
                 config.Stack.Web.DomainName = `${name}.spark.example.com`;
                 config.Stack.Web.HostedZoneId = 'Z0123456789ABCDEFGHIJ';
-                config.Stack.Ops.AlarmEmail = 'owner@example.com';
             }),
         })),
         ...(['account-dev', 'account-prod'] as ConfigName[]).map((name) => ({
-            config: `${name}+email+imported-provider`,
+            config: `${name}+imported-provider`,
             file: writeConfigCopy(name, (config) => {
-                config.Stack.GitHubOidc.BudgetEmail = 'owner@example.com';
                 config.Stack.GitHubOidc.CreateProvider = false;
                 config.Stack.GitHubOidc.ExistingProviderArn = `arn:aws:iam::${config.Project.Account}:oidc-provider/token.actions.githubusercontent.com`;
             }),

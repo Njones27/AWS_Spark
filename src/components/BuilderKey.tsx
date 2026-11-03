@@ -2,7 +2,14 @@ import { useEffect, useRef, useState, useSyncExternalStore, type FormEvent, type
 import { createPortal } from 'react-dom';
 import type { Route } from '../router';
 import { useApp, type Profile } from '../store';
-import { appSync, normalizeKey, type DesignChoice, type RecoverResult, type SyncStatus } from '../sync';
+import {
+  appSync,
+  normalizeKey,
+  type DesignChoice,
+  type KeyActionResult,
+  type RecoverResult,
+  type SyncStatus,
+} from '../sync';
 import { useEscape } from './playground/ShareDialog';
 import { Icon } from './Icon';
 
@@ -19,6 +26,72 @@ const RECOVER_TEXT: Record<RecoverResult, string> = {
   not_found: 'Spark couldn’t find that key. Check each word and number, then try again.',
   offline: 'Spark can’t reach the internet right now. Your progress is safe on this computer. Try again soon.',
 };
+
+type KeyAction = 'newKey' | 'forget';
+
+/** What the student sees after each key-safety action. */
+export const KEY_ACTION_TEXT: Record<KeyAction, Record<KeyActionResult, string>> = {
+  newKey: {
+    ok: 'Here’s your new Builder Key. Write it down again. Your old key doesn’t work anymore.',
+    offline: 'Spark can’t reach the internet right now, so your key didn’t change. Try again soon.',
+  },
+  forget: {
+    ok: 'Done. Spark no longer keeps your progress. It’s still here on this computer.',
+    offline: 'Spark can’t reach the internet right now, so nothing was removed. Try again soon.',
+  },
+};
+
+/** For someone whose key was seen by others, or who wants their saved progress gone from Spark. */
+function KeySafety({ onDone }: { onDone: (action: KeyAction, result: KeyActionResult) => void }) {
+  const [confirming, setConfirming] = useState<KeyAction | null>(null);
+  const [busy, setBusy] = useState(false);
+  const run = async (action: KeyAction) => {
+    setBusy(true);
+    const result = await (action === 'newKey' ? appSync.newKey() : appSync.forget());
+    setBusy(false);
+    setConfirming(null);
+    onDone(action, result);
+  };
+  return (
+    <section className="key-safety" aria-labelledby="key-safety-title">
+      <h3 id="key-safety-title">Keep your key safe</h3>
+      {confirming === null ? (
+        <>
+          <p className="muted small">
+            Anyone with your key can open your progress. If someone else saw it, get a new one.
+          </p>
+          <div className="key-choice-actions">
+            <button type="button" className="btn btn-ghost btn-sm" onClick={() => setConfirming('newKey')}>
+              Get a new key
+            </button>
+            <button type="button" className="btn btn-ghost btn-sm" onClick={() => setConfirming('forget')}>
+              Remove my progress from Spark
+            </button>
+          </div>
+        </>
+      ) : (
+        <div className="key-choice" role="group" aria-labelledby="key-confirm-title">
+          <p id="key-confirm-title">
+            <strong>{confirming === 'newKey' ? 'Get a new key?' : 'Remove your progress from Spark?'}</strong>
+          </p>
+          <p className="muted small">
+            {confirming === 'newKey'
+              ? 'Your old key will stop working. Other computers will need the new key to keep going.'
+              : 'Spark will forget your Builder Key and the progress saved with it. The progress on this computer stays.'}
+          </p>
+          <div className="key-choice-actions">
+            <button type="button" className="btn btn-ghost" onClick={() => setConfirming(null)} disabled={busy} autoFocus>
+              {confirming === 'newKey' ? 'Keep my key' : 'Keep it'}
+            </button>
+            <button type="button" className="btn btn-primary" onClick={() => void run(confirming)} disabled={busy}>
+              {busy ? 'Working…' : confirming === 'newKey' ? 'Get a new key' : 'Remove it'}
+            </button>
+          </div>
+        </div>
+      )}
+    </section>
+  );
+}
 
 /**
  * The one-time "You earned a Builder Key!" notice is due once a key exists that the student hasn't seen. It waits
@@ -149,6 +222,7 @@ export function BuilderKeyDialog({ onClose }: { onClose: () => void }) {
   const [busy, setBusy] = useState(false);
   const [result, setResult] = useState<RecoverResult | null>(null);
   const [copied, setCopied] = useState('');
+  const [safety, setSafety] = useState('');
   const keyBox = useRef<HTMLInputElement>(null);
   const box = useRef<HTMLDivElement>(null);
   useEscape(onClose);
@@ -188,6 +262,7 @@ export function BuilderKeyDialog({ onClose }: { onClose: () => void }) {
     setInput(normalizeKey(input));
     setBusy(true);
     setResult(null);
+    setSafety('');
     const r = await appSync.recover(input, chooseDesign);
     setBusy(false);
     setResult(r);
@@ -222,6 +297,12 @@ export function BuilderKeyDialog({ onClose }: { onClose: () => void }) {
               <p className="muted small key-copied" aria-live="polite">
                 {copied}
               </p>
+              <KeySafety
+                onDone={(action, result) => {
+                  setCopied('');
+                  setSafety(KEY_ACTION_TEXT[action][result]);
+                }}
+              />
             </>
           ) : (
             <p className="muted">
@@ -229,6 +310,11 @@ export function BuilderKeyDialog({ onClose }: { onClose: () => void }) {
               keep going on another computer.
             </p>
           )}
+
+          {/* Outside KeySafety, so the result still shows after "Remove" takes the key (and that section) away. */}
+          <p className="key-result" aria-live="polite">
+            {safety}
+          </p>
 
           <form className="key-form" onSubmit={submit}>
             <h3>Continue my progress</h3>

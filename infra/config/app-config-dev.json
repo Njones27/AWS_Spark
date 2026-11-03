@@ -33,12 +33,13 @@
       "Name": "Web",
       "DomainName": "",
       "HostedZoneId": "",
-      "CspReportOnly": true
+      "CspReportOnly": false
     },
     "Ops": {
       "Name": "Ops",
-      "AlarmEmail": "",
-      "Api5xxThreshold": 5
+      "Api5xxThreshold": 5,
+      "RecoverMissThreshold": 50,
+      "ThrottledThreshold": 50
     }
   }
 }

@@ -9,12 +9,12 @@ const expectations = {
     dev: {
         account: ACCOUNTS.dev, prefix: 'Spark-Dev', namespace: 'Spark/Dev', rate: 20, burst: 50,
         routeRates: { 'POST /api/profiles': 5, 'POST /api/profiles/recover': 5, 'POST /api/shares': 2, 'PUT /api/profiles/me': 10 },
-        reserved: undefined, retention: 14, pitr: false, retain: false, api5xx: 5,
+        reserved: undefined, retention: 14, pitr: false, retain: false, api5xx: 5, recoverMisses: 50,
     },
     prod: {
         account: ACCOUNTS.prod, prefix: 'Spark-Prod', namespace: 'Spark/Prod', rate: 500, burst: 1000,
         routeRates: { 'POST /api/profiles': 20, 'POST /api/profiles/recover': 5, 'POST /api/shares': 10, 'PUT /api/profiles/me': 200 },
-        reserved: 0, retention: 30, pitr: true, retain: true, api5xx: 1,
+        reserved: 0, retention: 30, pitr: true, retain: true, api5xx: 1, recoverMisses: 200,
     },
 } as const;
 
@@ -107,15 +107,17 @@ describe.each(Object.entries(expectations))('%s config', (stage, want) => {
                         STAGE: stage,
                         TABLE_NAME: { Ref: Match.stringLikeRegexp('TableName') },
                         ORIGIN_VERIFY_SECRET: { Ref: Match.stringLikeRegexp('OriginVerifySecret') },
+                        BUILDER_KEY_PEPPER: { Ref: Match.stringLikeRegexp('BuilderKeyPepper') },
                     }),
                 },
             });
         });
 
-        it('exposes exactly the seven contract routes, without CORS', () => {
+        it('exposes exactly the nine contract routes, without CORS', () => {
             const routeKeys = Object.values(template.findResources('AWS::ApiGatewayV2::Route')).map((r) => r.Properties.RouteKey);
             expect(routeKeys.sort()).toEqual(API_ROUTES.map((r) => `${r.method} ${r.path}`).sort());
-            expect(routeKeys).toHaveLength(7);
+            expect(routeKeys).toHaveLength(9);
+            expect(routeKeys).toEqual(expect.arrayContaining(['DELETE /api/profiles/me', 'POST /api/profiles/me/key']));
             template.hasResourceProperties('AWS::ApiGatewayV2::Api', { CorsConfiguration: Match.absent() });
         });
 
@@ -126,6 +128,28 @@ describe.each(Object.entries(expectations))('%s config', (stage, want) => {
                 route, { ThrottlingRateLimit: rate, ThrottlingBurstLimit: rate * 2 },
             ])));
             expect(stageProps.AccessLogSettings.Format).toMatch(/requestId/);
+        });
+
+        it('grants the function only the table actions the store sends', () => {
+            const policies = Object.values(template.findResources('AWS::IAM::Policy')).map((r) => r.Properties.PolicyDocument.Statement).flat();
+            const table = policies.find((st: { Sid?: string }) => st.Sid === 'TableReadWrite');
+            expect([...table.Action].sort()).toEqual([
+                'dynamodb:ConditionCheckItem', 'dynamodb:DeleteItem', 'dynamodb:GetItem',
+                'dynamodb:PutItem', 'dynamodb:TransactWriteItems', 'dynamodb:UpdateItem',
+            ]);
+        });
+
+        it('counts Builder Keys that matched nobody and throttled requests from the access logs', () => {
+            for (const [pattern, metric] of [
+                ['{ ($.routeKey = "POST /api/profiles/recover") && ($.status = "404") }', 'RecoverMisses'],
+                ['{ $.status = "429" }', 'ApiThrottled'],
+            ]) {
+                template.hasResourceProperties('AWS::Logs::MetricFilter', {
+                    FilterPattern: pattern,
+                    LogGroupName: { Ref: Match.stringLikeRegexp('ApiAccessLogs') },
+                    MetricTransformations: [{ MetricNamespace: want.namespace, MetricName: metric, MetricValue: '1' }],
+                });
+            }
         });
 
         it('counts logged error lines into a custom metric', () => {
@@ -181,15 +205,17 @@ describe.each(Object.entries(expectations))('%s config', (stage, want) => {
             }]);
         });
 
-        it('sends HSTS, nosniff, referrer policy and (for the first deploys) a report-only CSP', () => {
+        it('sends HSTS, nosniff, frame DENY, referrer policy and an enforced CSP', () => {
             const policy = onlyResource(template, 'AWS::CloudFront::ResponseHeadersPolicy').Properties.ResponseHeadersPolicyConfig;
             expect(policy.SecurityHeadersConfig.StrictTransportSecurity).toMatchObject({ AccessControlMaxAgeSec: 63072000, IncludeSubdomains: true });
             expect(policy.SecurityHeadersConfig.ContentTypeOptions).toEqual({ Override: true });
+            expect(policy.SecurityHeadersConfig.FrameOptions).toEqual({ FrameOption: 'DENY', Override: true });
             expect(policy.SecurityHeadersConfig.ReferrerPolicy.ReferrerPolicy).toBe('strict-origin-when-cross-origin');
-            expect(policy.SecurityHeadersConfig.ContentSecurityPolicy).toBeUndefined();
-            expect(policy.CustomHeadersConfig.Items).toEqual([
-                { Header: 'Content-Security-Policy-Report-Only', Value: CONTENT_SECURITY_POLICY, Override: true },
-            ]);
+            expect(policy.SecurityHeadersConfig.ContentSecurityPolicy).toEqual({ ContentSecurityPolicy: CONTENT_SECURITY_POLICY, Override: true });
+            expect(policy.CustomHeadersConfig).toBeUndefined();
+            for (const directive of ["frame-ancestors 'none'", "object-src 'none'", "script-src 'self'", "form-action 'self'"]) {
+                expect(CONTENT_SECURITY_POLICY).toContain(directive);
+            }
         });
 
         it('uploads hashed assets as immutable and entry files as revalidate, never pruning', () => {
@@ -214,9 +240,11 @@ describe.each(Object.entries(expectations))('%s config', (stage, want) => {
     describe('Ops', () => {
         const template = templateOf(stacks.ops);
 
-        it('alarms on Lambda errors, logged errors, throttles, API 5xx and CloudFront 5xx rate, all to SNS', () => {
+        it('alarms on errors, throttles, 5xx and abuse signals, all to SNS', () => {
             const alarms = Object.values(template.findResources('AWS::CloudWatch::Alarm')).map((r) => r.Properties);
-            expect(alarms.map((a) => a.MetricName).sort()).toEqual(['5xx', '5xxErrorRate', 'ApiLoggedErrors', 'Errors', 'Throttles']);
+            expect(alarms.map((a) => a.MetricName).sort()).toEqual([
+                '5xx', '5xxErrorRate', 'ApiLoggedErrors', 'ApiThrottled', 'Errors', 'RecoverMisses', 'Throttles',
+            ]);
             for (const alarm of alarms) {
                 expect(alarm.AlarmActions).toEqual([{ Ref: expect.stringMatching(/AlarmTopic/) }]);
                 expect(alarm.ComparisonOperator).toBe('GreaterThanOrEqualToThreshold');
@@ -225,19 +253,33 @@ describe.each(Object.entries(expectations))('%s config', (stage, want) => {
             const byMetric = Object.fromEntries(alarms.map((a) => [a.MetricName, a]));
             expect(byMetric['5xx'].Threshold).toBe(want.api5xx);
             expect(byMetric.ApiLoggedErrors).toMatchObject({ Namespace: want.namespace, Threshold: 1, Statistic: 'Sum' });
-            template.resourceCountIs('AWS::SNS::Subscription', 0);
+            expect(byMetric.RecoverMisses).toMatchObject({ Namespace: want.namespace, Threshold: want.recoverMisses, Statistic: 'Sum' });
+            expect(byMetric.ApiThrottled).toMatchObject({ Namespace: want.namespace, Threshold: 50, Statistic: 'Sum' });
+        });
+
+        it('emails the account alert address from SSM, never one written in the repo', () => {
+            template.resourceCountIs('AWS::SNS::Subscription', 1);
+            template.hasResourceProperties('AWS::SNS::Subscription', {
+                Protocol: 'email',
+                Endpoint: { Ref: Match.stringLikeRegexp('SparkAccountAlertEmail') },
+            });
+            const params = template.toJSON().Parameters ?? {};
+            expect(Object.values(params).map((p: any) => p.Default)).toContain('Spark-Account-AlertEmail');
             template.resourceCountIs('AWS::CloudWatch::Dashboard', 1);
         });
     });
 });
 
 describe('config switches', () => {
-    it('enforces the CSP once Web.CspReportOnly is false', () => {
-        const file = writeConfigCopy('prod', (config) => { config.Stack.Web.CspReportOnly = false; });
+    it('can send the CSP report-only again by setting Web.CspReportOnly, keeping the other headers', () => {
+        const file = writeConfigCopy('prod', (config) => { config.Stack.Web.CspReportOnly = true; });
         const policy = onlyResource(templateOf(synthConfig(file).stacks.web), 'AWS::CloudFront::ResponseHeadersPolicy')
             .Properties.ResponseHeadersPolicyConfig;
-        expect(policy.SecurityHeadersConfig.ContentSecurityPolicy).toEqual({ ContentSecurityPolicy: CONTENT_SECURITY_POLICY, Override: true });
-        expect(policy.CustomHeadersConfig).toBeUndefined();
+        expect(policy.SecurityHeadersConfig.ContentSecurityPolicy).toBeUndefined();
+        expect(policy.SecurityHeadersConfig.FrameOptions).toEqual({ FrameOption: 'DENY', Override: true });
+        expect(policy.CustomHeadersConfig.Items).toEqual([
+            { Header: 'Content-Security-Policy-Report-Only', Value: CONTENT_SECURITY_POLICY, Override: true },
+        ]);
     });
 
     it('treats a missing Api.ReservedConcurrency like 0 (no reservation)', () => {

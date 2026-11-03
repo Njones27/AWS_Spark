@@ -1,5 +1,5 @@
 import type { Band } from '../../../src/data/types';
-import { decodeDesign } from '../../../src/engine/share';
+import { decodeDesign, encodeDesign } from '../../../src/engine/share';
 
 /** What the server keeps for a profile (docs/aws/CONTRACT.md). `playground` is a share code from encodeDesign(). */
 export interface ProgressState {
@@ -34,15 +34,28 @@ const hasExactly = (v: Plain, keys: readonly string[]): boolean => {
   return own.length === keys.length && own.every((k) => keys.includes(k));
 };
 
-/** True when `code` is a design Spark can open: the right characters, small enough, and decodeDesign() accepts it. */
-export function isDesignCode(code: string): boolean {
-  if (code.length === 0 || code.length > MAX_CODE || !CODE_CHARS.test(code)) return false;
+/**
+ * The design in `code` as Spark keeps it: decoded, then encoded again. Decoding keeps only what Spark understands
+ * (known services, allowed arrows, capped text), so re-encoding drops anything else a hand-edited code carried, and
+ * the server never stores or hands back data that isn't part of a design. `bad_design`: not a design Spark can open.
+ * `too_large`: over MAX_CODE, before or after cleaning.
+ */
+export function cleanDesign(code: string): Parsed<string> {
+  if (code.length > MAX_CODE) return no('too_large');
+  if (code.length === 0 || !CODE_CHARS.test(code)) return no('bad_design');
+  let clean: string;
   try {
-    return decodeDesign(code) !== null;
+    const design = decodeDesign(code);
+    if (!design) return no('bad_design');
+    clean = encodeDesign(design);
   } catch {
-    return false;
+    return no('bad_design');
   }
+  return clean.length > MAX_CODE ? no('too_large') : ok(clean);
 }
+
+/** True when `code` is a design Spark can open: the right characters, small enough, and decodeDesign() accepts it. */
+export const isDesignCode = (code: string): boolean => cleanDesign(code).ok;
 
 const isBand = (v: unknown): v is Band => typeof v === 'string' && Object.hasOwn(BANDS, v);
 
@@ -52,9 +65,14 @@ export function parseProgress(v: unknown): Parsed<ProgressState> {
   if (band !== null && !isBand(band)) return no('bad_request');
   if (!Array.isArray(completed) || completed.length > MAX_COMPLETED) return no('bad_request');
   if (!completed.every((id) => typeof id === 'string' && LEVEL_ID.test(id))) return no('bad_request');
-  if (playground !== null && (typeof playground !== 'string' || !isDesignCode(playground))) return no('bad_request');
+  let design: string | null = null;
+  if (playground !== null) {
+    const cleaned = typeof playground === 'string' ? cleanDesign(playground) : no<string>('bad_request');
+    if (!cleaned.ok) return no('bad_request');
+    design = cleaned.value;
+  }
   if (typeof unlockAll !== 'boolean') return no('bad_request');
-  return ok({ band, completed: [...(completed as string[])], playground, unlockAll });
+  return ok({ band, completed: [...(completed as string[])], playground: design, unlockAll });
 }
 
 /** `POST /api/profiles` takes `{}`. A missing body counts as `{}`. */
@@ -72,9 +90,11 @@ export function parseRecover(body: unknown): Parsed<string> {
   return typeof builderKey === 'string' && builderKey.length <= MAX_KEY_INPUT ? ok(builderKey) : no('bad_request');
 }
 
-/** `POST /api/shares` takes `{ code }`. Too long is `too_large` (413); not a Spark design is `bad_design` (400). */
+/**
+ * `POST /api/shares` takes `{ code }` and gives back the cleaned code to store. Too long is `too_large` (413); not a
+ * Spark design is `bad_design` (400).
+ */
 export function parseShare(body: unknown): Parsed<string> {
   if (!isPlain(body) || !hasExactly(body, ['code']) || typeof body.code !== 'string') return no('bad_request');
-  if (body.code.length > MAX_CODE) return no('too_large');
-  return isDesignCode(body.code) ? ok(body.code) : no('bad_design');
+  return cleanDesign(body.code);
 }

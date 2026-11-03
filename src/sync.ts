@@ -29,6 +29,8 @@ interface SessionReply extends ProfileReply {
 /** `device`: no Builder Key yet. `synced`: the server has this device's progress. `offline`: it will catch up later. */
 export type SyncStatus = 'device' | 'synced' | 'offline';
 export type RecoverResult = 'ok' | 'bad_key' | 'not_found' | 'offline';
+/** How "Get a new key" or "Remove my progress from Spark" went. `offline`: nothing changed, try again later. */
+export type KeyActionResult = 'ok' | 'offline';
 /** Which Playground design to keep when this computer and the Builder Key each have a different one. */
 export type DesignChoice = 'local' | 'server';
 
@@ -40,11 +42,15 @@ const NOTHING: ProgressState = { band: null, completed: [], playground: null, un
 
 // ── pure helpers ────────────────────────────────────────────
 
-/** The share code for a saved design, or null when there's nothing worth keeping (no design, or only the starting townsfolk). */
+/**
+ * The share code for a saved design, or null when there's nothing worth keeping (no design, or only the starting
+ * townsfolk). It's the cleaned code (decoded, then encoded again), the same one the server keeps, so a design that
+ * hasn't changed never looks different from what the server already has.
+ */
 export function playgroundCode(d: SavedDiagram | null): string | null {
   if (!d || isBlank(d)) return null;
-  const code = encodeDesign(d);
-  return decodeDesign(code) ? code : null;
+  const design = decodeDesign(encodeDesign(d));
+  return design ? encodeDesign(design) : null;
 }
 
 /** This device's progress, in the shape the server keeps. */
@@ -284,6 +290,23 @@ export function createSync({
     return true;
   }
 
+  /**
+   * A call that needs this device signed in. Gets a token first when there is only a Builder Key, and once more if the
+   * token turns out to be signed out (401). Throws an ApiError when it still can't.
+   */
+  async function signedInCall<T>(path: string, init: ApiInit): Promise<T> {
+    for (let attempt = 0; ; attempt++) {
+      if (!profileNow().token && !(await connect())) throw new ApiError(401, 'unauthorized');
+      try {
+        return await call<T>(path, { ...init, token: profileNow().token });
+      } catch (e) {
+        if (!(e instanceof ApiError) || e.status !== 401 || attempt > 0) throw e;
+        store.getState().setProfile({ token: null });
+        serverState = null;
+      }
+    }
+  }
+
   /** Learns the server's progress if needed, then sends this device's progress if it differs. Never throws. */
   async function syncOnce(): Promise<void> {
     const outlive = keepalive;
@@ -411,6 +434,48 @@ export function createSync({
       const result = await enqueue(() => recoverOnce(builderKey, chooseDesign));
       if (result === 'ok') await flush();
       return result;
+    },
+    /**
+     * "Get a new key": the old Builder Key stops working and other computers are signed out, for when someone else saw
+     * it. This computer stays signed in and shows the new key.
+     */
+    newKey(): Promise<KeyActionResult> {
+      return enqueue(async () => {
+        try {
+          const res = await signedInCall<{ builderKey?: unknown }>('/profiles/me/key', { method: 'POST', body: {} });
+          if (typeof res?.builderKey !== 'string' || !isBuilderKey(res.builderKey)) return 'offline';
+          // The student is looking at it in the dialog, so the one-time notice isn't needed.
+          store.getState().setProfile({ builderKey: res.builderKey, builderKeySeen: true });
+          return 'ok';
+        } catch {
+          return 'offline';
+        }
+      });
+    },
+    /**
+     * "Remove my progress from Spark": deletes the Builder Key and the progress saved with it from the server. This
+     * computer keeps its own progress; finishing another level later makes a brand-new key.
+     */
+    forget(): Promise<KeyActionResult> {
+      cancelTimer();
+      wantsProfile = false;
+      return enqueue(async () => {
+        const p = profileNow();
+        if (p.token || p.builderKey) {
+          try {
+            await signedInCall('/profiles/me', { method: 'DELETE' });
+          } catch (e) {
+            // Spark no longer knew this key (connect() already let it go), so there is nothing left to remove.
+            const alreadyGone = e instanceof ApiError && e.status === 401 && !profileNow().builderKey;
+            if (!alreadyGone) return 'offline';
+          }
+        }
+        store.getState().clearProfile();
+        serverState = null;
+        wantsProfile = false;
+        settled();
+        return 'ok';
+      });
     },
     getStatus: () => status,
     subscribeStatus(listener: () => void) {
