@@ -1221,18 +1221,6 @@ img {
 }
 .piece.is-source {
   background: linear-gradient(var(--source-tint), var(--card) 60%);
-  margin-top: 14px;
-}
-.piece.is-source::before {
-  content: '';
-  position: absolute;
-  top: -24px;
-  left: 50%;
-  transform: translateX(-50%);
-  border-left: 76px solid transparent;
-  border-right: 76px solid transparent;
-  border-bottom: 26px solid var(--roof);
-  filter: drop-shadow(0 -1px 0 rgba(0, 0, 0, 0.04));
 }
 .piece.is-selected {
   border-color: var(--coral);
