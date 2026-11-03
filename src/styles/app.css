@@ -449,6 +449,7 @@ img {
   width: min(460px, calc(100% - 32px));
   margin: 2vh 0 0 clamp(16px, 4vw, 64px);
   padding: 26px;
+  background: var(--card); /* browsers without color-mix (iOS < 16.2, Chrome < 111) get a solid card */
   background: color-mix(in srgb, var(--card) 86%, transparent);
   backdrop-filter: blur(6px);
   border-radius: var(--r-xl);
@@ -666,6 +667,7 @@ img {
 .stop-label {
   display: grid;
   text-align: center;
+  background: var(--card); /* browsers without color-mix (iOS < 16.2, Chrome < 111) get a solid card */
   background: color-mix(in srgb, var(--card) 92%, transparent);
   border-radius: 12px;
   padding: 3px 10px;
@@ -1545,6 +1547,7 @@ img {
   align-items: center;
   gap: 12px;
   padding: 10px;
+  background: var(--card); /* browsers without color-mix (iOS < 16.2, Chrome < 111) get a solid card */
   background: color-mix(in srgb, var(--card) 95%, transparent);
   border-radius: 26px;
   box-shadow: var(--shadow-lg);

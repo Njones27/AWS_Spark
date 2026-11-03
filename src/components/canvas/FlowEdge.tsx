@@ -2,16 +2,22 @@ import { EdgeLabelRenderer, getBezierPath, useInternalNode, useReactFlow, type E
 import { memo } from 'react';
 import { floatingParams, useSim, type AppEdge } from './model';
 import { Icon } from '../Icon';
+import { parkedMotion, useReducedMotion } from '../../motion';
 
 const DOT_SECONDS = 1.8;
 const dotCount = (flow: number) => (flow <= 0.05 ? 0 : Math.min(9, Math.max(3, Math.round(3 + flow / 25))));
 
 function Dots({ path, n, cls }: { path: string; n: number; cls: string }) {
+  const still = useReducedMotion();
   return (
     <>
       {Array.from({ length: n }, (_, i) => (
         <circle key={`${n}-${i}`} className={cls} r={cls === 'dot-bot' ? 6.5 : 6}>
-          <animateMotion dur={`${DOT_SECONDS}s`} begin={`${-(i * DOT_SECONDS) / n}s`} repeatCount="indefinite" path={path} />
+          {still ? (
+            <animateMotion {...parkedMotion((i + 0.5) / n)} path={path} />
+          ) : (
+            <animateMotion dur={`${DOT_SECONDS}s`} begin={`${-(i * DOT_SECONDS) / n}s`} repeatCount="indefinite" path={path} />
+          )}
         </circle>
       ))}
     </>

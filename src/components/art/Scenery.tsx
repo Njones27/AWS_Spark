@@ -1,4 +1,5 @@
 import { iconUrl } from '../../data/services';
+import { parkedMotion, useReducedMotion } from '../../motion';
 
 /* Flat, Balance-style landscape pieces shared by the title screen, the level map, and the canvas zones. */
 
@@ -64,6 +65,7 @@ function CloudPuff({ x, y, s = 1, opacity = 1 }: { x: number; y: number; s?: num
 
 /** Title-screen hero: the town sending glowing requests up to the cloud. */
 export function TownScene() {
+  const still = useReducedMotion();
   const flows = [
     'M190 452 C 220 330, 360 300, 470 236',
     'M560 360 C 560 300, 600 270, 600 240',
@@ -136,7 +138,11 @@ export function TownScene() {
           <path d={d} className="flow-dash" stroke="var(--flow)" strokeWidth="4" fill="none" strokeLinecap="round" />
           {[0, 1, 2].map((k) => (
             <circle key={k} r="6" fill="var(--sun)" stroke="var(--card)" strokeWidth="2">
-              <animateMotion dur="2.6s" begin={`${k * 0.87 + i * 0.3}s`} repeatCount="indefinite" path={d} />
+              {still ? (
+                <animateMotion {...parkedMotion((k + 1) / 4)} path={d} />
+              ) : (
+                <animateMotion dur="2.6s" begin={`${k * 0.87 + i * 0.3}s`} repeatCount="indefinite" path={d} />
+              )}
             </circle>
           ))}
         </g>

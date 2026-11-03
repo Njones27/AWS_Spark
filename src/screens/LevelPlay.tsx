@@ -28,7 +28,7 @@ import { Icon } from '../components/Icon';
 const RAMP_MS = 2600;
 
 /** Goal marks are icons, so their state is spoken from here. */
-const MARK_LABEL = { ok: 'Done', bad: 'Needs a fix', pending: 'Not yet', live: 'Not yet' } as const;
+const MARK_LABEL = { ok: 'Done', bad: 'Needs a fix', pending: 'Not yet', live: 'Checking' } as const;
 
 type GoalState = keyof typeof MARK_LABEL;
 
