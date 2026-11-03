@@ -3070,6 +3070,24 @@ img {
   justify-content: center;
   font-size: 20px;
 }
+/* The title screen keeps its buttons in the header (it has no "More" menu). On narrow phones they wrap under the
+   wordmark rather than run off the right edge. */
+[data-device='phone'] .home-top {
+  flex-wrap: wrap;
+  gap: 8px;
+  padding-inline: 16px;
+}
+[data-device='phone'] .home-top .topbar-actions {
+  gap: 8px;
+}
+/* Its Theme and grade menus hang from the header's right edge, not from their buttons, so neither runs off a side. */
+[data-device='phone'] .home-top .band-switch {
+  position: static;
+}
+[data-device='phone'] .home-top .band-menu {
+  right: 16px;
+  max-width: calc(100vw - 32px);
+}
 [data-device='phone'] .topbar {
   gap: 8px;
   padding: 8px 10px;

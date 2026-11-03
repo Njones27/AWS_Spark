@@ -33,7 +33,7 @@ export function TopBar({
         <div className="topbar-title">{title}</div>
         <PhoneMenu>
           {children}
-          <ThemeSwitch />
+          <ThemeSwitch labelled />
           {!hideBand && <BandSwitch />}
         </PhoneMenu>
       </header>
@@ -69,27 +69,28 @@ const THEMES: { id: ThemeChoice; label: string; icon: IconName }[] = [
   { id: 'dark', label: 'Dark', icon: 'moon' },
 ];
 
-/** Light, dark, or whatever the device uses. The button shows the colours in use now. */
-export function ThemeSwitch() {
+/**
+ * Light, dark, or whatever the device uses. The button shows the colours in use now: an icon in a top bar, or the icon
+ * and its name (`labelled`) as a row in the phone's "More" menu.
+ */
+export function ThemeSwitch({ labelled }: { labelled?: boolean }) {
   const { choice, theme } = useTheme();
-  const { device } = useDevice();
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   useDismiss(ref, open, () => setOpen(false));
   const cur = THEMES.find((t) => t.id === choice)!;
-  const phone = device === 'phone';
   return (
     <div className="band-switch theme-switch" ref={ref}>
       <button
-        className={phone ? 'btn btn-chip' : 'btn btn-chip btn-icon'}
+        className={labelled ? 'btn btn-chip' : 'btn btn-chip btn-icon'}
         aria-haspopup="menu"
         aria-expanded={open}
-        aria-label={phone ? undefined : `Theme: ${cur.label}`}
-        title={phone ? undefined : `Theme: ${cur.label}`}
+        aria-label={labelled ? undefined : `Theme: ${cur.label}`}
+        title={labelled ? undefined : `Theme: ${cur.label}`}
         onClick={() => setOpen((o) => !o)}
       >
         <Icon name={theme === 'dark' ? 'moon' : 'sun'} />
-        {phone && <>Theme: {cur.label}</>}
+        {labelled && <>Theme: {cur.label}</>}
       </button>
       {open && (
         <div className="band-menu theme-menu" role="menu" aria-label="Theme">
