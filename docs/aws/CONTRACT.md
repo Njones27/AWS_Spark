@@ -9,9 +9,12 @@ Architecture and rationale: see `docs/aws/architecture.html` and the approved pl
 - Routes are registered in API Gateway **with** the `/api` prefix; CloudFront forwards the full path unchanged.
 - Same origin: the frontend calls relative `/api/...`. No CORS configuration anywhere.
 - CloudFront adds the custom origin header `x-origin-verify: <secret>` to every `/api/*` request. The Lambda compares it
-  with env `ORIGIN_VERIFY_SECRET`. If the env value is non-empty and the header is missing or different → `403 forbidden`.
+  with env `ORIGIN_VERIFY_SECRET`. If the header is missing or different → `403 forbidden`. Fails closed: if the env
+  value is missing or shorter than 32 characters, every request gets `403` and an error line is logged.
   Applies to every route, including `/api/health` (the smoke test goes through CloudFront).
-- Lambda env vars: `TABLE_NAME`, `STAGE` (`dev` | `prod`), `APP_VERSION` (git sha or `local`), `ORIGIN_VERIFY_SECRET`, plus `NODE_OPTIONS=--enable-source-maps`.
+- Lambda env vars: `TABLE_NAME`, `STAGE` (`dev` | `prod`), `APP_VERSION` (git sha or `local`), `ORIGIN_VERIFY_SECRET`,
+  `BUILDER_KEY_PEPPER` (32+ characters; routes that make or check a Builder Key answer `500` without it), plus
+  `NODE_OPTIONS=--enable-source-maps`.
 - Handler: `backend/src/handler.ts` exports `handler` (type `APIGatewayProxyHandlerV2`). CDK `NodejsFunction` bundles it
   with esbuild, ESM output, `externalModules: ['@aws-sdk/*']`, Node 24, arm64.
 - `src/data/services.ts` reads `import.meta.env.BASE_URL`; the CDK bundling defines `import.meta.env` as `{}` and
@@ -29,6 +32,8 @@ Architecture and rationale: see `docs/aws/architecture.html` and the approved pl
 | `POST /api/profiles` | none | `{}` | `201 { profileId, token, builderKey, state, updatedAt }` |
 | `GET /api/profiles/me` | bearer | – | `200 { profileId, state, updatedAt }` |
 | `PUT /api/profiles/me` | bearer | `{ state: ProgressState }` | `200 { profileId, state, updatedAt }` (merged) |
+| `DELETE /api/profiles/me` | bearer | – | `200 { deleted: true }` |
+| `POST /api/profiles/me/key` | bearer | `{}` | `200 { profileId, builderKey, state, updatedAt }` (the new key) |
 | `POST /api/profiles/recover` | none | `{ builderKey }` | `200 { profileId, token, builderKey, state, updatedAt }` |
 | `POST /api/shares` | none | `{ code }` | `201 { id }` |
 | `GET /api/shares/{id}` | none | – | `200 { id, code }` |
@@ -36,6 +41,11 @@ Architecture and rationale: see `docs/aws/architecture.html` and the approved pl
 - Unknown route or method → `404 not_found`. Bad token → `401 unauthorized`. Unknown builderKey → `404 not_found`.
 - Request bodies over 64 KB → `413 payload_too_large`. `code` over 16 KB → `413`.
 - `POST /api/shares` rejects a `code` that `decodeDesign(code)` (from `src/engine/share.ts`) turns into `null` → `400 bad_request`.
+- Design codes are **cleaned** before they are stored: `encodeDesign(decodeDesign(code))`. Decoding keeps only what
+  Spark understands, so re-encoding drops any extra fields a hand-edited code carried, and the API never stores or
+  hands back anything but a design. This applies to `POST /api/shares` (the share id is made from the cleaned code)
+  and to `state.playground` in `PUT /api/profiles/me`. `GET /api/shares/{id}` cleans again on the way out, and answers
+  `404` if a stored code no longer decodes. A cleaned code over 16 KB → `413` for shares, `400` for profiles.
 
 ## Types
 
@@ -44,7 +54,7 @@ Architecture and rationale: see `docs/aws/architecture.html` and the approved pl
 interface ProgressState {
   band: Band | null;
   completed: string[];      // level ids, <= 500 entries, each <= 32 chars matching /^[a-z0-9-]+$/
-  playground: string | null; // a share code from encodeDesign(); server accepts only if decodeDesign(code) !== null; <= 16 KB
+  playground: string | null; // a share code from encodeDesign(); server accepts only if decodeDesign(code) !== null, and stores the cleaned code; <= 16 KB
   unlockAll: boolean;
 }
 ```
@@ -57,7 +67,13 @@ Closed schema: any unknown field anywhere in the body → `400 bad_request`. Wro
 - `builderKey`: `WORD-WORD-DDDD`, e.g. `MAPLE-OTTER-4821`. Two distinct words from a 1,000-entry kid-safe list
   (animals, plants, colours, weather, food, everyday objects; uppercase A–Z, 3–7 letters, nothing scary or rude), then
   four digits `0000`–`9999`. Server normalises input: trim, uppercase, treat spaces and underscores as `-`, collapse repeats.
-  Server stores only `sha256(normalisedKey)` hex.
+  Server stores only `HMAC-SHA256(BUILDER_KEY_PEPPER, normalisedKey)` hex, so a copy of the table alone can't be
+  used to work out keys (there are only about 10^10). Keys stored before the pepper as plain `sha256(normalisedKey)`
+  are still found by `recover`, which moves them to the peppered hash in the same request.
+- `POST /api/profiles/me/key` gives the profile a new Builder Key. The old key stops working at once, and every
+  other device is signed out (its `TOKEN#` deleted); the calling device stays signed in. For a key someone else saw.
+- `DELETE /api/profiles/me` deletes the profile, its `KEY#` and every `TOKEN#` in one transaction. Each device keeps
+  its own local progress; its next real save makes a new profile.
 - `recover` adds a token to the profile without signing other devices out. A profile holds at most 8 tokens; a ninth
   evicts the oldest (its `TOKEN#` item is deleted and it gets `401` from then on). Two devices on one Builder Key therefore
   both stay signed in. A malformed key → `400 bad_request`; a well-formed key nobody has → `404 not_found`.
@@ -90,6 +106,11 @@ One table per stage, on-demand, partition key `pk` (S), sort key `sk` (S), TTL a
 
 - Create writes `PROFILE#`, `KEY#` and the first `TOKEN#` in one transaction, each only if it does not exist (key collision → new key, retry).
 - Recover updates `tokens` only if the list is unchanged since it was read, adds the new `TOKEN#`, and deletes the evicted one in the same transaction (retry up to 3 times on a race).
+- A new key (`POST /me/key`) updates `keyHash` and `tokens` only if both are unchanged since read, deletes the old
+  `KEY#`, puts the new one if it does not exist, and deletes the other devices' `TOKEN#` items, all in one transaction
+  (new key on a collision, re-read on a race; up to 3 tries). Delete (`DELETE /me`) has the same read-then-condition shape.
+- A legacy key hash moves to the peppered one in one transaction: `keyHash` updated only if still the legacy hash, the
+  legacy `KEY#` deleted only if it names this profile, the new `KEY#` put only if it does not exist.
 - Auth = `TOKEN#<hash>` lookup → `profileId`, then the hash must still be in that profile's `tokens`.
 - DynamoDB `TransactionConflictException`, and transactions cancelled with a `TransactionConflict` reason, count as conflicts and go through the same re-read/merge/retry path (never a `500`).
 - `PUT /api/profiles/me` is an optimistic write: if another device saved in between, the route re-reads, merges again and retries (up to 3 times), so a finished level is never lost. The merged `completed` list is capped at 500, stored entries first.
@@ -104,6 +125,8 @@ Names are `<Project>-<Stage>-<Key>`, e.g. `Spark-Dev-TableName` (the template's 
 | `ApiId`, `ApiDomain`, `FunctionName` | Api stack | `ApiDomain` = `<apiId>.execute-api.<region>.amazonaws.com`; `FunctionName` lets the Ops stack find the Lambda for alarms |
 | `WebBucketName`, `DistributionId`, `DistributionDomain` | Web stack | CloudFront + S3; `DistributionDomain` is always the `*.cloudfront.net` name (the `SiteUrl` output switches to a custom domain) |
 | `OriginVerifySecret` | `infra/script/setup_initial.sh` (plain `String`, 32 random bytes hex) | read by Api (Lambda env) and Web (origin header) |
+| `BuilderKeyPepper` | `infra/script/setup_initial.sh` (plain `String`, 32 random bytes hex, never replaced) | read by Api (Lambda env `BUILDER_KEY_PEPPER`) |
+| `Spark-Account-AlertEmail` (per account) | `infra/script/setup_initial.sh` (looked up from the account) | read by Ops (alarm emails) |
 
 ## Config files (`infra/config/`)
 
@@ -125,9 +148,11 @@ Every IAM role the app creates has a name starting with `Spark-` and carries the
 ```jsonc
 // app-config-dev.json. Prod: throttles 500/1000, CreateProfile 20, Recover 5, Share 10, Save 200, ReservedConcurrency 0 for now (100 once the Lambda quota increase is granted)
 // (0 or missing = no reservation; Lambda needs the account's unreserved concurrency to stay >= 100), LogRetentionDays 30,
-// PITR + RetainOnDelete true, CspReportOnly true until the report-only soak is done, Api5xxThreshold 1.
+// PITR + RetainOnDelete true, CspReportOnly false (enforced, as in dev), Api5xxThreshold 1, RecoverMissThreshold 200.
 // Route throttles (burst = 2x rate) apply to POST /api/profiles, POST /api/profiles/recover, POST /api/shares, PUT /api/profiles/me.
 // The Lambda uses JSON log format; a metric filter on level ERROR/error feeds the Spark/<Stage> ApiLoggedErrors alarm.
+// Access-log metric filters feed RecoverMisses (recover 404s) and ApiThrottled (429s). Alarms email the account's
+// Spark-Account-AlertEmail SSM parameter, never an address in a config.
 {
   "Project": { "Name": "Spark", "Stage": "Dev", "Account": "166147842278", "Region": "us-east-1", "Profile": "spark-dev" },
   "Stack": {
@@ -137,8 +162,8 @@ Every IAM role the app creates has a name starting with `Spark-` and carries the
     "Api":  { "Name": "Api", "ThrottleRateLimit": 20, "ThrottleBurstLimit": 50, "CreateProfileRateLimit": 5,
               "RecoverRateLimit": 5, "ShareRateLimit": 2, "SaveRateLimit": 10,
               "ReservedConcurrency": 0, "LogRetentionDays": 14 },
-    "Web":  { "Name": "Web", "DomainName": "", "HostedZoneId": "", "CspReportOnly": true, "DistPath": "../dist" },
-    "Ops":  { "Name": "Ops", "AlarmEmail": "", "Api5xxThreshold": 5 }
+    "Web":  { "Name": "Web", "DomainName": "", "HostedZoneId": "", "CspReportOnly": false, "DistPath": "../dist" },
+    "Ops":  { "Name": "Ops", "Api5xxThreshold": 5, "RecoverMissThreshold": 50, "ThrottledThreshold": 50 }
   }
 }
 // app-config-account-dev.json (app-config-account-prod.json: Account 027729116436, Profile spark-prod).

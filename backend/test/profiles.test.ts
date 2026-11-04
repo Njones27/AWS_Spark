@@ -1,11 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import { decodeDesign } from '../../src/engine/share';
-import { sha256Hex } from '../src/lib/auth';
+import { builderKeyHash, sha256Hex } from '../src/lib/auth';
 import { BUILDER_KEY } from '../src/lib/codes';
 import { MESSAGES } from '../src/lib/http';
 import { keys, MemoryStore } from '../src/lib/store';
 import type { ProgressState } from '../src/lib/validate';
-import { designCode, NOW, setup } from './helpers';
+import { designCode, NOW, PEPPER, setup, TEST_ENV } from './helpers';
 
 const TWO_YEARS_S = 2 * 365 * 24 * 60 * 60;
 const ttlAt = (d: Date) => Math.floor(d.getTime() / 1000) + TWO_YEARS_S;
@@ -45,14 +45,14 @@ describe('POST /api/profiles', () => {
       pk: `PROFILE#${p.profileId}`,
       sk: 'META',
       tokens: [sha256Hex(p.token)],
-      keyHash: sha256Hex(p.builderKey),
+      keyHash: builderKeyHash(p.builderKey, PEPPER),
       state: JSON.stringify(state()),
       createdAt: NOW.toISOString(),
       updatedAt: NOW.toISOString(),
       ttl: ttlAt(NOW),
     });
-    expect(ctx.store.items.get(`KEY#${sha256Hex(p.builderKey)}`)).toEqual({
-      pk: `KEY#${sha256Hex(p.builderKey)}`,
+    expect(ctx.store.items.get(`KEY#${builderKeyHash(p.builderKey, PEPPER)}`)).toEqual({
+      pk: `KEY#${builderKeyHash(p.builderKey, PEPPER)}`,
       sk: 'META',
       profileId: p.profileId,
       createdAt: NOW.toISOString(),
@@ -326,5 +326,171 @@ describe('POST /api/profiles/recover', () => {
     const res = await call('POST', '/api/profiles/recover', { body });
     expect(res.status).toBe(400);
     expect(res.body.error).toBe('bad_request');
+  });
+});
+
+describe('Builder Key hashes', () => {
+  /** A profile made before the pepper: its key filed under plain SHA-256, as older deploys stored it. */
+  function legacyProfile(store: MemoryStore, builderKey: string, token: string) {
+    const profileId = 'legacy-profile';
+    const keyHash = sha256Hex(builderKey);
+    const progress = state({ completed: ['ch1-l1'] });
+    store.items.set(`PROFILE#${profileId}`, {
+      ...keys.profile(profileId),
+      tokens: [sha256Hex(token)],
+      keyHash,
+      state: JSON.stringify(progress),
+      createdAt: NOW.toISOString(),
+      updatedAt: NOW.toISOString(),
+      ttl: ttlAt(NOW),
+    });
+    store.items.set(`KEY#${keyHash}`, { ...keys.key(keyHash), profileId, createdAt: NOW.toISOString() });
+    store.items.set(`TOKEN#${sha256Hex(token)}`, { ...keys.token(sha256Hex(token)), profileId, createdAt: NOW.toISOString(), ttl: ttlAt(NOW) });
+    return { profileId, progress };
+  }
+
+  it('never stores a plain SHA-256 of the key, which anyone with the table could reverse', async () => {
+    const ctx = setup();
+    const p = await newProfile(ctx);
+    const everything = JSON.stringify([...ctx.store.items.values()]);
+    expect(everything).not.toContain(sha256Hex(p.builderKey));
+    expect(everything).toContain(builderKeyHash(p.builderKey, PEPPER));
+  });
+
+  it('a different pepper (another stage) does not open the same key', async () => {
+    const store = new MemoryStore();
+    const p = await newProfile(setup({ store }));
+    const other = setup({ store, env: { ...TEST_ENV, BUILDER_KEY_PEPPER: 'another-stage-pepper-0123456789abcdef' } });
+    expect((await other.call('POST', '/api/profiles/recover', { body: { builderKey: p.builderKey } })).status).toBe(404);
+  });
+
+  it('still opens a key saved before the pepper, and upgrades its hash on the spot', async () => {
+    const store = new MemoryStore();
+    const ctx = setup({ store });
+    const builderKey = 'MAPLE-OTTER-4821';
+    const { profileId, progress } = legacyProfile(store, builderKey, 'B'.repeat(43));
+
+    const res = await ctx.call('POST', '/api/profiles/recover', { body: { builderKey } });
+    expect(res.status).toBe(200);
+    expect(res.body).toMatchObject({ profileId, builderKey, state: progress });
+
+    const peppered = builderKeyHash(builderKey, PEPPER);
+    expect(store.items.get(keys.profile(profileId).pk)?.keyHash).toBe(peppered);
+    expect(store.items.get(`KEY#${peppered}`)).toMatchObject({ profileId });
+    expect(store.items.has(`KEY#${sha256Hex(builderKey)}`)).toBe(false);
+    // And it keeps working afterwards.
+    expect((await ctx.call('POST', '/api/profiles/recover', { body: { builderKey } })).status).toBe(200);
+  });
+
+  it('answers 500, and logs why, when the pepper is missing', async () => {
+    const ctx = setup({ env: { ...TEST_ENV, BUILDER_KEY_PEPPER: '' } });
+    const res = await ctx.call('POST', '/api/profiles', { body: {} });
+    expect(res.status).toBe(500);
+    expect(String(ctx.errors[0].detail.error)).toContain('BUILDER_KEY_PEPPER');
+    expect(ctx.store.items.size).toBe(0);
+  });
+});
+
+describe('POST /api/profiles/me/key', () => {
+  it('gives a new key, retires the old one, and signs out every other computer', async () => {
+    const ctx = setup();
+    const p = await newProfile(ctx);
+    const progress = state({ completed: ['ch1-l1'] });
+    await ctx.call('PUT', '/api/profiles/me', { token: p.token, body: { state: progress } });
+    const other = (await ctx.call('POST', '/api/profiles/recover', { body: { builderKey: p.builderKey } })).body.token as string;
+
+    const res = await ctx.call('POST', '/api/profiles/me/key', { token: p.token });
+    expect(res.status).toBe(200);
+    expect(res.body).toMatchObject({ profileId: p.profileId, state: progress });
+    const builderKey = res.body.builderKey as string;
+    expect(builderKey).toMatch(BUILDER_KEY);
+    expect(builderKey).not.toBe(p.builderKey);
+
+    // The old key is gone, the new one works, this computer stays signed in, and the other one is signed out.
+    expect((await ctx.call('POST', '/api/profiles/recover', { body: { builderKey: p.builderKey } })).status).toBe(404);
+    expect((await ctx.call('GET', '/api/profiles/me', { token: p.token })).status).toBe(200);
+    expect((await ctx.call('GET', '/api/profiles/me', { token: other })).status).toBe(401);
+    expect(ctx.store.items.has(keys.token(sha256Hex(other)).pk)).toBe(false);
+    expect(ctx.store.items.has(`KEY#${builderKeyHash(p.builderKey, PEPPER)}`)).toBe(false);
+    expect(ctx.store.items.get(keys.profile(p.profileId).pk)).toMatchObject({
+      keyHash: builderKeyHash(builderKey, PEPPER),
+      tokens: [sha256Hex(p.token)],
+    });
+    expect(JSON.stringify([...ctx.store.items.values()])).not.toContain(builderKey);
+    expect((await ctx.call('POST', '/api/profiles/recover', { body: { builderKey } })).body.profileId).toBe(p.profileId);
+  });
+
+  it('tries another key when the new one is taken, and reads again after a race', async () => {
+    const store = new MemoryStore();
+    const ctx = setup({ store });
+    const p = await newProfile(ctx);
+    const real = store.rotateKey.bind(store);
+    const answers: ('key_taken' | 'conflict')[] = ['key_taken', 'conflict'];
+    store.rotateKey = async (id, change) => answers.shift() ?? real(id, change);
+    const res = await ctx.call('POST', '/api/profiles/me/key', { token: p.token });
+    expect(res.status).toBe(200);
+    expect(answers).toEqual([]);
+  });
+
+  it.each([
+    ['no token', undefined],
+    ['a token that does not work', 'C'.repeat(43)],
+  ])('answers 401 with %s', async (_, token) => {
+    const ctx = setup();
+    await newProfile(ctx);
+    expect((await ctx.call('POST', '/api/profiles/me/key', { token })).status).toBe(401);
+  });
+
+  it('answers 400 for a body with fields', async () => {
+    const ctx = setup();
+    const p = await newProfile(ctx);
+    expect((await ctx.call('POST', '/api/profiles/me/key', { token: p.token, body: { builderKey: 'MAPLE-OTTER-4821' } })).status).toBe(400);
+  });
+});
+
+describe('DELETE /api/profiles/me', () => {
+  it('removes the profile, its key and every sign-in, and leaves other profiles alone', async () => {
+    const ctx = setup();
+    const p = await newProfile(ctx);
+    const keep = await newProfile(ctx);
+    const other = (await ctx.call('POST', '/api/profiles/recover', { body: { builderKey: p.builderKey } })).body.token as string;
+    const before = ctx.store.items.size;
+
+    const res = await ctx.call('DELETE', '/api/profiles/me', { token: p.token });
+    expect(res.status).toBe(200);
+    expect(res.body).toEqual({ deleted: true });
+
+    expect(ctx.store.items.size).toBe(before - 4);
+    expect(JSON.stringify([...ctx.store.items.values()])).not.toContain(p.profileId);
+    expect((await ctx.call('GET', '/api/profiles/me', { token: p.token })).status).toBe(401);
+    expect((await ctx.call('GET', '/api/profiles/me', { token: other })).status).toBe(401);
+    expect((await ctx.call('POST', '/api/profiles/recover', { body: { builderKey: p.builderKey } })).status).toBe(404);
+    expect((await ctx.call('GET', '/api/profiles/me', { token: keep.token })).status).toBe(200);
+    // Asking again from a signed-out computer changes nothing.
+    expect((await ctx.call('DELETE', '/api/profiles/me', { token: other })).status).toBe(401);
+  });
+
+  it('reads again and retries when another computer changed the profile meanwhile', async () => {
+    const store = new MemoryStore();
+    const ctx = setup({ store });
+    const p = await newProfile(ctx);
+    const real = store.deleteProfile.bind(store);
+    let raced = false;
+    store.deleteProfile = async (id, seen) => {
+      if (!raced) {
+        raced = true;
+        await ctx.call('POST', '/api/profiles/recover', { body: { builderKey: p.builderKey } });
+      }
+      return real(id, seen);
+    };
+    expect((await ctx.call('DELETE', '/api/profiles/me', { token: p.token })).status).toBe(200);
+    expect(store.items.size).toBe(0);
+  });
+
+  it('answers 401 without a working token', async () => {
+    const ctx = setup();
+    await newProfile(ctx);
+    expect((await ctx.call('DELETE', '/api/profiles/me')).status).toBe(401);
+    expect(ctx.store.items.size).toBe(3);
   });
 });

@@ -1,9 +1,9 @@
 import type { APIGatewayProxyEventV2, APIGatewayProxyHandlerV2 } from 'aws-lambda';
-import { secretsEqual } from './lib/auth';
+import { MIN_SECRET_LENGTH, secretsEqual } from './lib/auth';
 import { fail, MESSAGES, type ApiRequest, type Env, type Reply } from './lib/http';
 import { DynamoStore, type Store } from './lib/store';
 import { health } from './routes/health';
-import { createProfile, getMe, putMe, recover } from './routes/profiles';
+import { createProfile, deleteMe, getMe, putMe, recover, rotateKey } from './routes/profiles';
 import { createShare, getShare } from './routes/shares';
 
 // One Lambda behind API Gateway (HTTP API, payload 2.0) behind CloudFront `/api/*`. Routes: docs/aws/CONTRACT.md.
@@ -21,6 +21,8 @@ const ROUTES: readonly Route[] = [
   { method: 'POST', path: /^\/api\/profiles$/, run: createProfile },
   { method: 'GET', path: /^\/api\/profiles\/me$/, run: getMe },
   { method: 'PUT', path: /^\/api\/profiles\/me$/, run: putMe },
+  { method: 'DELETE', path: /^\/api\/profiles\/me$/, run: deleteMe },
+  { method: 'POST', path: /^\/api\/profiles\/me\/key$/, run: rotateKey },
   { method: 'POST', path: /^\/api\/profiles\/recover$/, run: recover },
   { method: 'POST', path: /^\/api\/shares$/, run: createShare },
   { method: 'GET', path: /^\/api\/shares\/(?<id>[^/]+)$/, run: getShare },
@@ -78,10 +80,16 @@ export function createHandler(deps: Deps = {}): Handler {
     const path = event.rawPath ?? '';
     try {
       const headers = lowerCaseKeys(event.headers);
+      // Fails closed: without a proper secret nothing is served, so a broken deploy can't open the API to the world.
       const secret = env.ORIGIN_VERIFY_SECRET ?? '';
-      if (secret && !secretsEqual(headers['x-origin-verify'] ?? '', secret)) {
+      if (secret.length < MIN_SECRET_LENGTH) {
+        logError('ORIGIN_VERIFY_SECRET is missing or too short, so every request is refused', {
+          route: `${method} ${path}`,
+          requestId: event.requestContext?.requestId,
+        });
         return fail('forbidden', MESSAGES.forbidden);
       }
+      if (!secretsEqual(headers['x-origin-verify'] ?? '', secret)) return fail('forbidden', MESSAGES.forbidden);
 
       const text = bodyText(event);
       if (text === null) return fail('payload_too_large', MESSAGES.tooLarge);

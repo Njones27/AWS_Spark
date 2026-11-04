@@ -23,11 +23,11 @@ jobs:
       group: ci-verify-${{ github.ref }}
       cancel-in-progress: true
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
           persist-credentials: false
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version-file: .nvmrc
           cache: npm
@@ -54,10 +54,14 @@ jobs:
           done
 
   # Deploys the PR to dev once the checks pass. Skipped for forks (no OIDC token, and their code must never run
-  # with AWS credentials) and for manual runs. Queues behind any other dev deploy (see deploy-stage.yml).
+  # with AWS credentials), for Dependabot (bumped dependencies reach AWS only after a person merges them), and for
+  # manual runs. Queues behind any other dev deploy (see deploy-stage.yml).
   deploy-dev:
     needs: verify
-    if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
+    if: >-
+      github.event_name == 'pull_request'
+      && github.event.pull_request.head.repo.full_name == github.repository
+      && github.event.pull_request.user.login != 'dependabot[bot]'
     permissions:
       id-token: write
       contents: read

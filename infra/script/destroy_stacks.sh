@@ -6,7 +6,9 @@
 #
 # Kept on purpose, delete by hand when sure:
 # - prod's DynamoDB table (RemovalPolicy RETAIN + deletion protection) and prod's site bucket (RETAIN)
-# - the <Project>-<Stage>-OriginVerifySecret SSM parameter (created by setup_initial.sh, not by CDK)
+# - the <Project>-<Stage>-OriginVerifySecret and <Project>-<Stage>-BuilderKeyPepper SSM parameters, and the account's
+#   <Project>-Account-AlertEmail (created by setup_initial.sh, not by CDK). Deleting the pepper while the table is
+#   kept makes every Builder Key in it stop working.
 set -euo pipefail
 
 if [ "$#" -ne 1 ]; then
@@ -54,6 +56,8 @@ if [ "$(echo "$STAGE" | tr '[:upper:]' '[:lower:]')" = "prod" ]; then
   echo "- the $PREFIX site bucket (retained): empty and delete it in the S3 console once unneeded."
 fi
 if [ -n "$(config_get "$APP_CONFIG" Stack.Api.Name)" ]; then
-  echo "- SSM parameter $PREFIX-OriginVerifySecret:"
+  echo "- SSM parameters $PREFIX-OriginVerifySecret and $PREFIX-BuilderKeyPepper (only delete the pepper together"
+  echo "  with the table: without it, no Builder Key in the table works):"
   echo "    aws ssm delete-parameter --name $PREFIX-OriginVerifySecret --region $REGION"
+  echo "    aws ssm delete-parameter --name $PREFIX-BuilderKeyPepper --region $REGION"
 fi

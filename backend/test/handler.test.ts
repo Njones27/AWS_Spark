@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { createHandler } from '../src/handler';
 import { MESSAGES } from '../src/lib/http';
 import { MemoryStore } from '../src/lib/store';
-import { event, NOW, setup } from './helpers';
+import { event, NOW, ORIGIN_SECRET, setup, TEST_ENV } from './helpers';
 
 describe('GET /api/health', () => {
   it('reports stage, version and time as JSON', async () => {
@@ -14,7 +14,7 @@ describe('GET /api/health', () => {
   });
 
   it('works without a table, and falls back to "local"', async () => {
-    const handler = createHandler({ env: {}, logError: () => {} });
+    const handler = createHandler({ env: { ORIGIN_VERIFY_SECRET: ORIGIN_SECRET }, logError: () => {} });
     const res = await handler(event('GET', '/api/health'));
     expect(res.statusCode).toBe(200);
     expect(JSON.parse(res.body)).toMatchObject({ ok: true, stage: 'local', version: 'local' });
@@ -22,33 +22,40 @@ describe('GET /api/health', () => {
 });
 
 describe('origin check', () => {
-  const env = { STAGE: 'test', ORIGIN_VERIFY_SECRET: 'cloudfront-secret' };
-
   it.each([
-    ['missing', {}],
-    ['wrong', { 'x-origin-verify': 'guess' }],
-    ['a prefix of the secret', { 'x-origin-verify': 'cloudfront' }],
-  ])('answers 403 when the header is %s', async (_, headers) => {
-    const { call } = setup({ env });
-    const res = await call('GET', '/api/health', { headers });
+    ['missing', null],
+    ['wrong', 'guess'],
+    ['a prefix of the secret', ORIGIN_SECRET.slice(0, 20)],
+    ['the secret plus more', `${ORIGIN_SECRET}x`],
+  ])('answers 403 when the header is %s', async (_, origin) => {
+    const { call } = setup();
+    const res = await call('GET', '/api/health', { origin });
     expect(res.status).toBe(403);
     expect(res.body).toEqual({ error: 'forbidden', message: MESSAGES.forbidden });
   });
 
   it('checks before anything else, even unknown routes', async () => {
-    const { call } = setup({ env });
-    expect((await call('GET', '/api/nope')).status).toBe(403);
-    expect((await call('POST', '/api/shares', { rawBody: '{not json' })).status).toBe(403);
+    const { call } = setup();
+    expect((await call('GET', '/api/nope', { origin: null })).status).toBe(403);
+    expect((await call('POST', '/api/shares', { rawBody: '{not json', origin: null })).status).toBe(403);
   });
 
   it('lets the request through with the right header, in any letter case', async () => {
-    const { call } = setup({ env });
-    expect((await call('GET', '/api/health', { headers: { 'X-Origin-Verify': 'cloudfront-secret' } })).status).toBe(200);
+    const { call } = setup();
+    const res = await call('GET', '/api/health', { origin: null, headers: { 'X-Origin-Verify': ORIGIN_SECRET } });
+    expect(res.status).toBe(200);
   });
 
-  it('is off when the secret is not set', async () => {
-    const { call } = setup({ env: { STAGE: 'test', ORIGIN_VERIFY_SECRET: '' } });
-    expect((await call('GET', '/api/health')).status).toBe(200);
+  it.each([
+    ['not set', undefined],
+    ['empty', ''],
+    ['too short to be a real secret', 'short-secret'],
+  ])('refuses everything, and logs why, when the secret is %s', async (_, secret) => {
+    const { call, errors } = setup({ env: { ...TEST_ENV, ORIGIN_VERIFY_SECRET: secret } });
+    // Even a request carrying the same weak value as its header is refused.
+    expect((await call('GET', '/api/health', { origin: secret ?? null })).status).toBe(403);
+    expect((await call('GET', '/api/health', { origin: null })).status).toBe(403);
+    expect(errors[0]?.message).toMatch(/ORIGIN_VERIFY_SECRET/);
   });
 });
 
@@ -56,7 +63,8 @@ describe('routing and bodies', () => {
   it.each([
     ['GET', '/api/nope'],
     ['GET', '/'],
-    ['DELETE', '/api/profiles/me'],
+    ['DELETE', '/api/shares/AbCdEfGh12'],
+    ['GET', '/api/profiles/me/key'],
     ['GET', '/api/profiles'],
     ['PUT', '/api/shares'],
     ['GET', '/api/health/extra'],
@@ -107,7 +115,7 @@ describe('routing and bodies', () => {
 
   it('answers 500 for data routes when TABLE_NAME is missing', async () => {
     const logged: string[] = [];
-    const handler = createHandler({ env: {}, logError: (m) => logged.push(m) });
+    const handler = createHandler({ env: { ...TEST_ENV, TABLE_NAME: undefined }, logError: (m) => logged.push(m) });
     const res = await handler(event('POST', '/api/profiles', { body: {} }));
     expect(res.statusCode).toBe(500);
     expect(logged).toEqual(['Unhandled error']);

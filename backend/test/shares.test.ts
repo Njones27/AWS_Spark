@@ -110,3 +110,58 @@ describe('shares', () => {
     expect(res.body).toEqual({ error: 'not_found', message: MESSAGES.shareNotFound });
   });
 });
+
+describe('shares keep only the design', () => {
+  const packed = (extra: Record<string, unknown>) =>
+    Buffer.from(JSON.stringify({ v: 1, n: [['users', 0, 0, null, 50], ['s3', 200, 0]], e: [[0, 1]], ...extra })).toString('base64url');
+
+  it('drops fields Spark does not know, so the API is not a place to keep other data', async () => {
+    const ctx = setup();
+    const code = packed({ junk: 'ARBITRARY '.repeat(1000) });
+    const created = await ctx.call('POST', '/api/shares', { body: { code } });
+    expect(created.status).toBe(201);
+    const id = created.body.id as string;
+    const stored = String(ctx.store.items.get(keys.share(id).pk)?.code);
+    expect(stored.length).toBeLessThan(200);
+    expect(Buffer.from(stored, 'base64url').toString()).not.toContain('ARBITRARY');
+    const got = await ctx.call('GET', `/api/shares/${id}`);
+    expect(got.body.code).toBe(stored);
+    // The same design with or without the junk is one share.
+    expect((await ctx.call('POST', '/api/shares', { body: { code: packed({}) } })).body.id).toBe(id);
+  });
+
+  it('cleans a code stored before cleaning existed, on the way out', async () => {
+    const ctx = setup();
+    const id = 'OldShare01';
+    ctx.store.items.set(`SHARE#${id}`, { ...keys.share(id), code: packed({ junk: 'x'.repeat(500) }), createdAt: NOW.toISOString() });
+    const got = await ctx.call('GET', `/api/shares/${id}`);
+    expect(got.status).toBe(200);
+    expect(Buffer.from(String(got.body.code), 'base64url').toString()).not.toContain('junk');
+    expect(decodeDesign(String(got.body.code))?.nodes).toHaveLength(2);
+  });
+
+  it('treats a stored code that is no longer a design as not found', async () => {
+    const ctx = setup();
+    const id = 'OldShare02';
+    ctx.store.items.set(`SHARE#${id}`, { ...keys.share(id), code: 'bm90IGEgZGVzaWdu', createdAt: NOW.toISOString() });
+    expect((await ctx.call('GET', `/api/shares/${id}`)).status).toBe(404);
+  });
+
+  it('saves a cleaned Playground design on the profile too', async () => {
+    const ctx = setup();
+    const p = (await ctx.call('POST', '/api/profiles', { body: {} })).body as { token: string };
+    const body = { state: { band: null, completed: [], playground: packed({ junk: 'y'.repeat(800) }), unlockAll: false } };
+    const res = await ctx.call('PUT', '/api/profiles/me', { token: p.token, body });
+    expect(res.status).toBe(200);
+    const saved = (res.body.state as { playground: string }).playground;
+    expect(Buffer.from(saved, 'base64url').toString()).not.toContain('junk');
+    expect(JSON.stringify([...ctx.store.items.values()])).not.toContain('yyyy');
+  });
+
+  it('gives the same code back for a design that is already clean', async () => {
+    const ctx = setup();
+    const code = designCode();
+    const { id } = (await ctx.call('POST', '/api/shares', { body: { code } })).body as { id: string };
+    expect((await ctx.call('GET', `/api/shares/${id}`)).body.code).toBe(code);
+  });
+});

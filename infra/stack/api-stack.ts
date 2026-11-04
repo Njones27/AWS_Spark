@@ -15,7 +15,7 @@ import { AppContext } from '../lib/template/app-context';
 import { StackConfig } from '../lib/template/app-config';
 import { BaseStack } from '../lib/template/stack/base/base-stack';
 import { configOptionalNonNegativeInt, configPositiveInt } from '../lib/config-values';
-import { API_LOGGED_ERRORS_METRIC, stageNamespace } from '../lib/metrics';
+import { API_LOGGED_ERRORS_METRIC, API_THROTTLED_METRIC, RECOVER_MISSES_METRIC, stageNamespace } from '../lib/metrics';
 
 const REPO_ROOT = path.join(__dirname, '..', '..');
 
@@ -25,6 +25,8 @@ export const API_ROUTES: ReadonlyArray<{ method: apigwv2.HttpMethod; path: strin
     { method: apigwv2.HttpMethod.POST, path: '/api/profiles' },
     { method: apigwv2.HttpMethod.GET, path: '/api/profiles/me' },
     { method: apigwv2.HttpMethod.PUT, path: '/api/profiles/me' },
+    { method: apigwv2.HttpMethod.DELETE, path: '/api/profiles/me' },
+    { method: apigwv2.HttpMethod.POST, path: '/api/profiles/me/key' },
     { method: apigwv2.HttpMethod.POST, path: '/api/profiles/recover' },
     { method: apigwv2.HttpMethod.POST, path: '/api/shares' },
     { method: apigwv2.HttpMethod.GET, path: '/api/shares/{id}' },
@@ -46,6 +48,11 @@ export const ROUTE_THROTTLES: ReadonlyArray<{ routeKey: string; rateKey: string 
  * `"level":"ERROR"`; the lowercase form matches the handler's own `level` field if it ever writes raw JSON lines.
  */
 export const LOGGED_ERROR_PATTERN = '{ ($.level = "ERROR") || ($.level = "error") }';
+
+/** Access-log lines for a Builder Key nobody has: the signal for key guessing. */
+export const RECOVER_MISS_PATTERN = '{ ($.routeKey = "POST /api/profiles/recover") && ($.status = "404") }';
+/** Access-log lines for requests API Gateway throttled. */
+export const THROTTLED_PATTERN = '{ $.status = "429" }';
 
 /** Map a day count from config onto the CloudWatch Logs retention enum (whose values are day counts). */
 export function toRetentionDays(days: number): logs.RetentionDays {
@@ -75,10 +82,12 @@ export class ApiStack extends BaseStack {
         const retention = toRetentionDays(configPositiveInt(stackConfig, 'LogRetentionDays'));
 
         // Both resolve at deploy time (CloudFormation SSM parameter types), so synth needs no AWS access.
-        // TableName/TableArn come from the Data stack; OriginVerifySecret is created by script/setup_initial.sh.
+        // TableName/TableArn come from the Data stack; OriginVerifySecret and BuilderKeyPepper are created by
+        // script/setup_initial.sh, so a stage can't deploy until that has run for it.
         const tableName = this.getParameter('TableName');
         const tableArn = this.getParameter('TableArn');
         const originVerifySecret = this.getParameter('OriginVerifySecret');
+        const builderKeyPepper = this.getParameter('BuilderKeyPepper');
 
         const functionLogGroup = new logs.LogGroup(this, 'ApiFunctionLogs', {
             retention,
@@ -104,6 +113,8 @@ export class ApiStack extends BaseStack {
                 STAGE: this.stage,
                 APP_VERSION: process.env.APP_VERSION ?? 'local',
                 ORIGIN_VERIFY_SECRET: originVerifySecret,
+                // Keys the Builder Key hashes, so the table alone can't be used to work out anyone's key.
+                BUILDER_KEY_PEPPER: builderKeyPepper,
                 // Makes the bundled source map show TypeScript lines in stack traces.
                 NODE_OPTIONS: '--enable-source-maps',
             },
@@ -123,13 +134,14 @@ export class ApiStack extends BaseStack {
 
         this.handler.addToRolePolicy(new iam.PolicyStatement({
             sid: 'TableReadWrite',
+            // Exactly what lib/store.ts sends. Each item in a TransactWriteItems call is authorized as its own
+            // Put/Update/Delete/ConditionCheck, so those stay even though only GetItem, UpdateItem and transactions
+            // are sent directly.
             actions: [
                 'dynamodb:GetItem',
                 'dynamodb:PutItem',
                 'dynamodb:UpdateItem',
                 'dynamodb:DeleteItem',
-                'dynamodb:Query',
-                'dynamodb:BatchWriteItem',
                 'dynamodb:TransactWriteItems',
                 'dynamodb:ConditionCheckItem',
             ],
@@ -195,6 +207,24 @@ export class ApiStack extends BaseStack {
             filterPattern: logs.FilterPattern.literal(LOGGED_ERROR_PATTERN),
             metricNamespace: stageNamespace(this.commonProps.appConfig.Project.Name, this.commonProps.appConfig.Project.Stage),
             metricName: API_LOGGED_ERRORS_METRIC,
+            metricValue: '1',
+        });
+
+        // Abuse signals from the access logs, alarmed on in the Ops stack. Free to keep; they tell you if per-IP
+        // limits (AWS WAF) ever become worth paying for.
+        const namespace = stageNamespace(this.commonProps.appConfig.Project.Name, this.commonProps.appConfig.Project.Stage);
+        new logs.MetricFilter(this, 'RecoverMisses', {
+            logGroup: accessLogs,
+            filterPattern: logs.FilterPattern.literal(RECOVER_MISS_PATTERN),
+            metricNamespace: namespace,
+            metricName: RECOVER_MISSES_METRIC,
+            metricValue: '1',
+        });
+        new logs.MetricFilter(this, 'Throttled', {
+            logGroup: accessLogs,
+            filterPattern: logs.FilterPattern.literal(THROTTLED_PATTERN),
+            metricNamespace: namespace,
+            metricName: API_THROTTLED_METRIC,
             metricValue: '1',
         });
 

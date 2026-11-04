@@ -54,6 +54,8 @@ export interface Env {
   STAGE?: string;
   APP_VERSION?: string;
   ORIGIN_VERIFY_SECRET?: string;
+  /** Key for Builder Key hashes (see builderKeyHash). Required by every route that makes or checks a key. */
+  BUILDER_KEY_PEPPER?: string;
 }
 
 /** What a route gets: the parsed JSON body (undefined when there was none), lower-cased headers, and its tools. */

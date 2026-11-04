@@ -106,6 +106,8 @@ function fakeServer() {
     online: true,
     exists: false,
     knowsKey: true,
+    /** The Builder Key the server holds now. */
+    key: KEY,
     token: '',
     tokens: 0,
     state: state(),
@@ -116,7 +118,7 @@ function fakeServer() {
   const reply = (status: number, body: unknown) => new Response(JSON.stringify(body), { status });
   const session = (status: number) => {
     s.token = `token-${++s.tokens}`;
-    return reply(status, { profileId: 'p1', token: s.token, builderKey: KEY, state: s.state, updatedAt: `t${s.tokens}` });
+    return reply(status, { profileId: 'p1', token: s.token, builderKey: s.key, state: s.state, updatedAt: `t${s.tokens}` });
   };
   const fetch = (async (input: RequestInfo | URL, init: RequestInit = {}) => {
     const route = `${init.method ?? 'GET'} ${String(input)}`;
@@ -130,7 +132,7 @@ function fakeServer() {
         s.exists = true;
         return session(201);
       case 'POST /api/profiles/recover':
-        return s.exists && s.knowsKey && body.builderKey === KEY ? session(200) : reply(404, { error: 'not_found', message: '' });
+        return s.exists && s.knowsKey && body.builderKey === s.key ? session(200) : reply(404, { error: 'not_found', message: '' });
       case 'GET /api/profiles/me':
         if (!signedIn) return reply(401, { error: 'unauthorized', message: '' });
         return reply(200, { profileId: 'p1', state: s.state, updatedAt: 'then' });
@@ -141,6 +143,16 @@ function fakeServer() {
         s.state = { ...sent, completed: [...new Set([...s.state.completed, ...sent.completed])] };
         return reply(200, { profileId: 'p1', state: s.state, updatedAt: 'later' });
       }
+      case 'POST /api/profiles/me/key':
+        if (!signedIn) return reply(401, { error: 'unauthorized', message: '' });
+        s.key = 'CEDAR-HERON-2718';
+        return reply(200, { profileId: 'p1', builderKey: s.key, state: s.state, updatedAt: 'then' });
+      case 'DELETE /api/profiles/me':
+        if (!signedIn) return reply(401, { error: 'unauthorized', message: '' });
+        s.exists = false;
+        s.token = '';
+        s.state = state();
+        return reply(200, { deleted: true });
       default:
         return reply(404, { error: 'not_found', message: '' });
     }
@@ -494,6 +506,112 @@ describe('sync engine', () => {
       await expect(sync.recover('maple otter')).resolves.toBe('bad_key');
       expect(server.calls).toHaveLength(0);
     });
+  });
+});
+
+describe('keeping a Builder Key safe', () => {
+  let server: ReturnType<typeof fakeServer>;
+  let clock: ReturnType<typeof fakeClock>;
+  let sync: Sync;
+  const start = () => {
+    sync = createSync({ store: useApp, fetch: server.fetch, setTimer: clock.setTimer, clearTimer: clock.clearTimer });
+    sync.start();
+    return sync.idle();
+  };
+  const signedIn = (token: string | null = 'token-0') => {
+    server.exists = true;
+    server.token = 'token-0';
+    useApp.setState({
+      completed: ['l1'],
+      profile: { profileId: 'p1', token, builderKey: KEY, lastSyncedAt: 't0', lastSynced: state({ completed: ['l1'] }), builderKeySeen: true },
+    });
+    server.state = state({ band: 'builder', completed: ['l1'] });
+  };
+
+  beforeEach(() => {
+    server = fakeServer();
+    clock = fakeClock();
+    useApp.setState({ band: 'builder', completed: [], playground: null, unlockAll: false, profile: EMPTY_PROFILE });
+  });
+  afterEach(() => sync?.stop());
+
+  it('gets a new key and keeps this computer signed in', async () => {
+    signedIn();
+    await start();
+    expect(await sync.newKey()).toBe('ok');
+    expect(app().profile).toMatchObject({ builderKey: 'CEDAR-HERON-2718', token: 'token-0', builderKeySeen: true });
+    expect(server.routes()).toContain('POST /api/profiles/me/key');
+  });
+
+  it('signs in with the saved key first when this computer had been signed out', async () => {
+    signedIn(null);
+    // Not started, so nothing has signed in yet: the action itself has to.
+    sync = createSync({ store: useApp, fetch: server.fetch, setTimer: clock.setTimer, clearTimer: clock.clearTimer });
+    expect(await sync.newKey()).toBe('ok');
+    expect(server.routes()).toEqual(['POST /api/profiles/recover', 'POST /api/profiles/me/key']);
+    expect(app().profile.builderKey).toBe('CEDAR-HERON-2718');
+  });
+
+  it('keeps the old key when Spark can’t be reached', async () => {
+    signedIn();
+    await start();
+    server.online = false;
+    expect(await sync.newKey()).toBe('offline');
+    expect(app().profile.builderKey).toBe(KEY);
+  });
+
+  it('removes the key from Spark and keeps the progress on this computer', async () => {
+    signedIn();
+    await start();
+    expect(await sync.forget()).toBe('ok');
+    expect(server.exists).toBe(false);
+    expect(server.routes()).toContain('DELETE /api/profiles/me');
+    expect(app().profile).toEqual(EMPTY_PROFILE);
+    expect(app().completed).toEqual(['l1']);
+    expect(sync.getStatus()).toBe('device');
+  });
+
+  it('counts a key Spark already forgot as removed', async () => {
+    signedIn(null);
+    server.knowsKey = false;
+    await start();
+    expect(await sync.forget()).toBe('ok');
+    expect(app().profile).toEqual(EMPTY_PROFILE);
+  });
+
+  it('keeps everything when removing fails, so the student can try again', async () => {
+    signedIn();
+    await start();
+    server.online = false;
+    expect(await sync.forget()).toBe('offline');
+    expect(app().profile.builderKey).toBe(KEY);
+  });
+
+  it('a later finished level makes a brand-new key', async () => {
+    signedIn();
+    await start();
+    await sync.forget();
+    server.calls.length = 0;
+    app().complete('l2');
+    clock.advance(2000);
+    await sync.idle();
+    expect(server.routes()).toEqual(['POST /api/profiles', 'PUT /api/profiles/me']);
+  });
+});
+
+describe('design codes', () => {
+  it('sends the cleaned code, the same one the server keeps, so nothing looks changed after a save', () => {
+    const messy: SavedDiagram = {
+      nodes: [
+        { id: 'x', service: 'users', pos: { x: 10.4, y: 0 }, source: {} as never },
+        { id: 'y', service: 'lambda', pos: { x: 200, y: 0 }, note: '   ' },
+      ],
+      edges: [{ source: 'x', target: 'y' }],
+    };
+    const sent = playgroundCode(messy)!;
+    expect(sent).not.toBe(encodeDesign(messy));
+    expect(encodeDesign(decodeDesign(sent)!)).toBe(sent);
+    expect(playgroundCode(decodeDesign(sent))).toBe(sent);
   });
 });
 
