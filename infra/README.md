@@ -30,7 +30,7 @@ and one stage's five stacks.
 
 | Config | Stack | What it holds | Deployed by |
 |---|---|---|---|
-| account-dev / account-prod | `Spark-Account-GitHubOidc` | GitHub Actions OIDC provider, monthly AWS Budgets ($10, $25) that email the account alert address | `setup_initial.sh`, once per account |
+| account-dev / account-prod | `Spark-Account-GitHubOidc` | GitHub Actions OIDC provider, monthly AWS Budgets ($10, $25) | `setup_initial.sh`, once per account |
 | dev / prod | `Spark-<Stage>-Cicd` | IAM role `Spark-<Stage>-GitHubDeploy` that the deploy workflow assumes | `setup_initial.sh` only, never CI |
 | dev / prod | `Spark-<Stage>-Data` | DynamoDB table (`pk`/`sk`, on-demand, TTL `ttl`). Prod: PITR, deletion protection, retained on delete | CI |
 | dev / prod | `Spark-<Stage>-Api` | HTTP API (9 routes under `/api`, stage + route throttles, access logs), the Node 24 arm64 Lambda (JSON logs), metric filters for error lines, Builder Key misses and throttled requests | CI |
@@ -48,7 +48,7 @@ CloudFormation resolves those parameters **at deploy time**, so `cdk synth` need
 | `WebBucketName`, `DistributionId`, `DistributionDomain` | Web | Ops, the deploy smoke test |
 | `OriginVerifySecret` | `setup_initial.sh` (plain String, 32 random bytes in hex) | Api (Lambda env), Web (CloudFront origin header) |
 | `BuilderKeyPepper` | `setup_initial.sh` (plain String, 32 random bytes in hex, **never replaced**) | Api (Lambda env): keys the Builder Key hashes |
-| `Spark-Account-AlertEmail` (one per account, no stage) | `setup_initial.sh` (looked up from the account) | Ops (alarm emails), GitHubOidc (budget emails) |
+| `Spark-Account-AlertEmail` (one per account, no stage) | `setup_initial.sh` (looked up from the account) | Ops (alarm emails) |
 | `DeployRoleArn` | Cicd | `setup_initial.sh` (prints it) |
 
 ### Config keys
@@ -70,9 +70,10 @@ The shapes are in `docs/aws/CONTRACT.md`. Settings that differ by stage:
 | `Ops.Api5xxThreshold` (5xx responses in 5 minutes that page) | 5 | 1 |
 | `Ops.RecoverMissThreshold` (Builder Keys that matched nobody in 5 minutes: key guessing) | 50 | 200 |
 | `Ops.ThrottledThreshold` (requests API Gateway throttled in 5 minutes) | 50 | 50 |
+| `GitHubOidc.BudgetEmail` | "" (no email subscription) | "" |
 
-There is no email setting in the configs: this repo is public, so alarms and budgets email the address in the
-account's `Spark-Account-AlertEmail` SSM parameter, which `setup_initial.sh` fills in (see step 6 below).
+Alarms have no email setting in the configs: this repo is public, so they email the address in the account's
+`Spark-Account-AlertEmail` SSM parameter, which `setup_initial.sh` fills in (see step 6 below).
 
 The per-route rates get a burst of twice the rate. They are a cost guardrail as much as abuse protection.
 The write routes are what fill the table and invoke the Lambda most.
@@ -163,15 +164,15 @@ The script is safe to re-run. It does the following:
 5. Runs `cdk bootstrap aws://<account>/us-east-1 --cloudformation-execution-policies
    arn:aws:iam::<account>:policy/Spark-CdkCfnExec,arn:aws:iam::<account>:policy/Spark-CdkCfnExecWebOps`, so the
    CloudFormation execution role never gets `AdministratorAccess`.
-6. Stores the account's alert email in `Spark-Account-AlertEmail`. It looks, in order, at `ALERT_EMAIL` from the
+6. Stores the account's alert email, where the Ops stack sends alarms, in `Spark-Account-AlertEmail`. It looks, in order, at `ALERT_EMAIL` from the
    environment, the account's own email in AWS Organizations (readable only from the management account), the
    account's operations, security and billing alternate contacts, and finally the organization's management account
    email, which any member account can read. For Spark's two member accounts that last one is normally the answer,
    so nothing needs typing. It asks only if all of them come up empty (a standalone account's root email cannot be
    read through any AWS API). An existing value is kept unless you pass `ALERT_EMAIL`. AWS emails that address a link to
    confirm the alarm subscription after the Ops stack deploys: click it, or alarms are not delivered.
-   Then deploys `Spark-Account-GitHubOidc` with your own (admin) credentials, not through the exec role, which holds the OIDC provider and the budgets. Each budget
-   emails the alert address when actual spend passes 100%. A new account has no GitHub OIDC provider, so both
+   Then deploys `Spark-Account-GitHubOidc` with your own (admin) credentials, not through the exec role, which holds the OIDC provider and the budgets. The budgets get an
+   email notification (ACTUAL > 100%) once `BudgetEmail` is set. A new account has no GitHub OIDC provider, so both
    account configs have `CreateProvider: true`. An account holds only one provider per URL: if one already exists,
    set `CreateProvider: false` and `ExistingProviderArn`.
 7. For the stage:

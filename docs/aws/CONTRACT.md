@@ -126,7 +126,7 @@ Names are `<Project>-<Stage>-<Key>`, e.g. `Spark-Dev-TableName` (the template's 
 | `WebBucketName`, `DistributionId`, `DistributionDomain` | Web stack | CloudFront + S3; `DistributionDomain` is always the `*.cloudfront.net` name (the `SiteUrl` output switches to a custom domain) |
 | `OriginVerifySecret` | `infra/script/setup_initial.sh` (plain `String`, 32 random bytes hex) | read by Api (Lambda env) and Web (origin header) |
 | `BuilderKeyPepper` | `infra/script/setup_initial.sh` (plain `String`, 32 random bytes hex, never replaced) | read by Api (Lambda env `BUILDER_KEY_PEPPER`) |
-| `Spark-Account-AlertEmail` (per account) | `infra/script/setup_initial.sh` (looked up from the account) | read by Ops (alarm emails) and GitHubOidc (budget emails) |
+| `Spark-Account-AlertEmail` (per account) | `infra/script/setup_initial.sh` (looked up from the account) | read by Ops (alarm emails) |
 
 ## Config files (`infra/config/`)
 
@@ -151,8 +151,8 @@ Every IAM role the app creates has a name starting with `Spark-` and carries the
 // PITR + RetainOnDelete true, CspReportOnly false (enforced, as in dev), Api5xxThreshold 1, RecoverMissThreshold 200.
 // Route throttles (burst = 2x rate) apply to POST /api/profiles, POST /api/profiles/recover, POST /api/shares, PUT /api/profiles/me.
 // The Lambda uses JSON log format; a metric filter on level ERROR/error feeds the Spark/<Stage> ApiLoggedErrors alarm.
-// Access-log metric filters feed RecoverMisses (recover 404s) and ApiThrottled (429s). No email in any config: alarms
-// and budgets email the account's Spark-Account-AlertEmail SSM parameter.
+// Access-log metric filters feed RecoverMisses (recover 404s) and ApiThrottled (429s). Alarms email the account's
+// Spark-Account-AlertEmail SSM parameter, never an address in a config.
 {
   "Project": { "Name": "Spark", "Stage": "Dev", "Account": "166147842278", "Region": "us-east-1", "Profile": "spark-dev" },
   "Stack": {
@@ -172,7 +172,7 @@ Every IAM role the app creates has a name starting with `Spark-` and carries the
   "Project": { "Name": "Spark", "Stage": "Account", "Account": "166147842278", "Region": "us-east-1", "Profile": "spark-dev" },
   "Stack": {
     "GitHubOidc": { "Name": "GitHubOidc", "CreateProvider": true, "ExistingProviderArn": "",
-                    "BudgetLimitsUsd": [10, 25] }
+                    "BudgetEmail": "", "BudgetLimitsUsd": [10, 25] }
   }
 }
 ```

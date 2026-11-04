@@ -26,33 +26,33 @@ describe.each([
         template.hasOutput('GitHubOidcProviderArn', {});
     });
 
-    it('creates the monthly budgets, each emailing the account alert address from SSM at 100% of actual spend', () => {
+    it('creates the monthly budgets without notifications while BudgetEmail is empty', () => {
         template.resourceCountIs('AWS::Budgets::Budget', 2);
         for (const limit of [10, 25]) {
             template.hasResourceProperties('AWS::Budgets::Budget', {
                 Budget: Match.objectLike({ BudgetLimit: { Amount: limit, Unit: 'USD' }, TimeUnit: 'MONTHLY', BudgetType: 'COST' }),
-                NotificationsWithSubscribers: [{
-                    Notification: { NotificationType: 'ACTUAL', ComparisonOperator: 'GREATER_THAN', Threshold: 100, ThresholdType: 'PERCENTAGE' },
-                    Subscribers: [{ SubscriptionType: 'EMAIL', Address: { Ref: Match.stringLikeRegexp('SparkAccountAlertEmail') } }],
-                }],
+                NotificationsWithSubscribers: Match.absent(),
             });
         }
-        // Resolved from SSM at deploy time: the address itself never appears in the template or the repo.
-        const params = template.toJSON().Parameters ?? {};
-        expect(Object.values(params).map((p: any) => p.Default)).toContain('Spark-Account-AlertEmail');
-        expect(JSON.stringify(template.toJSON())).not.toMatch(/@/);
     });
 
-    it('can import an existing provider', () => {
+    it('adds an ACTUAL > 100% email notification once BudgetEmail is set, and can import an existing provider', () => {
         const providerArn = `arn:aws:iam::${account}:oidc-provider/token.actions.githubusercontent.com`;
         const file = writeConfigCopy(name, (config) => {
+            config.Stack.GitHubOidc.BudgetEmail = 'owner@example.com';
             config.Stack.GitHubOidc.CreateProvider = false;
             config.Stack.GitHubOidc.ExistingProviderArn = providerArn;
         });
 
-        const imported = templateOf(synthConfig(file).stacks.gitHubOidc);
-        imported.resourceCountIs('AWS::IAM::OIDCProvider', 0);
-        imported.hasOutput('GitHubOidcProviderArn', { Value: providerArn });
+        const withEmail = templateOf(synthConfig(file).stacks.gitHubOidc);
+        withEmail.resourceCountIs('AWS::IAM::OIDCProvider', 0);
+        withEmail.hasOutput('GitHubOidcProviderArn', { Value: providerArn });
+        withEmail.hasResourceProperties('AWS::Budgets::Budget', {
+            NotificationsWithSubscribers: [{
+                Notification: { NotificationType: 'ACTUAL', ComparisonOperator: 'GREATER_THAN', Threshold: 100, ThresholdType: 'PERCENTAGE' },
+                Subscribers: [{ SubscriptionType: 'EMAIL', Address: 'owner@example.com' }],
+            }],
+        });
     });
 });
 

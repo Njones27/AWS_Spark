@@ -10,7 +10,6 @@ import { AppContext } from '../lib/template/app-context';
 import { StackConfig } from '../lib/template/app-config';
 import { BaseStack } from '../lib/template/stack/base/base-stack';
 import { configBoolean, configNumberList, configString } from '../lib/config-values';
-import { ALERT_EMAIL_KEY } from '../lib/metrics';
 
 export const GITHUB_OIDC_URL = 'https://token.actions.githubusercontent.com';
 
@@ -34,10 +33,9 @@ export class GitHubOidcStack extends BaseStack {
             this.provider = iam.OidcProviderNative.fromOidcProviderArn(this, 'GitHubOidc', existingArn);
         }
 
-        // Monthly cost budgets (free without actions), each emailing the account's alert address once actual spend
-        // passes 100%. The address is the `<Project>-Account-AlertEmail` SSM parameter that setup_initial.sh writes
-        // before deploying this stack, so it never sits in the public repo.
-        const alertEmail = this.getParameter(ALERT_EMAIL_KEY);
+        // Monthly cost budgets. They are always created (budgets without actions are free); the email
+        // notification at 100% of actual spend is added only when BudgetEmail is set.
+        const budgetEmail = configString(stackConfig, 'BudgetEmail', '');
         for (const limit of configNumberList(stackConfig, 'BudgetLimitsUsd')) {
             new budgets.CfnBudget(this, `MonthlyBudget${limit}Usd`, {
                 budget: {
@@ -46,15 +44,15 @@ export class GitHubOidcStack extends BaseStack {
                     timeUnit: 'MONTHLY',
                     budgetLimit: { amount: limit, unit: 'USD' },
                 },
-                notificationsWithSubscribers: [{
+                notificationsWithSubscribers: budgetEmail.length > 0 ? [{
                     notification: {
                         notificationType: 'ACTUAL',
                         comparisonOperator: 'GREATER_THAN',
                         threshold: 100,
                         thresholdType: 'PERCENTAGE',
                     },
-                    subscribers: [{ subscriptionType: 'EMAIL', address: alertEmail }],
-                }],
+                    subscribers: [{ subscriptionType: 'EMAIL', address: budgetEmail }],
+                }] : undefined,
             });
         }
 

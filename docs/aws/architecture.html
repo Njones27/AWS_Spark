@@ -479,7 +479,7 @@ pre.wrap code { overflow-wrap: anywhere; }
       <div class="flow-head"><h3>Continue on another device</h3><p class="flow-sub">The Builder Key is all a student carries.</p></div>
       <ol class="steps">
         <li><div><span class="who w-dev">Browser</span>On the new device the student types the key into Continue my progress, for example <code>MAPLE-OTTER-4821</code>.</div></li>
-        <li><div><span class="who w-api">Lambda</span><code>POST /api/profiles/recover</code> normalises it (trim, uppercase, spaces and underscores become <code>-</code>) and hashes it with HMAC-SHA256, keyed with the stage's pepper (older plain SHA-256 keys are upgraded on use).</div></li>
+        <li><div><span class="who w-api">Lambda</span><code>POST /api/profiles/recover</code> normalises it (trim, uppercase, spaces and underscores become <code>-</code>) and hashes it with SHA-256.</div></li>
         <li><div><span class="who w-api">DynamoDB</span><code>KEY#&lt;keyHash&gt;</code> points to the profile. An unknown key gets 404.</div></li>
         <li><div><span class="who w-api">Lambda</span>Issues a fresh token and invalidates the old one, then returns the profile and its state.</div></li>
         <li><div><span class="who w-dev">Browser</span>Stores the new token and applies the state. Normal sync resumes.</div></li>
@@ -582,8 +582,8 @@ pre.wrap code { overflow-wrap: anywhere; }
     </div>
     <div>
       <h3>Response headers policy (default behavior)</h3>
-      <p class="code-label">HSTS, <code>nosniff</code>, <code>X-Frame-Options: DENY</code>, <code>Referrer-Policy: strict-origin-when-cross-origin</code>, and this CSP, enforced in both stages:</p>
-      <pre class="code wrap"><code>default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; object-src 'none'; form-action 'self'</code></pre>
+      <p class="code-label">HSTS, <code>nosniff</code>, <code>Referrer-Policy: strict-origin-when-cross-origin</code>, and this CSP, report-only in dev first:</p>
+      <pre class="code wrap"><code>default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'</code></pre>
     </div>
   </div>
 </section>
@@ -592,7 +592,7 @@ pre.wrap code { overflow-wrap: anywhere; }
 <section id="api">
   <div class="sec-head">
     <h2>API and data</h2>
-    <p>Nine routes under <code>/api</code>, JSON in and out. Routes are registered in API Gateway with the <code>/api</code> prefix and CloudFront forwards the full path unchanged. <code>docs/aws/CONTRACT.md</code> is the shared spec for <code>infra/</code>, <code>backend/</code> and <code>src/</code>.</p>
+    <p>Seven routes under <code>/api</code>, JSON in and out. Routes are registered in API Gateway with the <code>/api</code> prefix and CloudFront forwards the full path unchanged. <code>docs/aws/CONTRACT.md</code> is the shared spec for <code>infra/</code>, <code>backend/</code> and <code>src/</code>.</p>
   </div>
   <div class="table-wrap">
     <table class="t-wide">
@@ -602,8 +602,6 @@ pre.wrap code { overflow-wrap: anywhere; }
         <tr><td><code>POST /api/profiles</code></td><td>none, throttled</td><td><code>{}</code></td><td><code>201 { profileId, token, builderKey, state, updatedAt }</code></td></tr>
         <tr><td><code>GET /api/profiles/me</code></td><td>bearer</td><td>–</td><td><code>200 { profileId, state, updatedAt }</code></td></tr>
         <tr><td><code>PUT /api/profiles/me</code></td><td>bearer</td><td><code>{ state }</code></td><td><code>200 { profileId, state, updatedAt }</code>, merged</td></tr>
-        <tr><td><code>DELETE /api/profiles/me</code></td><td>bearer</td><td>–</td><td><code>200 { deleted: true }</code>: removes the profile, its key and every sign-in</td></tr>
-        <tr><td><code>POST /api/profiles/me/key</code></td><td>bearer</td><td><code>{}</code></td><td><code>200 { profileId, builderKey, state, updatedAt }</code>: a new key; other computers are signed out</td></tr>
         <tr><td><code>POST /api/profiles/recover</code></td><td>none, tightly throttled</td><td><code>{ builderKey }</code></td><td><code>200 { profileId, token, builderKey, state, updatedAt }</code></td></tr>
         <tr><td><code>POST /api/shares</code></td><td>none, throttled</td><td><code>{ code }</code></td><td><code>201 { id }</code></td></tr>
         <tr><td><code>GET /api/shares/{id}</code></td><td>none</td><td>–</td><td><code>200 { id, code }</code></td></tr>
@@ -915,8 +913,8 @@ pre.wrap code { overflow-wrap: anywhere; }
               "ReservedConcurrency": 10,
               "LogRetentionDays": 14 },
     "Web":  { "DomainName": "", "HostedZoneId": "",
-              "CspReportOnly": false },
-    "Ops":  { "Api5xxThreshold": 5 }
+              "CspReportOnly": true },
+    "Ops":  { "AlarmEmail": "" }
   }
 }</code></pre>
       <div class="table-wrap">

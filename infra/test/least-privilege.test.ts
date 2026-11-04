@@ -84,8 +84,9 @@ function synthAll(): SynthedStack[] {
             }),
         })),
         ...(['account-dev', 'account-prod'] as ConfigName[]).map((name) => ({
-            config: `${name}+imported-provider`,
+            config: `${name}+email+imported-provider`,
             file: writeConfigCopy(name, (config) => {
+                config.Stack.GitHubOidc.BudgetEmail = 'owner@example.com';
                 config.Stack.GitHubOidc.CreateProvider = false;
                 config.Stack.GitHubOidc.ExistingProviderArn = `arn:aws:iam::${config.Project.Account}:oidc-provider/token.actions.githubusercontent.com`;
             }),

@@ -18,7 +18,7 @@ export const RECOVER_MISSES_METRIC = 'RecoverMisses';
 export const API_THROTTLED_METRIC = 'ApiThrottled';
 
 /**
- * The SSM parameter (one per AWS account) holding the email that alarms and budgets go to:
+ * The SSM parameter (one per AWS account) holding the email that the Ops stack's alarms go to:
  * `<Project>-Account-AlertEmail`, e.g. `Spark-Account-AlertEmail`. script/setup_initial.sh writes it from the account's
  * own email, so no address is ever committed to this public repo.
  */

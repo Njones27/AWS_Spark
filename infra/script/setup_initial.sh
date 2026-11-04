@@ -12,7 +12,7 @@
 #    Spark-CdkCfnExec, Spark-CdkCfnExecWebOps), then runs `cdk bootstrap aws://<account>/<region>` with the two exec
 #    policies as the CloudFormation execution policies, instead of the default AdministratorAccess
 # 4. stores the account's alert email in the <Project>-Account-AlertEmail SSM parameter (see "AlertEmail" below),
-#    then deploys the account config (GitHub OIDC provider, budgets that email it)
+#    which the stage's Ops stack emails alarms to, then deploys the account config (GitHub OIDC provider, budgets)
 # 5. creates the <Project>-<Stage>-OriginVerifySecret and <Project>-<Stage>-BuilderKeyPepper SSM parameters (once
 #    each, never replaced), deploys <Project>-<Stage>-Cicd, and prints the GitHub environment variables to set
 #
@@ -118,7 +118,7 @@ APP_CONFIG="$ACCOUNT_CONFIG" npx cdk bootstrap "aws://$ACCOUNT/$REGION" \
 echo
 
 echo "==--------AlertEmail---------=="
-# Alarms (Ops stack) and budgets (account stack) email this address. One per account, read at deploy time.
+# The Ops stack's alarms email this address. One per account, read at deploy time.
 ALERT_PARAM="$(config_get "$ACCOUNT_CONFIG" Project.Name)-Account-AlertEmail"
 looks_like_email() { [[ "$1" =~ ^[^[:space:]@]+@[^[:space:]@]+\.[^[:space:]@]+$ ]]; }
 lookup_alert_email() {
@@ -144,7 +144,7 @@ else
   WANT_EMAIL="$(lookup_alert_email)"
   if [ -z "$WANT_EMAIL" ] && [ -t 0 ]; then
     echo "No email found for account $ACCOUNT in AWS Organizations or its alternate contacts."
-    read -r -p "Email for alarms and budget alerts: " WANT_EMAIL
+    read -r -p "Email for Spark alarms: " WANT_EMAIL
   fi
 fi
 if ! looks_like_email "$WANT_EMAIL"; then
@@ -155,7 +155,7 @@ if [ "$WANT_EMAIL" = "$CURRENT_EMAIL" ]; then
   echo "SSM parameter $ALERT_PARAM already set, keeping it."
 else
   aws ssm put-parameter --name "$ALERT_PARAM" --type String --overwrite --region "$REGION" \
-    --description "Where Spark alarms and budget alerts for this account are emailed" \
+    --description "Where Spark alarms for this account are emailed" \
     --value "$WANT_EMAIL" >/dev/null
   echo "Set SSM parameter $ALERT_PARAM. AWS will email that address a link to confirm the alarm subscription."
 fi
