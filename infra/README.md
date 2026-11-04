@@ -164,10 +164,11 @@ The script is safe to re-run. It does the following:
    arn:aws:iam::<account>:policy/Spark-CdkCfnExec,arn:aws:iam::<account>:policy/Spark-CdkCfnExecWebOps`, so the
    CloudFormation execution role never gets `AdministratorAccess`.
 6. Stores the account's alert email in `Spark-Account-AlertEmail`. It looks, in order, at `ALERT_EMAIL` from the
-   environment, the account's own email in AWS Organizations (readable from the management account), then the
-   account's operations, security and billing alternate contacts, and asks if none is set. A standalone account's
-   root email cannot be read through any AWS API, so set an alternate contact (Account settings in the console) or
-   pass `ALERT_EMAIL=...`. An existing value is kept unless you pass `ALERT_EMAIL`. AWS emails that address a link to
+   environment, the account's own email in AWS Organizations (readable only from the management account), the
+   account's operations, security and billing alternate contacts, and finally the organization's management account
+   email, which any member account can read. For Spark's two member accounts that last one is normally the answer,
+   so nothing needs typing. It asks only if all of them come up empty (a standalone account's root email cannot be
+   read through any AWS API). An existing value is kept unless you pass `ALERT_EMAIL`. AWS emails that address a link to
    confirm the alarm subscription after the Ops stack deploys: click it, or alarms are not delivered.
    Then deploys `Spark-Account-GitHubOidc` with your own (admin) credentials, not through the exec role, which holds the OIDC provider and the budgets. Each budget
    emails the alert address when actual spend passes 100%. A new account has no GitHub OIDC provider, so both

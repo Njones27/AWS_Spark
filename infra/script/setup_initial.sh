@@ -17,8 +17,9 @@
 #    each, never replaced), deploys <Project>-<Stage>-Cicd, and prints the GitHub environment variables to set
 #
 # The alert email is looked up, in order: ALERT_EMAIL from the environment, the account's own email in AWS
-# Organizations (works from the management account), then the account's operations, security or billing alternate
-# contact. If none is found it asks (or stops, without a terminal). It is kept in SSM, never in this public repo.
+# Organizations (works from the management account), the account's operations, security or billing alternate
+# contact, then the organization's management account email (readable from any member account). If none is found it
+# asks (or stops, without a terminal). It is kept in SSM, never in this public repo.
 # The account and Cicd stacks use CliCredentialsStackSynthesizer: they deploy with the credentials this script runs
 # with, never through the CDK exec role (which is denied changes to the deploy role and the OIDC provider).
 #
@@ -129,6 +130,10 @@ lookup_alert_email() {
       --query AlternateContact.EmailAddress --output text 2>/dev/null || true)"
     if looks_like_email "$found"; then echo "$found"; return; fi
   done
+  # A member account can't read its own email, but any account in an organization can read the owner's: the
+  # management account's email.
+  found="$(aws organizations describe-organization --query Organization.MasterAccountEmail --output text 2>/dev/null || true)"
+  if looks_like_email "$found"; then echo "$found"; return; fi
 }
 CURRENT_EMAIL="$(aws ssm get-parameter --name "$ALERT_PARAM" --region "$REGION" --query Parameter.Value --output text 2>/dev/null || true)"
 if [ -n "${ALERT_EMAIL:-}" ]; then
