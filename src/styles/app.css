@@ -3073,15 +3073,19 @@ img {
   gap: 8px;
   padding-inline: 16px;
 }
+/* The buttons stay at the right edge even when they wrap, so they line up with the menus that open under them. */
 [data-device='phone'] .home-top .topbar-actions {
+  position: relative;
   gap: 8px;
+  margin-left: auto;
 }
-/* Its Theme and grade menus hang from the header's right edge, not from their buttons, so neither runs off a side. */
+/* Its Theme and grade menus hang from the right end of the button row, not from their own buttons, so neither runs
+   off a side. Anchoring to the row (not the whole header) keeps the usual 8px gap under the buttons. */
 [data-device='phone'] .home-top .band-switch {
   position: static;
 }
 [data-device='phone'] .home-top .band-menu {
-  right: 16px;
+  right: 0;
   max-width: calc(100vw - 32px);
 }
 [data-device='phone'] .topbar {
