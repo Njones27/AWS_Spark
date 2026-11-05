@@ -598,8 +598,15 @@ img {
   flex-wrap: wrap;
   gap: 4px 14px;
   justify-content: center;
+  align-items: center;
   font-size: 12px;
   color: var(--ink-soft);
+}
+.home-foot a {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--tap);
+  padding: 0 4px;
 }
 
 /* ── level map ───────────────────────────────────────────── */
@@ -1107,8 +1114,15 @@ img {
   height: var(--tap);
 }
 .canvas .react-flow__attribution {
+  padding: 0 8px;
   background: transparent;
-  opacity: 0.5;
+  font-size: 12px;
+}
+.canvas .react-flow__attribution a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  color: var(--ink-soft);
 }
 .react-flow__node.zone-node {
   pointer-events: none !important;
@@ -2278,6 +2292,7 @@ img {
 .field input,
 .field textarea {
   width: 100%;
+  min-height: var(--tap);
   border: 2px solid var(--border-control);
   border-radius: var(--r-sm);
   padding: 8px 10px;
@@ -2352,6 +2367,7 @@ img {
 .goal-line input {
   flex: 1 1 150px;
   min-width: 0;
+  min-height: var(--tap);
   border: 0;
   border-bottom: 2px dashed var(--border-control);
   background: transparent;

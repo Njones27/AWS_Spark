@@ -52,6 +52,13 @@ export function chapterOpen(chapter: Chapter, completed: string[], unlockAll: bo
   return unlockAll || i <= 0 || chapterDone(STORY[i - 1], completed);
 }
 
+/** What has to be finished before a locked stop opens: the stop before it, or the chapter before this one. */
+function unlockAfter(chapter: Chapter, index: number) {
+  if (index > 0) return `${chapter.unit.toLowerCase()} ${chapter.levels[index - 1].number}`;
+  const prev = STORY[STORY.indexOf(chapter) - 1];
+  return prev ? prev.eyebrow : 'the one before';
+}
+
 export function isUnlocked(chapter: Chapter, index: number, completed: string[], unlockAll: boolean) {
   if (index === 0) return chapterOpen(chapter, completed, unlockAll);
   return unlockAll || completed.includes(chapter.levels[index - 1].id);
@@ -105,7 +112,7 @@ function ChapterMap({ chapter }: { chapter: Chapter }) {
                 aria-disabled={!open}
                 className={`stop ${done ? 'is-done' : ''} ${open ? 'is-open' : 'is-locked'} ${i === nextIndex ? 'is-next' : ''}`}
                 style={{ left: `${p.x / 10}%`, top: `${p.y / 6}%` }}
-                title={open ? `${chapter.unit} ${l.number}. ${l.title}` : `Finish the ${chapter.unit.toLowerCase()} before to unlock`}
+                title={open ? `${chapter.unit} ${l.number}. ${l.title}` : `Locked until you finish ${unlockAfter(chapter, i)}`}
               >
                 <span className="stop-disc">
                   {open ? <img src={iconUrl(l.teaches[0])} alt="" /> : <Icon name="lock" size={22} />}
@@ -114,6 +121,7 @@ function ChapterMap({ chapter }: { chapter: Chapter }) {
                   </span>
                 </span>
                 <span className="stop-label">
+                  {!open && <span className="sr-only">Locked: </span>}
                   <strong>{l.title}</strong>
                   <em>{l.concept}</em>
                 </span>
@@ -150,7 +158,7 @@ function ChapterMap({ chapter }: { chapter: Chapter }) {
           )}
           {!advanced && (
             <nav className="chapter-list" aria-label="Story chapters">
-              {STORY.map((c) => {
+              {STORY.map((c, ci) => {
                 const open = chapterOpen(c, completed, unlockAll);
                 const done = c.levels.filter((l) => completed.includes(l.id)).length;
                 return (
@@ -163,8 +171,11 @@ function ChapterMap({ chapter }: { chapter: Chapter }) {
                   >
                     <Icon name={done === c.levels.length ? 'star' : open ? 'book' : 'lock'} />
                     <span>
-                      <strong>{c.eyebrow}</strong>
-                      {c.title} · {done} of {c.levels.length}
+                      <strong>
+                        {c.eyebrow}
+                        {!open && ' · Locked'}
+                      </strong>
+                      {c.title} · {open ? `${done} of ${c.levels.length}` : `opens after ${STORY[ci - 1].eyebrow}`}
                     </span>
                   </a>
                 );
