@@ -55,12 +55,6 @@ export function StarterPicker({ onPick, onClose }: Props) {
                 <strong>{s.title}</strong>
                 <small>{s.examples}</small>
                 <Chain starter={s} />
-                {s.id === picked && (
-                  // The radio's checked state already says this to screen readers.
-                  <span className="starter-chosen" aria-hidden="true">
-                    <Icon name="check" /> Chosen
-                  </span>
-                )}
               </button>
             ))}
           </div>

@@ -2417,6 +2417,9 @@ img {
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 12px;
   margin-top: 14px;
+  /* Room for a card's bouncy hover lift to overshoot downward as it settles. Without it the
+     overshoot overflows the scroll area for a frame, a scrollbar flashes in, and every card jitters sideways. */
+  padding-bottom: 4px;
 }
 .starter-card {
   display: grid;
@@ -2437,24 +2440,8 @@ img {
   border-color: var(--paper-3);
 }
 .starter-card.is-picked {
-  position: relative;
   border-color: var(--coral-fill);
   background: var(--card);
-}
-/* The chosen plan says so in words, not only with its border colour. */
-.starter-chosen {
-  position: absolute;
-  top: 8px;
-  right: 8px;
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  padding: 2px 8px 2px 6px;
-  border-radius: 99px;
-  background: var(--coral-fill);
-  color: var(--on-coral);
-  font-size: 12px;
-  font-weight: 600;
 }
 .starter-card:focus-visible {
   outline: 3px solid var(--ring);
