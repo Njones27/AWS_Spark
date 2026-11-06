@@ -3,6 +3,7 @@ import { fromSaved, isBlank, toSaved } from '../components/canvas/saved';
 import { isPiece } from '../components/canvas/model';
 import { alternativesOf, PICK_WHEN } from '../data/alternatives';
 import { findRule } from '../data/rules';
+import { playgroundCatalog, SERVICE_LIST } from '../data/services';
 import { STARTERS } from '../data/starters';
 import { planText, summarizePlan } from '../components/playground/PlanExport';
 import { EMPTY_PROFILE, migrateSaved, type SavedDiagram } from '../store';
@@ -274,5 +275,15 @@ describe('judge practice', () => {
       'builder',
     );
     expect(qs.some((x) => x.id === 'data')).toBe(false);
+  });
+});
+
+describe('playground catalog', () => {
+  it('offers only the basic pieces at Explorer and every piece at the other bands', () => {
+    const basic = SERVICE_LIST.filter((s) => s.basic);
+    expect(basic.length).toBeLessThan(SERVICE_LIST.length);
+    expect(playgroundCatalog('explorer')).toEqual(basic);
+    expect(playgroundCatalog('builder')).toHaveLength(SERVICE_LIST.length);
+    expect(playgroundCatalog('architect')).toHaveLength(SERVICE_LIST.length);
   });
 });

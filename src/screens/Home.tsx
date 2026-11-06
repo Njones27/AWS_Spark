@@ -5,14 +5,16 @@ import { BandPicker, BandSwitch, ThemeSwitch } from '../components/Chrome';
 import { ADVANCED } from '../data/advanced';
 import { STORY } from '../data/chapters';
 import { CHAPTER } from '../data/levels';
-import { iconUrl, SERVICE_LIST } from '../data/services';
+import { iconUrl, playgroundCatalog } from '../data/services';
 import { href } from '../router';
-import { useApp } from '../store';
+import { useApp, useBand } from '../store';
 import { Icon } from '../components/Icon';
 
 export function Home() {
   const band = useApp((s) => s.band);
   const completed = useApp((s) => s.completed);
+  // The Playground offers fewer pieces at Explorer, so the count follows the chosen band.
+  const pieceCount = playgroundCatalog(useBand()).length;
   const storyLevels = STORY.flatMap((c) => c.levels);
   const done = completed.filter((id) => storyLevels.some((l) => l.id === id)).length;
   // Story Mode opens the first chapter that isn't finished.
@@ -90,7 +92,7 @@ export function Home() {
             </span>
             <span className="mode-text">
               <strong>Playground</strong>
-              <span>Build anything with {SERVICE_LIST.length} pieces. Only connections that make sense will snap together!</span>
+              <span>Build anything with {pieceCount} pieces. Only connections that make sense will snap together!</span>
             </span>
             <span className="mode-go" aria-hidden="true">
               <Icon name="chevron" size={28} />
