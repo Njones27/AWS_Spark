@@ -54,12 +54,76 @@ const PHONE_FIT = { top: '96px', left: '8px', right: '8px', bottom: '12px' } as 
 const PHONE_WIDE_FIT = { top: '56px', left: '8px', right: '56px', bottom: '8px' } as const;
 
 interface Bubble {
+  /** The piece the tip is about. The bubble stays pinned to it, even while it is dragged or the map is panned. */
+  nodeId: string;
   title: string;
   text: string;
   suggestions: ServiceId[];
-  left: number;
+}
+
+/** Where a piece sits on screen, in pixels from the map's top-left corner. */
+interface Anchor {
+  x: number;
   top: number;
-  below: boolean;
+  bottom: number;
+  width: number;
+}
+
+const sameAnchor = (a: Anchor | null, b: Anchor | null) =>
+  a === b || (!!a && !!b && a.x === b.x && a.top === b.top && a.bottom === b.bottom && a.width === b.width);
+
+// Half the bubble's width plus a little room, so it never hangs off either side of the map.
+const BUBBLE_HALF = 170;
+// When the piece is this close to the top of the map, the bubble goes underneath it instead of above.
+const ROOM_ABOVE = 200;
+
+/** A tip that points at one piece and follows it around the map. */
+function AnchoredBubble({ bubble, onClose }: { bubble: Bubble; onClose: () => void }) {
+  const anchor = useStore((s): Anchor | null => {
+    const n = s.nodeLookup.get(bubble.nodeId);
+    if (!n) return null;
+    const [tx, ty, zoom] = s.transform;
+    const { x, y } = n.internals.positionAbsolute;
+    const w = n.measured.width ?? 0;
+    const h = n.measured.height ?? 0;
+    return { x: (x + w / 2) * zoom + tx, top: y * zoom + ty, bottom: (y + h) * zoom + ty, width: s.width };
+  }, sameAnchor);
+
+  // The piece was deleted, so there's nothing left to point at.
+  useEffect(() => {
+    if (!anchor) onClose();
+  }, [anchor, onClose]);
+  if (!anchor) return null;
+
+  const below = anchor.top < ROOM_ABOVE;
+  const left = anchor.width > BUBBLE_HALF * 2 ? Math.min(Math.max(anchor.x, BUBBLE_HALF), anchor.width - BUBBLE_HALF) : anchor.x;
+  // If the bubble had to slide sideways to stay on screen, slide its tail back so it still touches the piece.
+  const tail = Math.min(Math.max(anchor.x - left, -BUBBLE_HALF + 34), BUBBLE_HALF - 34);
+
+  return (
+    <div
+      className={`bubble ${below ? 'is-below' : ''}`}
+      style={{ left, top: below ? anchor.bottom : anchor.top, ['--tail-x' as string]: `${tail}px` }}
+      role="alert"
+    >
+      <div className="bubble-head">
+        <Sparky mood="worried" size={46} bob={false} />
+        <strong>{bubble.title}</strong>
+        <button className="bubble-close" aria-label="Close" onClick={onClose}>
+          <Icon name="close" />
+        </button>
+      </div>
+      <p>{bubble.text}</p>
+      {bubble.suggestions.length > 0 && (
+        <div className="bubble-try">
+          <span>Try connecting it to:</span>
+          {bubble.suggestions.map((sid) => (
+            <ServiceChip key={sid} service={sid} />
+          ))}
+        </div>
+      )}
+    </div>
+  );
 }
 
 interface Props {
@@ -92,7 +156,7 @@ export function BuilderCanvas({
   const band = useBand();
   const { device, sideways } = useDevice();
   const phone = device === 'phone';
-  const { getNode, getEdges, getInternalNode, flowToScreenPosition, fitView, getViewport, setViewport } = useReactFlow<
+  const { getNode, getEdges, getInternalNode, fitView, getViewport, setViewport } = useReactFlow<
     AppNode,
     AppEdge
   >();
@@ -155,6 +219,7 @@ export function BuilderCanvas({
 
   const { theme } = useTheme();
   const [bubble, setBubble] = useState<Bubble | null>(null);
+  const closeBubble = useCallback(() => setBubble(null), []);
   const [wiggleId, setWiggleId] = useState<string | null>(null);
   const lastConnected = useRef<string | null>(null);
   const dragging = useConnection((c) => c.inProgress);
@@ -199,32 +264,12 @@ export function BuilderCanvas({
 
   const explainAt = useCallback(
     (targetId: string, title: string, text: string, suggestions: ServiceId[] = []) => {
-      const n = getInternalNode(targetId);
-      const box = wrap.current?.getBoundingClientRect();
-      if (!n || !box) return;
-      const p = flowToScreenPosition({
-        x: n.internals.positionAbsolute.x + (n.measured.width ?? 0) / 2,
-        y: n.internals.positionAbsolute.y,
-      });
-      const below = p.y - box.top < 200;
-      const q = below
-        ? flowToScreenPosition({
-            x: n.internals.positionAbsolute.x + (n.measured.width ?? 0) / 2,
-            y: n.internals.positionAbsolute.y + (n.measured.height ?? 0),
-          })
-        : p;
-      setBubble({
-        title,
-        text,
-        suggestions,
-        left: Math.min(Math.max(q.x - box.left, 170), box.width - 170),
-        top: q.y - box.top,
-        below,
-      });
+      if (!getInternalNode(targetId)) return;
+      setBubble({ nodeId: targetId, title, text, suggestions });
       setWiggleId(targetId);
       window.setTimeout(() => setWiggleId((w) => (w === targetId ? null : w)), 650);
     },
-    [getInternalNode, flowToScreenPosition],
+    [getInternalNode],
   );
 
   /** Explain why `fromId → toId` was refused (if it was). */
@@ -310,7 +355,6 @@ export function BuilderCanvas({
             onNodesDelete={() => onStructureChange?.()}
             onEdgesDelete={() => onStructureChange?.()}
             onMoveStart={(event) => {
-              setBubble(null);
               // Only the student's own drags, scrolls and pinches carry an event; fitting the map doesn't.
               if (event) moved.current = true;
             }}
@@ -347,30 +391,7 @@ export function BuilderCanvas({
               </ControlButton>
             </Controls>
           </ReactFlow>
-          {bubble && (
-            <div
-              className={`bubble ${bubble.below ? 'is-below' : ''}`}
-              style={{ left: bubble.left, top: bubble.top }}
-              role="alert"
-            >
-              <div className="bubble-head">
-                <Sparky mood="worried" size={46} bob={false} />
-                <strong>{bubble.title}</strong>
-                <button className="bubble-close" aria-label="Close" onClick={() => setBubble(null)}>
-                  <Icon name="close" />
-                </button>
-              </div>
-              <p>{bubble.text}</p>
-              {bubble.suggestions.length > 0 && (
-                <div className="bubble-try">
-                  <span>Try connecting it to:</span>
-                  {bubble.suggestions.map((sid) => (
-                    <ServiceChip key={sid} service={sid} />
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
+          {bubble && <AnchoredBubble bubble={bubble} onClose={closeBubble} />}
           {children}
         </div>
       </UiContext.Provider>

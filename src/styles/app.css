@@ -1505,7 +1505,8 @@ img {
   position: absolute;
   z-index: 20;
   width: 330px;
-  transform: translate(-50%, calc(-100% - 20px));
+  /* The tail's tip lands right on the piece's edge (the tail pokes 11px past the bubble's border). */
+  transform: translate(-50%, calc(-100% - 11px));
   background: var(--card);
   border: 3px solid var(--bad-soft);
   border-radius: 22px;
@@ -1514,12 +1515,12 @@ img {
   animation: pop 0.3s var(--ease-bounce);
 }
 .bubble.is-below {
-  transform: translate(-50%, 20px);
+  transform: translate(-50%, 11px);
 }
 .bubble::after {
   content: '';
   position: absolute;
-  left: 50%;
+  left: calc(50% + var(--tail-x, 0px));
   bottom: -14px;
   transform: translateX(-50%);
   border: 12px solid transparent;
