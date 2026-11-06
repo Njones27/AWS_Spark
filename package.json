@@ -10,6 +10,7 @@
     "test": "vitest run",
     "typecheck": "tsc -b --noEmit",
     "icons": "node scripts/import-icons.mjs",
+    "site-icons": "node scripts/make-site-icons.mjs",
     "test:all": "vitest run && npm test -w backend && npm test -w infra",
     "typecheck:all": "tsc -b --noEmit && npm run typecheck -w backend && npm run typecheck -w infra"
   },
