@@ -31,8 +31,8 @@
     },
     "Web": {
       "Name": "Web",
-      "DomainName": "",
-      "HostedZoneId": "",
+      "DomainName": "dev.letslearncloud.com",
+      "HostedZoneId": "Z09013603F9IENGM16JP",
       "CspReportOnly": false
     },
     "Ops": {
