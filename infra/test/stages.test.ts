@@ -10,11 +10,13 @@ const expectations = {
         account: ACCOUNTS.dev, prefix: 'Spark-Dev', namespace: 'Spark/Dev', rate: 20, burst: 50,
         routeRates: { 'POST /api/profiles': 5, 'POST /api/profiles/recover': 5, 'POST /api/shares': 2, 'PUT /api/profiles/me': 10 },
         reserved: undefined, retention: 14, pitr: false, retain: false, api5xx: 5, recoverMisses: 50,
+        domain: 'dev.letslearncloud.com',
     },
     prod: {
         account: ACCOUNTS.prod, prefix: 'Spark-Prod', namespace: 'Spark/Prod', rate: 500, burst: 1000,
         routeRates: { 'POST /api/profiles': 20, 'POST /api/profiles/recover': 5, 'POST /api/shares': 10, 'PUT /api/profiles/me': 200 },
         reserved: 0, retention: 30, pitr: true, retain: true, api5xx: 1, recoverMisses: 200,
+        domain: 'letslearncloud.com',
     },
 } as const;
 
@@ -231,9 +233,16 @@ describe.each(Object.entries(expectations))('%s config', (stage, want) => {
             for (const d of deployments) expect(d.Prune).toBe(false);
         });
 
-        it('creates no DNS records or certificate while DomainName is empty', () => {
-            template.resourceCountIs('AWS::CertificateManager::Certificate', 0);
-            template.resourceCountIs('AWS::Route53::RecordSet', 0);
+        it(`serves ${want.domain} with a DNS-validated certificate and A/AAAA aliases`, () => {
+            template.hasResourceProperties('AWS::CertificateManager::Certificate', {
+                DomainName: want.domain,
+                ValidationMethod: 'DNS',
+            });
+            template.hasResourceProperties('AWS::CloudFront::Distribution', {
+                DistributionConfig: Match.objectLike({ Aliases: [want.domain] }),
+            });
+            template.resourcePropertiesCountIs('AWS::Route53::RecordSet', { Type: 'A' }, 1);
+            template.resourcePropertiesCountIs('AWS::Route53::RecordSet', { Type: 'AAAA' }, 1);
         });
     });
 
@@ -289,21 +298,17 @@ describe('config switches', () => {
         });
     });
 
-    it('adds a DNS-validated certificate and A/AAAA aliases when DomainName and HostedZoneId are set', () => {
+    it('creates no DNS records or certificate while DomainName is empty', () => {
         const file = writeConfigCopy('dev', (config) => {
-            config.Stack.Web.DomainName = 'dev.spark.example.com';
-            config.Stack.Web.HostedZoneId = 'Z0123456789ABCDEFGHIJ';
+            config.Stack.Web.DomainName = '';
+            config.Stack.Web.HostedZoneId = '';
         });
 
         const template = templateOf(synthConfig(file).stacks.web);
-        template.hasResourceProperties('AWS::CertificateManager::Certificate', {
-            DomainName: 'dev.spark.example.com',
-            ValidationMethod: 'DNS',
-        });
+        template.resourceCountIs('AWS::CertificateManager::Certificate', 0);
+        template.resourceCountIs('AWS::Route53::RecordSet', 0);
         template.hasResourceProperties('AWS::CloudFront::Distribution', {
-            DistributionConfig: Match.objectLike({ Aliases: ['dev.spark.example.com'] }),
+            DistributionConfig: Match.objectLike({ Aliases: Match.absent() }),
         });
-        template.resourcePropertiesCountIs('AWS::Route53::RecordSet', { Type: 'A' }, 1);
-        template.resourcePropertiesCountIs('AWS::Route53::RecordSet', { Type: 'AAAA' }, 1);
     });
 });

@@ -66,7 +66,7 @@ The shapes are in `docs/aws/CONTRACT.md`. Settings that differ by stage:
 | `Api.ReservedConcurrency` (hard cap on Lambda spend; `0` or missing = none) | 0 | 0 for now; set to 100 once the Lambda quota increase is granted |
 | `Api.LogRetentionDays` | 14 | 30 |
 | `Web.CspReportOnly` | false (enforced) | false (enforced; see [The CSP](#the-csp)) |
-| `Web.DomainName`, `Web.HostedZoneId` | "" | "" (see [Adding a domain](#adding-a-domain-later)) |
+| `Web.DomainName`, `Web.HostedZoneId` | `dev.letslearncloud.com`, its dev-account zone | `letslearncloud.com`, its prod-account zone (see [Adding a domain](#adding-a-domain-later)) |
 | `Ops.Api5xxThreshold` (5xx responses in 5 minutes that page) | 5 | 1 |
 | `Ops.RecoverMissThreshold` (Builder Keys that matched nobody in 5 minutes: key guessing) | 50 | 200 |
 | `Ops.ThrottledThreshold` (requests API Gateway throttled in 5 minutes) | 50 | 50 |
@@ -512,6 +512,12 @@ Account IDs live only in `infra/config/*.json` and in the GitHub environment var
    `*.cloudfront.net` name, which keeps working.
 4. Register the domain before any public launch: links shared on the CloudFront hostname break when that
    hostname changes.
+
+Spark's domain is set up this way:
+- `letslearncloud.com` is registered in the organization's management account, because Route 53 would not register
+  it from the new prod account. Its nameservers point at the `letslearncloud.com` zone in the prod account.
+- `dev.letslearncloud.com` is its own zone in the dev account. An `NS` record named `dev` in the prod zone hands it
+  over. Add or change that record by hand: the deploy roles may only write `A`, `AAAA` and `CNAME` records.
 
 ## Troubleshooting
 
