@@ -80,6 +80,9 @@ export interface AppState {
   clearProfile: () => void;
 }
 
+/** Where the progress lives in localStorage. */
+export const STORAGE_NAME = 'spark-cloud-builders';
+
 export const useApp = create<AppState>()(
   persist(
     (set) => ({
@@ -97,7 +100,7 @@ export const useApp = create<AppState>()(
       clearProfile: () => set({ profile: EMPTY_PROFILE }),
     }),
     {
-      name: 'spark-cloud-builders',
+      name: STORAGE_NAME,
       version: 3,
       migrate: migrateSaved,
       // Storage can be blocked (private mode, managed Chromebooks); fall back to memory.

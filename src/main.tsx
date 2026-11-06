@@ -7,6 +7,7 @@ import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { App } from './App';
 import { startDeviceWatch } from './device';
+import { STORAGE_NAME, useApp } from './store';
 import { appSync } from './sync';
 import { startThemeWatch } from './theme';
 
@@ -37,6 +38,13 @@ window.addEventListener(
     }, 10_000),
   { once: true },
 );
+
+// Every tab keeps its own copy of the progress in memory and writes all of it back on each change. Without this, a tab
+// left open in the background would put its older copy back the next time anything changed in it, erasing a design or
+// level finished in another tab. When another tab saves, this one reads the new save instead.
+window.addEventListener('storage', (e) => {
+  if (e.key === STORAGE_NAME && e.newValue !== null) void useApp.persist.rehydrate();
+});
 
 // Progress syncs to the student's Builder Key in the background. The app never waits for it.
 appSync.start();
