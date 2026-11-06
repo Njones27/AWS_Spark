@@ -81,7 +81,7 @@ export interface AppState {
 }
 
 /** Where the progress lives in localStorage. */
-const STORAGE_NAME = 'spark-cloud-builders';
+export const STORAGE_NAME = 'spark-cloud-builders';
 
 export const useApp = create<AppState>()(
   persist(
@@ -121,15 +121,6 @@ export const useApp = create<AppState>()(
     },
   ),
 );
-
-// Every tab keeps its own copy of the progress in memory and writes all of it back on each change. Without this, a tab
-// left open in the background would put its older copy back the next time anything changed in it, erasing a design or
-// level finished in another tab. When another tab saves, this one reads the new save instead.
-if (typeof window !== 'undefined') {
-  window.addEventListener('storage', (e) => {
-    if (e.key === STORAGE_NAME && e.newValue !== null) void useApp.persist.rehydrate();
-  });
-}
 
 /**
  * Without a migrate function, zustand would throw away saves from an older version.
