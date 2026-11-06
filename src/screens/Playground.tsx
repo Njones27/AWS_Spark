@@ -111,14 +111,33 @@ function PlaygroundInner({ share, shareId }: { share?: string; shareId?: string 
 
   // Save (debounced) whenever the diagram, plan, or goal changes.
   const lastSaved = useRef(useApp.getState().playground);
+  // The save still waiting on the debounce, if any. Leaving the screen or closing the tab runs it at once, so the last
+  // change before leaving is never dropped.
+  const pendingSave = useRef<(() => void) | null>(null);
   useEffect(() => {
-    const t = window.setTimeout(() => {
+    const save = () => {
+      pendingSave.current = null;
       const saved = toSaved(d.nodes, d.edges, { plan, goal });
       lastSaved.current = saved;
       savePlayground(saved);
-    }, 400);
+    };
+    pendingSave.current = save;
+    const t = window.setTimeout(save, 400);
     return () => window.clearTimeout(t);
   }, [d.nodes, d.edges, plan, goal, savePlayground]);
+  useEffect(() => {
+    const saveNow = () => pendingSave.current?.();
+    const onHidden = () => {
+      if (document.visibilityState === 'hidden') saveNow();
+    };
+    window.addEventListener('pagehide', saveNow);
+    document.addEventListener('visibilitychange', onHidden);
+    return () => {
+      window.removeEventListener('pagehide', saveNow);
+      document.removeEventListener('visibilitychange', onHidden);
+      saveNow();
+    };
+  }, []);
   // A newer design can arrive from the student's Builder Key while this screen is open (the start-up sync). Show it,
   // rather than letting this screen's next save put the older copy back.
   const resetDiagram = d.reset;
