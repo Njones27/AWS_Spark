@@ -64,6 +64,29 @@ export function planText(plan: PlanInfo, summary: PlanSummary): string {
 /** A colour from the theme in use, so the saved pictures look like what the team sees (light or dark). */
 const themeColor = (token: string) => getComputedStyle(document.documentElement).getPropertyValue(token).trim();
 
+/** The SVG paint properties the map's arrows and icons take from the stylesheet. */
+const SVG_PAINT = ['fill', 'fill-opacity', 'stroke', 'stroke-width', 'stroke-opacity', 'stroke-dasharray', 'stroke-linecap', 'stroke-linejoin', 'opacity'];
+
+/**
+ * html-to-image copies an <svg> in one piece and only writes the stylesheet's styles onto the <svg> itself, so the
+ * arrows inside lose theirs. A path with no `fill: none` falls back to a black fill, which drew curved arrows as thick
+ * black swooshes in the saved map. Write each shape's paint onto it for the picture, and hand back a way to undo that.
+ */
+function inlineSvgPaint(root: HTMLElement): () => void {
+  const shapes = Array.from(root.querySelectorAll<SVGElement>('svg *'));
+  const before = shapes.map((el) => el.getAttribute('style'));
+  shapes.forEach((el) => {
+    const css = getComputedStyle(el);
+    SVG_PAINT.forEach((prop) => el.style.setProperty(prop, css.getPropertyValue(prop)));
+  });
+  return () =>
+    shapes.forEach((el, i) => {
+      const old = before[i];
+      if (old === null) el.removeAttribute('style');
+      else el.setAttribute('style', old);
+    });
+}
+
 const PIC_W = 1200;
 const PIC_H = 640;
 
@@ -82,6 +105,7 @@ export function PlanExport({ pieces, edges, plan, onPlan, band, onClose }: Props
       const viewport = document.querySelector<HTMLElement>('.react-flow__viewport');
       if (!viewport) return;
       const v = getViewportForBounds(getNodesBounds(getNodes()), PIC_W, PIC_H, 0.2, 2, 0.06);
+      const restore = inlineSvgPaint(viewport);
       toPng(viewport, {
         backgroundColor: themeColor('--paper'),
         width: PIC_W,
@@ -89,7 +113,8 @@ export function PlanExport({ pieces, edges, plan, onPlan, band, onClose }: Props
         style: { width: `${PIC_W}px`, height: `${PIC_H}px`, transform: `translate(${v.x}px, ${v.y}px) scale(${v.zoom})` },
       })
         .then(setMap)
-        .catch(() => setMap(null));
+        .catch(() => setMap(null))
+        .finally(restore);
     });
     return () => cancelAnimationFrame(frame);
   }, [getNodes]);
