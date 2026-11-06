@@ -1,7 +1,7 @@
 import { useId } from 'react';
 import type { Mood } from '../../data/levels';
 
-/** Sparky: the guide. A little cloud with a lightning-spark tuft. */
+/** Sparky: the guide. A little cloud with a lightning bolt striking down from underneath. */
 export function Sparky({ mood = 'happy', size = 96, bob = true }: { mood?: Mood; size?: number; bob?: boolean }) {
   const look = mood === 'think' ? -3 : 0;
   const shade = `sparky-shade-${useId().replace(/[^a-zA-Z0-9_-]/g, '')}`;
@@ -10,7 +10,7 @@ export function Sparky({ mood = 'happy', size = 96, bob = true }: { mood?: Mood;
       className={bob ? 'sparky bob' : 'sparky'}
       width={size}
       height={(size * 100) / 120}
-      viewBox="0 0 120 100"
+      viewBox="-5.9 11 136.8 114"
       role="img"
       aria-label={`Sparky looks ${mood === 'worried' ? 'worried' : mood === 'think' ? 'thoughtful' : 'happy'}`}
     >
@@ -20,25 +20,35 @@ export function Sparky({ mood = 'happy', size = 96, bob = true }: { mood?: Mood;
           <stop offset="1" stopColor="#dfe9f3" />
         </linearGradient>
       </defs>
-      {/* spark tuft */}
-      <path d="M71 2 L58 24 L66 24 L60 38 L78 15 L69 15 L75 2 Z" fill="var(--sun)" stroke="#e8a800" strokeWidth="1.5" strokeLinejoin="round" />
+      {/* lightning bolt, drawn first so its top tucks under the cloud */}
+      <path
+        d="M70.8 84.8 L49.8 105 L63.8 105 L54 122.2 L87.6 97.8 L72.2 97.8 L82 84.8 Z"
+        fill="var(--sun)"
+        stroke="#e8a800"
+        strokeWidth="1.6"
+        strokeLinejoin="round"
+      />
       {/* body */}
       <g fill={`url(#${shade})`} stroke="#c9d6e3" strokeWidth="2">
-        <circle cx="38" cy="60" r="24" />
+        <circle cx="31" cy="60" r="24" />
+        <circle cx="47.5" cy="52" r="24" />
         <circle cx="64" cy="46" r="30" />
-        <circle cx="90" cy="62" r="21" />
-        <rect x="18" y="60" width="92" height="32" rx="16" />
+        <circle cx="80.5" cy="54" r="22" />
+        <circle cx="97" cy="62" r="21" />
+        <rect x="11" y="60" width="106" height="32" rx="16" />
       </g>
       {/* cover inner seams */}
       <g fill={`url(#${shade})`}>
-        <circle cx="38" cy="60" r="22.5" />
+        <circle cx="31" cy="60" r="22.5" />
+        <circle cx="47.5" cy="52" r="22.5" />
         <circle cx="64" cy="46" r="28.5" />
-        <circle cx="90" cy="62" r="19.5" />
-        <rect x="19.5" y="61.5" width="89" height="29" rx="14.5" />
+        <circle cx="80.5" cy="54" r="20.5" />
+        <circle cx="97" cy="62" r="19.5" />
+        <rect x="12.5" y="61.5" width="103" height="29" rx="14.5" />
       </g>
       {/* cheeks */}
-      <ellipse cx="42" cy="72" rx="7" ry="4" fill="var(--face-blush)" opacity="0.3" />
-      <ellipse cx="88" cy="72" rx="7" ry="4" fill="var(--face-blush)" opacity="0.3" />
+      <ellipse cx="39.9" cy="72" rx="7" ry="4" fill="var(--face-blush)" opacity="0.3" />
+      <ellipse cx="90.1" cy="72" rx="7" ry="4" fill="var(--face-blush)" opacity="0.3" />
       {/* eyes */}
       {mood === 'cheer' ? (
         <g stroke="var(--face-ink)" strokeWidth="3.5" strokeLinecap="round" fill="none">

@@ -53,7 +53,7 @@ img {
   stroke-linejoin: round;
   vertical-align: -0.2em;
 }
-/* The wordmark's bolt matches the one on Sparky's head. */
+/* The wordmark's bolt matches the one striking down from under Sparky. */
 .wordmark-spark .ico {
   fill: var(--sun);
   stroke: #e8a800;
