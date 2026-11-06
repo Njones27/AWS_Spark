@@ -19,7 +19,7 @@ import { StarterPicker } from '../components/playground/StarterPicker';
 import { ServiceCard } from '../components/ServiceCard';
 import { SidePanel } from '../components/SidePanel';
 import { topProblem } from '../data/feedback';
-import { CATEGORIES, SERVICE_LIST } from '../data/services';
+import { CATEGORIES, playgroundCatalog } from '../data/services';
 import type { SourceSpec } from '../data/types';
 import { useDevice } from '../device';
 import { judgeQuestions } from '../engine/judge';
@@ -141,7 +141,7 @@ function PlaygroundInner({ share, shareId }: { share?: string; shareId?: string 
   const sim = useMemo(() => (running ? simulate(structure.nodes, structure.edges, 1) : null), [running, structure]);
 
   const pieces = d.nodes.filter(isPiece);
-  const catalog = useMemo(() => SERVICE_LIST.filter((s) => band !== 'explorer' || s.basic), [band]);
+  const catalog = useMemo(() => playgroundCatalog(band), [band]);
   // Pieces on hand: this band's catalog, plus anything already on the map.
   const available = useMemo(
     () => [...new Set([...catalog.map((s) => s.id), ...d.nodes.filter(isPiece).map((n) => n.data.service)])],

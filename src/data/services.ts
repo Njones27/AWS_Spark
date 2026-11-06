@@ -1,4 +1,4 @@
-import type { Category, ServiceDef, ServiceId } from './types';
+import type { Band, Category, ServiceDef, ServiceId } from './types';
 
 const INF = Number.POSITIVE_INFINITY;
 
@@ -520,6 +520,10 @@ export const SERVICES: Record<ServiceId, ServiceDef> = Object.fromEntries(list.m
 >;
 
 export const SERVICE_LIST = list;
+
+/** The pieces the Playground tray offers at a band. Explorer gets only the basic pieces. */
+export const playgroundCatalog = (band: Band): ServiceDef[] =>
+  band === 'explorer' ? list.filter((s) => s.basic) : list;
 
 /** The name without its "Amazon " or "AWS " prefix, e.g. "S3". */
 export const shortName = (id: ServiceId): string => SERVICES[id].name.replace(/^(Amazon|AWS) /, '');
