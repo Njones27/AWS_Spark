@@ -2414,9 +2414,15 @@ img {
   display: flex;
   flex-direction: column;
 }
+/*
+ * A scroll box clips on every side, so focus rings (3px outline, 2px offset) on its edge controls were cut off.
+ * The padding gives them room and the matching negative margin keeps the content where it was.
+ */
 .modal-scroll {
   min-height: 0;
   overflow-y: auto;
+  padding: 6px;
+  margin: -6px;
 }
 .starter-picker {
   max-width: 880px;
@@ -2514,6 +2520,7 @@ img {
 /* Keep the scrollbar clear of the rounded top corner. */
 .plan-export .modal-scroll {
   margin: 14px 8px 0 0;
+  padding: 0;
 }
 .plan-close {
   position: absolute;
