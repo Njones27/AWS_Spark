@@ -7,13 +7,21 @@ import { LevelMap } from './screens/LevelMap';
 import { LevelPlay } from './screens/LevelPlay';
 import { Playground } from './screens/Playground';
 import { StyleGuide } from './screens/StyleGuide';
+import { English } from './i18n/English';
 import { useRoute, type Route } from './router';
 
 export function App() {
   const route = useRoute();
   return (
     <>
-      <Screen route={route} />
+      {/* Only the title screen and the shared menus are translated so far; the rest stays English for now. */}
+      {route.name === 'home' ? (
+        <Screen route={route} />
+      ) : (
+        <English>
+          <Screen route={route} />
+        </English>
+      )}
       <KeyNotice route={route.name} />
     </>
   );

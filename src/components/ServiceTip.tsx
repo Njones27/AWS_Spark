@@ -78,6 +78,8 @@ export function useServiceTip(service: ServiceId) {
           id={id}
           role="tooltip"
           className="service-tip"
+          lang="en"
+          dir="ltr"
           style={pos ? { left: pos.left, top: pos.top } : { left: 0, top: 0, visibility: 'hidden' }}
         >
           <strong>{def.name}</strong>

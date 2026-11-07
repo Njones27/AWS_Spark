@@ -1,16 +1,20 @@
 import { TownScene } from '../components/art/Scenery';
 import { Sparky } from '../components/art/Sparky';
 import { BuilderKeyButton } from '../components/BuilderKey';
-import { BandPicker, BandSwitch, ThemeSwitch } from '../components/Chrome';
+import { BandPicker, BandSwitch, LangSwitch, ThemeSwitch } from '../components/Chrome';
 import { ADVANCED } from '../data/advanced';
 import { STORY } from '../data/chapters';
-import { CHAPTER } from '../data/levels';
 import { iconUrl, playgroundCatalog } from '../data/services';
 import { href } from '../router';
 import { useApp, useBand } from '../store';
 import { Icon } from '../components/Icon';
+import { useT, type MessageKey } from '../i18n';
+
+/** Each Story Mode chapter's line on its card. */
+const STORY_BLURB: Record<string, MessageKey> = { ch1: 'home.story.ch1', ch2: 'home.story.ch2' };
 
 export function Home() {
+  const t = useT();
   const band = useApp((s) => s.band);
   const completed = useApp((s) => s.completed);
   // The Playground offers fewer pieces at Explorer, so the count follows the chosen band.
@@ -32,6 +36,7 @@ export function Home() {
         <div className="topbar-actions">
           <BuilderKeyButton variant="chip" />
           <ThemeSwitch />
+          <LangSwitch />
           <BandSwitch />
         </div>
       </div>
@@ -39,19 +44,19 @@ export function Home() {
         <div className="home-title">
           <Sparky mood="cheer" size={120} />
           <h1>
-            Spark <span>Cloud Builders</span>
+            Spark <span>{t('home.subtitle')}</span>
           </h1>
-          <p>Connect real AWS services, watch requests flow, and help a little town go online.</p>
+          <p>{t('home.tagline')}</p>
         </div>
-        <nav className="home-cards" aria-label="Choose a mode">
+        <nav className="home-cards" aria-label={t('home.modes')}>
           <a className="mode-card mode-story" href={href.chapter(current.id)}>
             <span className="mode-icon" aria-hidden="true">
               <Icon name="book" size={30} />
             </span>
             <span className="mode-text">
-              <strong>Story Mode</strong>
-              <span>{current === STORY[0] ? CHAPTER.blurb : current.blurb}</span>
-              <span className="progress" aria-label={`${done} of ${storyLevels.length} levels done`}>
+              <strong>{t('home.story')}</strong>
+              <span>{STORY_BLURB[current.id] ? t(STORY_BLURB[current.id]) : current.blurb}</span>
+              <span className="progress" aria-label={t('home.levelsDone', { done, total: storyLevels.length })}>
                 <span className="progress-bar">
                   <span style={{ width: `${(done / storyLevels.length) * 100}%` }} />
                 </span>
@@ -70,10 +75,13 @@ export function Home() {
             </span>
             <span className="mode-text">
               <strong>
-                Advanced Track <span className="mode-tag">College & up</span>
+                {t('home.advanced')} <span className="mode-tag">{t('home.collegeTag')}</span>
               </strong>
-              <span>On call at Crumb & Co.: real incidents, monthly budgets, and security reviews.</span>
-              <span className="progress" aria-label={`${advDone} of ${ADVANCED.levels.length} tickets done`}>
+              <span>{t('home.advanced.blurb')}</span>
+              <span
+                className="progress"
+                aria-label={t('home.ticketsDone', { done: advDone, total: ADVANCED.levels.length })}
+              >
                 <span className="progress-bar">
                   <span style={{ width: `${(advDone / ADVANCED.levels.length) * 100}%` }} />
                 </span>
@@ -91,8 +99,8 @@ export function Home() {
               <img src={iconUrl('lambda')} alt="" />
             </span>
             <span className="mode-text">
-              <strong>Playground</strong>
-              <span>Build anything with {pieceCount} pieces. Only connections that make sense will snap together!</span>
+              <strong>{t('home.playground')}</strong>
+              <span>{t('home.playground.blurb', { count: pieceCount })}</span>
             </span>
             <span className="mode-go" aria-hidden="true">
               <Icon name="chevron" size={28} />
@@ -101,8 +109,8 @@ export function Home() {
         </nav>
       </main>
       <footer className="home-foot">
-        <a href={href.styleguide}>Style guide</a>
-        <span>AWS service icons © Amazon Web Services, used for teaching. Not affiliated with or endorsed by AWS.</span>
+        <a href={href.styleguide}>{t('home.styleGuide')}</a>
+        <span>{t('home.credit')}</span>
       </footer>
       {!band && <BandPicker />}
     </div>

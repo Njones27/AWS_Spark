@@ -158,7 +158,7 @@ export type IconName = keyof typeof PATHS;
 export function Icon({ name, size, className }: { name: IconName; size?: number; className?: string }) {
   return (
     <svg
-      className={className ? `ico ${className}` : 'ico'}
+      className={className ? `ico ico-${name} ${className}` : `ico ico-${name}`}
       viewBox="0 0 24 24"
       style={size ? { width: size, height: size } : undefined}
       aria-hidden="true"

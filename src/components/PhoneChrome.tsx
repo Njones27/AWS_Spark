@@ -1,10 +1,12 @@
 import { useRef, useState, type MouseEvent, type ReactNode } from 'react';
 import { setLayoutChoice } from '../device';
+import { useT } from '../i18n';
 import { Icon } from './Icon';
 import { useDismiss } from './useDismiss';
 
 /** The phone top bar's "⋯" menu: the buttons a laptop shows in the top bar, plus a way back to the laptop layout. */
 export function PhoneMenu({ children }: { children?: ReactNode }) {
+  const t = useT();
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   useDismiss(ref, open, () => setOpen(false));
@@ -14,14 +16,14 @@ export function PhoneMenu({ children }: { children?: ReactNode }) {
   };
   return (
     <div className="phone-menu" ref={ref}>
-      <button className="btn btn-ghost btn-icon" aria-label="More" aria-expanded={open} onClick={() => setOpen((o) => !o)}>
+      <button className="btn btn-ghost btn-icon" aria-label={t('chrome.more')} aria-expanded={open} onClick={() => setOpen((o) => !o)}>
         <Icon name="more" />
       </button>
       {open && (
         <div className="phone-menu-list" onClick={pick}>
           {children}
           <button className="btn btn-ghost phone-menu-layout" onClick={() => setLayoutChoice('laptop')}>
-            <Icon name="laptop" /> Use the laptop layout
+            <Icon name="laptop" /> {t('chrome.laptopLayout')}
           </button>
         </div>
       )}
@@ -46,6 +48,7 @@ export function Sheet({
   onClose: () => void;
   children: ReactNode;
 }) {
+  const t = useT();
   return (
     <>
       <div className={`sheet-backdrop ${hidden ? 'is-hidden' : ''}`} onClick={onClose} aria-hidden="true" />
@@ -61,7 +64,7 @@ export function Sheet({
           {/* Focus starts here, so Escape and screen readers land in the sheet. */}
           <button
             className="btn btn-ghost btn-icon sheet-close"
-            aria-label={`Close ${title}`}
+            aria-label={t('chrome.close', { name: title })}
             onClick={onClose}
             autoFocus
           >
@@ -79,6 +82,7 @@ const TURN_TIP = 'spark-turn-tip';
 
 /** Level maps run left to right, so an upright phone shows them small. Suggest turning sideways, once. */
 export function TurnTip() {
+  const t = useT();
   const [seen, setSeen] = useState(() => {
     try {
       return localStorage.getItem(TURN_TIP) === 'seen';
@@ -98,9 +102,9 @@ export function TurnTip() {
   return (
     <div className="turn-tip" role="note">
       <Icon name="phone" />
-      <span>Turn your phone sideways for a bigger map.</span>
+      <span>{t('chrome.turnTip')}</span>
       <button className="btn btn-ghost btn-sm" onClick={dismiss}>
-        Got it
+        {t('chrome.gotIt')}
       </button>
     </div>
   );

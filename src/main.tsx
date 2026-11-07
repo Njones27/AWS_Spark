@@ -9,6 +9,7 @@ import { App } from './App';
 import { startDeviceWatch } from './device';
 import { STORAGE_NAME, useApp } from './store';
 import { appSync } from './sync';
+import { startLangWatch } from './i18n';
 import { startThemeWatch } from './theme';
 
 // After a deploy, a tab opened earlier can ask for a file that is gone. Reload once to get the new version.
@@ -53,6 +54,8 @@ appSync.start();
 startDeviceWatch();
 // Keeps data-theme="light" or "dark" on <html> in step with the Theme menu and the device setting.
 startThemeWatch();
+// Keeps <html lang dir> in step with the Language menu (Arabic reads right to left).
+startLangWatch();
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
