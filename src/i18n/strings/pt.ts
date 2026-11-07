@@ -51,4 +51,17 @@ export const pt: Messages = {
   'chrome.close': 'Fechar {name}',
   'chrome.turnTip': 'Vire o celular de lado para ver um mapa maior.',
   'chrome.gotIt': 'Entendi',
+
+  'whatsNew.label': 'Novidades',
+  'whatsNew.unread': 'Novidades ({count} novas)',
+  'whatsNew.window': 'Últimos 7 dias',
+  'whatsNew.empty': 'Nada de novo esta semana. Volte logo!',
+  'whatsNew.today': 'Hoje',
+  'whatsNew.yesterday': 'Ontem',
+  'whatsNew.daysAgo': 'Há {count} dias',
+  'whatsNew.kind.new': 'Novo',
+  'whatsNew.kind.better': 'Melhorado',
+  'whatsNew.kind.fixed': 'Corrigido',
+  'whatsNew.isNew': 'Novo desde a sua última visita',
+  'whatsNew.markRead': 'Marcar tudo como lido',
 };

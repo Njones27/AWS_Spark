@@ -54,4 +54,17 @@ export const ar: Messages = {
   'chrome.close': 'إغلاق {name}',
   'chrome.turnTip': 'أدر هاتفك أفقيًا لتحصل على خريطة أكبر.',
   'chrome.gotIt': 'حسنًا',
+
+  'whatsNew.label': 'ما الجديد',
+  'whatsNew.unread': 'ما الجديد (الجديد: {count})',
+  'whatsNew.window': 'آخر 7 أيام',
+  'whatsNew.empty': 'لا جديد هذا الأسبوع. عُد قريبًا!',
+  'whatsNew.today': 'اليوم',
+  'whatsNew.yesterday': 'أمس',
+  'whatsNew.daysAgo': 'منذ {count} أيام',
+  'whatsNew.kind.new': 'جديد',
+  'whatsNew.kind.better': 'أفضل',
+  'whatsNew.kind.fixed': 'تم الإصلاح',
+  'whatsNew.isNew': 'جديد منذ آخر زيارة',
+  'whatsNew.markRead': 'تحديد الكل كمقروء',
 };

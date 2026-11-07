@@ -51,4 +51,17 @@ export const ja: Messages = {
   'chrome.close': '{name}を閉じる',
   'chrome.turnTip': 'スマホを横にするとマップが大きくなります。',
   'chrome.gotIt': 'わかった',
+
+  'whatsNew.label': '新着情報',
+  'whatsNew.unread': '新着情報（新しいもの {count} 件）',
+  'whatsNew.window': '過去 7 日間',
+  'whatsNew.empty': '今週は新しいお知らせはありません。また見に来てね！',
+  'whatsNew.today': '今日',
+  'whatsNew.yesterday': '昨日',
+  'whatsNew.daysAgo': '{count} 日前',
+  'whatsNew.kind.new': '新機能',
+  'whatsNew.kind.better': '改善',
+  'whatsNew.kind.fixed': '修正',
+  'whatsNew.isNew': '前回から新しく追加',
+  'whatsNew.markRead': 'すべて既読にする',
 };

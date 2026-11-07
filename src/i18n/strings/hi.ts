@@ -51,4 +51,17 @@ export const hi: Messages = {
   'chrome.close': '{name} बंद करो',
   'chrome.turnTip': 'बड़े नक्शे के लिए अपना फ़ोन तिरछा घुमाओ।',
   'chrome.gotIt': 'समझ गया',
+
+  'whatsNew.label': 'नया क्या है',
+  'whatsNew.unread': 'नया क्या है ({count} नए)',
+  'whatsNew.window': 'पिछले 7 दिन',
+  'whatsNew.empty': 'इस हफ़्ते कुछ नया नहीं है। जल्द फिर देखना!',
+  'whatsNew.today': 'आज',
+  'whatsNew.yesterday': 'कल',
+  'whatsNew.daysAgo': '{count} दिन पहले',
+  'whatsNew.kind.new': 'नया',
+  'whatsNew.kind.better': 'बेहतर',
+  'whatsNew.kind.fixed': 'ठीक किया',
+  'whatsNew.isNew': 'पिछली बार के बाद से नया',
+  'whatsNew.markRead': 'सबको पढ़ा हुआ मानें',
 };

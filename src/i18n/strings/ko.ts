@@ -51,4 +51,17 @@ export const ko: Messages = {
   'chrome.close': '{name} 닫기',
   'chrome.turnTip': '휴대폰을 가로로 돌리면 지도가 더 커져요.',
   'chrome.gotIt': '알겠어요',
+
+  'whatsNew.label': '새로운 소식',
+  'whatsNew.unread': '새로운 소식 (새 소식 {count}개)',
+  'whatsNew.window': '최근 7일',
+  'whatsNew.empty': '이번 주에는 새 소식이 없어요. 곧 다시 확인해 주세요!',
+  'whatsNew.today': '오늘',
+  'whatsNew.yesterday': '어제',
+  'whatsNew.daysAgo': '{count}일 전',
+  'whatsNew.kind.new': '새 기능',
+  'whatsNew.kind.better': '개선',
+  'whatsNew.kind.fixed': '수정',
+  'whatsNew.isNew': '지난번 이후 새로 생김',
+  'whatsNew.markRead': '모두 읽음으로 표시',
 };

@@ -51,4 +51,17 @@ export const zh: Messages = {
   'chrome.close': '关闭{name}',
   'chrome.turnTip': '把手机横过来，地图会更大。',
   'chrome.gotIt': '知道了',
+
+  'whatsNew.label': '新内容',
+  'whatsNew.unread': '新内容（{count} 条新的）',
+  'whatsNew.window': '最近 7 天',
+  'whatsNew.empty': '这周没有新内容。过几天再来看看！',
+  'whatsNew.today': '今天',
+  'whatsNew.yesterday': '昨天',
+  'whatsNew.daysAgo': '{count} 天前',
+  'whatsNew.kind.new': '新增',
+  'whatsNew.kind.better': '改进',
+  'whatsNew.kind.fixed': '修复',
+  'whatsNew.isNew': '上次查看后的新内容',
+  'whatsNew.markRead': '全部标为已读',
 };

@@ -8,6 +8,7 @@ import { iconUrl, playgroundCatalog } from '../data/services';
 import { href } from '../router';
 import { useApp, useBand } from '../store';
 import { Icon } from '../components/Icon';
+import { WhatsNew } from '../components/WhatsNew';
 import { useT, type MessageKey } from '../i18n';
 
 /** Each Story Mode chapter's line on its card. */
@@ -31,10 +32,12 @@ export function Home() {
         <span className="wordmark">
           <span className="wordmark-spark" aria-hidden="true">
             <Icon name="bolt" size={24} />
-          </span> Spark
+          </span>{' '}
+          Spark
         </span>
         <div className="topbar-actions">
           <BuilderKeyButton variant="chip" />
+          <WhatsNew />
           <ThemeSwitch />
           <LangSwitch />
           <BandSwitch />

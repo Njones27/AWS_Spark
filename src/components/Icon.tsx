@@ -10,6 +10,12 @@ const PATHS = {
     </>
   ),
   back: <path d="M19 12H5m6-6-6 6 6 6" />,
+  bell: (
+    <>
+      <path d="M6 16.5V11a6 6 0 0 1 12 0v5.5l1.5 2h-15z" />
+      <path d="M10 21h4" />
+    </>
+  ),
   bolt: <path d="M13 2 4 14h7l-1 8 9-12h-7z" />,
   book: <path d="M4 19.5V5a2 2 0 0 1 2-2h14v15H6.5A2.5 2.5 0 0 0 4 20.5 2.5 2.5 0 0 0 6.5 23H20" />,
   bot: (
@@ -111,6 +117,12 @@ const PATHS = {
     </>
   ),
   ruler: <path d="M3 21 21 3v18zM7 21v-2M11 21v-3M15 21v-2M17 13h4M14 16h4" />,
+  save: (
+    <>
+      <path d="M5 4h11l3 3v13H5z" />
+      <path d="M8 4v5h7V4M8 20v-6h8v6" />
+    </>
+  ),
   scissors: (
     <>
       <circle cx="6" cy="6" r="3" />
