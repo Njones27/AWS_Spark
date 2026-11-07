@@ -67,6 +67,16 @@ chip to see what it does, explained for your band. On a touch screen, tap a piec
 
 ![Explorer band: faces instead of numbers, and automatic hints](docs/screens/explorer-band.png)
 
+### Languages
+
+The globe button in the top corner switches between English, Spanish, French, German, Portuguese, Italian, Russian,
+Arabic, Hindi, Chinese, Japanese, and Korean. Spark starts in the browser's language when it has it. Arabic lays the
+page out right to left, while the maps and the builder canvas keep flowing left to right. AWS service names stay in
+English in every language, because that is what students will see in the real AWS console.
+
+So far the title screen, the grade picker, and the shared menus are translated. The other screens stay in English
+(marked with `<English>` in `src/App.tsx`) until their words move into `src/i18n/strings/`.
+
 ## Run it
 
 ```bash
@@ -116,6 +126,13 @@ locally, run `SPARK_API_PROXY=https://<dev CloudFront domain> npm run dev`.
 Append to the chapter's level list (`src/data/levels.ts`, `src/data/chapter2.ts`, or `src/data/advanced.ts`),
 including a `solution`. Advanced tickets can also set `budget`, `requires`, and `maxBacklog`. `npm test` fails if
 the starting setup already passes, if the solution doesn't, or if any arrow isn't an allowed connection.
+
+### Add a language or a translated phrase
+
+Words live in `src/i18n/strings/`, one file per language. `en.ts` lists every key; TypeScript makes each other language
+give all of them, and `npm test` checks that every translation keeps the same `{placeholders}` and AWS names. Use them in
+a component with `const t = useT()` and `t('home.story')`. A new language also needs a row in `LANGUAGES`
+(`src/i18n/index.ts`) and in `public/lang-boot.js`.
 
 ### Add a service
 

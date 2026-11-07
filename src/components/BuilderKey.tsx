@@ -176,7 +176,7 @@ export function KeyNotice({ route }: { route: Route['name'] }) {
   return (
     <>
       {keyNoticeDue(profile, route) && (
-        <aside className="key-notice" aria-labelledby="key-notice-title">
+        <aside className="key-notice" lang="en" dir="ltr" aria-labelledby="key-notice-title">
           <span className="key-notice-icon" aria-hidden="true">
             <Icon name="key" size={26} />
           </span>
@@ -273,7 +273,8 @@ export function BuilderKeyDialog({ onClose }: { onClose: () => void }) {
   };
 
   return (
-    <div className="modal-backdrop" onClick={(e) => e.target === e.currentTarget && onClose()}>
+    // Not translated yet, so it stays English and left to right even when the page reads right to left.
+    <div className="modal-backdrop" lang="en" dir="ltr" onClick={(e) => e.target === e.currentTarget && onClose()}>
       <div ref={box} className="modal share-dialog builder-key" role="dialog" aria-modal="true" aria-labelledby="key-title">
         <div className="modal-scroll">
           <p className="eyebrow">Builder Key</p>

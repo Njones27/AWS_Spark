@@ -1,6 +1,7 @@
 import { useRef, useState, type ReactNode } from 'react';
 import { BANDS } from '../data/text';
 import { setLayoutChoice, useDevice } from '../device';
+import { LANGUAGES, langDef, setLang, useLang, useT, type MessageKey, type T } from '../i18n';
 import { go, href } from '../router';
 import type { Band } from '../data/types';
 import { useApp, useBand } from '../store';
@@ -22,6 +23,7 @@ export function TopBar({
   hideBand?: boolean;
 }) {
   const { device, phoneScreen } = useDevice();
+  const t = useT();
   if (device === 'phone') {
     return (
       <header className="topbar">
@@ -34,6 +36,7 @@ export function TopBar({
         <PhoneMenu>
           {children}
           <ThemeSwitch labelled />
+          <LangSwitch labelled />
           {!hideBand && <BandSwitch />}
         </PhoneMenu>
       </header>
@@ -50,10 +53,11 @@ export function TopBar({
       <div className="topbar-actions">
         {children}
         <ThemeSwitch />
+        <LangSwitch />
         {!hideBand && <BandSwitch />}
         {phoneScreen && (
           <button className="btn btn-chip" onClick={() => setLayoutChoice('auto')}>
-            <Icon name="phone" /> Phone layout
+            <Icon name="phone" /> {t('chrome.phoneLayout')}
           </button>
         )}
       </div>
@@ -63,10 +67,10 @@ export function TopBar({
 
 const BAND_ICON: Record<Band, IconName> = { explorer: 'compass', builder: 'bricks', architect: 'ruler' };
 
-const THEMES: { id: ThemeChoice; label: string; icon: IconName }[] = [
-  { id: 'system', label: 'Match my device', icon: 'device' },
-  { id: 'light', label: 'Light', icon: 'sun' },
-  { id: 'dark', label: 'Dark', icon: 'moon' },
+const THEMES: { id: ThemeChoice; label: MessageKey; icon: IconName }[] = [
+  { id: 'system', label: 'theme.system', icon: 'device' },
+  { id: 'light', label: 'theme.light', icon: 'sun' },
+  { id: 'dark', label: 'theme.dark', icon: 'moon' },
 ];
 
 /**
@@ -75,39 +79,41 @@ const THEMES: { id: ThemeChoice; label: string; icon: IconName }[] = [
  */
 export function ThemeSwitch({ labelled }: { labelled?: boolean }) {
   const { choice, theme } = useTheme();
+  const t = useT();
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   useDismiss(ref, open, () => setOpen(false));
-  const cur = THEMES.find((t) => t.id === choice)!;
+  const cur = THEMES.find((th) => th.id === choice)!;
+  const curLabel = t('theme.current', { name: t(cur.label) });
   return (
     <div className="band-switch theme-switch" ref={ref}>
       <button
         className={labelled ? 'btn btn-chip' : 'btn btn-chip btn-icon'}
         aria-haspopup="menu"
         aria-expanded={open}
-        aria-label={labelled ? undefined : `Theme: ${cur.label}`}
-        title={labelled ? undefined : `Theme: ${cur.label}`}
+        aria-label={labelled ? undefined : curLabel}
+        title={labelled ? undefined : curLabel}
         onClick={() => setOpen((o) => !o)}
       >
         <Icon name={theme === 'dark' ? 'moon' : 'sun'} />
-        {labelled && <>Theme: {cur.label}</>}
+        {labelled && curLabel}
       </button>
       {open && (
-        <div className="band-menu theme-menu" role="menu" aria-label="Theme">
-          {THEMES.map((t) => (
+        <div className="band-menu theme-menu" role="menu" aria-label={t('theme.label')}>
+          {THEMES.map((th) => (
             <button
-              key={t.id}
+              key={th.id}
               role="menuitemradio"
-              aria-checked={t.id === choice}
-              className={t.id === choice ? 'is-current' : ''}
+              aria-checked={th.id === choice}
+              className={th.id === choice ? 'is-current' : ''}
               onClick={() => {
-                setThemeChoice(t.id);
+                setThemeChoice(th.id);
                 setOpen(false);
               }}
             >
-              <Icon name={t.icon} />
-              <span>{t.label}</span>
-              {t.id === choice && <Icon name="check" className="theme-menu-check" />}
+              <Icon name={th.icon} />
+              <span>{t(th.label)}</span>
+              {th.id === choice && <Icon name="check" className="theme-menu-check" />}
             </button>
           ))}
         </div>
@@ -116,13 +122,71 @@ export function ThemeSwitch({ labelled }: { labelled?: boolean }) {
   );
 }
 
+/**
+ * The language menu. Each language is listed in its own words, so a student who can't read the current one can still
+ * find theirs. AWS service names stay in English in every language.
+ */
+export function LangSwitch({ labelled }: { labelled?: boolean }) {
+  const lang = useLang();
+  const t = useT();
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  useDismiss(ref, open, () => setOpen(false));
+  const cur = langDef(lang);
+  const curLabel = t('lang.menu', { name: cur.name });
+  return (
+    <div className="band-switch lang-switch" ref={ref}>
+      <button
+        className="btn btn-chip"
+        aria-haspopup="menu"
+        aria-expanded={open}
+        aria-label={labelled ? undefined : curLabel}
+        title={labelled ? undefined : curLabel}
+        onClick={() => setOpen((o) => !o)}
+      >
+        <Icon name="globe" />
+        {labelled ? curLabel : <span className="lang-code">{cur.id.toUpperCase()}</span>}
+      </button>
+      {open && (
+        <div className="band-menu theme-menu lang-menu" role="menu" aria-label={t('lang.label')}>
+          {LANGUAGES.map((l) => (
+            <button
+              key={l.id}
+              role="menuitemradio"
+              aria-checked={l.id === lang}
+              className={l.id === lang ? 'is-current' : ''}
+              lang={l.tag}
+              title={l.english}
+              onClick={() => {
+                setLang(l.id);
+                setOpen(false);
+              }}
+            >
+              <span>{l.name}</span>
+              {l.id === lang && <Icon name="check" className="theme-menu-check" />}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/** A band's name, grades, and tagline in the chosen language. */
+export const bandText = (t: T, band: Band) => ({
+  label: t(`band.${band}` as MessageKey),
+  grades: t(`band.${band}.grades` as MessageKey),
+  tagline: t(`band.${band}.tagline` as MessageKey),
+});
+
 export function BandSwitch() {
+  const t = useT();
   const band = useBand();
   const setBand = useApp((s) => s.setBand);
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   useDismiss(ref, open, () => setOpen(false));
-  const cur = BANDS.find((b) => b.id === band)!;
+  const cur = bandText(t, band);
   return (
     <div className="band-switch" ref={ref}>
       <button className="btn btn-chip" aria-haspopup="menu" aria-expanded={open} onClick={() => setOpen((o) => !o)}>
@@ -146,8 +210,8 @@ export function BandSwitch() {
                 <Icon name={BAND_ICON[b.id]} />
               </span>
               <span>
-                <strong>{b.label}</strong> <em>{b.grades}</em>
-                <small>{b.tagline}</small>
+                <strong>{bandText(t, b.id).label}</strong> <em>{bandText(t, b.id).grades}</em>
+                <small>{bandText(t, b.id).tagline}</small>
               </span>
             </button>
           ))}
@@ -157,38 +221,36 @@ export function BandSwitch() {
   );
 }
 
-// Every band sees the real name. The explanation is what changes.
-const SAMPLE: Record<Band, { main: string; sub?: string }> = {
-  explorer: { main: 'Amazon S3', sub: 'A giant toy box for files' },
-  builder: { main: 'Amazon S3', sub: 'Stores files like photos and pages' },
-  architect: { main: 'Amazon S3', sub: 'Object storage with 11 nines of durability' },
-};
-
-/** First-run picker: "Who's building today?" */
+/** First-run picker: "Who's building today?" Every band sees the real name (Amazon S3); the explanation is what changes. */
 export function BandPicker() {
+  const t = useT();
   const setBand = useApp((s) => s.setBand);
   return (
     <div className="modal-backdrop">
       <div className="modal band-picker" role="dialog" aria-modal="true" aria-labelledby="band-title">
+        {/* Here too, because this card covers the title screen's menu on a first visit. */}
+        <div className="band-picker-lang">
+          <LangSwitch />
+        </div>
         <Sparky mood="cheer" size={92} />
-        <h2 id="band-title">Who’s building today?</h2>
-        <p className="muted">You can change this any time from the top corner.</p>
+        <h2 id="band-title">{t('picker.title')}</h2>
+        <p className="muted">{t('picker.hint')}</p>
         <div className="band-cards">
           {BANDS.map((b) => (
             <button key={b.id} className={`band-card band-${b.id}`} onClick={() => setBand(b.id)}>
               <span className="band-card-icon">
                 <Icon name={BAND_ICON[b.id]} />
               </span>
-              <strong>{b.label}</strong>
-              <em>{b.grades}</em>
+              <strong>{bandText(t, b.id).label}</strong>
+              <em>{bandText(t, b.id).grades}</em>
               <span className="band-card-sample">
                 <img src={`${import.meta.env.BASE_URL}icons/s3.svg`} alt="" />
                 <span>
-                  <b>{SAMPLE[b.id].main}</b>
-                  {SAMPLE[b.id].sub && <small>{SAMPLE[b.id].sub}</small>}
+                  <b>Amazon S3</b>
+                  <small>{t(`band.sample.${b.id}`)}</small>
                 </span>
               </span>
-              <small>{b.tagline}</small>
+              <small>{bandText(t, b.id).tagline}</small>
             </button>
           ))}
           {/* Not a fourth band: college students go to the Advanced Track, which always uses Architect detail. */}
@@ -202,16 +264,16 @@ export function BandPicker() {
             <span className="band-card-icon">
               <Icon name="cap" />
             </span>
-            <strong>College</strong>
-            <em>College & up</em>
+            <strong>{t('picker.college')}</strong>
+            <em>{t('picker.collegeGrades')}</em>
             <span className="band-card-sample">
               <img src={`${import.meta.env.BASE_URL}icons/s3.svg`} alt="" />
               <span>
                 <b>Amazon S3</b>
-                <small>Object storage with 11 nines of durability</small>
+                <small>{t('band.sample.architect')}</small>
               </span>
             </span>
-            <small>Opens the Advanced Track: real incidents and budgets</small>
+            <small>{t('picker.collegeTagline')}</small>
           </button>
         </div>
       </div>

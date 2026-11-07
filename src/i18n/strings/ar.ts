@@ -1,0 +1,57 @@
+import type { Messages } from './en';
+
+// Latin names inside Arabic text are wrapped in Unicode isolates (U+2066 … U+2069), so their full stops and the
+// punctuation after them stay on the right side of the name when the line reads right to left.
+
+export const ar: Messages = {
+  'lang.label': 'اللغة',
+  'lang.menu': 'اللغة: {name}',
+
+  'home.subtitle': 'بُناة السحابة',
+  'home.tagline': 'اربط خدمات AWS حقيقية، وشاهد الطلبات وهي تتدفق، وساعد بلدة صغيرة على الاتصال بالإنترنت.',
+  'home.modes': 'اختر وضعًا',
+  'home.story': 'وضع القصة',
+  'home.story.ch1': 'ساعد الخبّازة روزا على نقل أفضل مخبز في \u2066Maple Hollow\u2069 إلى الإنترنت.',
+  'home.story.ch2': 'أصبحت \u2066Crumb & Co.\u2069 متصلة بالإنترنت. الآن تحتاج البلدة كلها إلى المساعدة، بمشكلات تشبه التي قد يختارها فريقك.',
+  'home.levelsDone': 'أُنجز {done} من {total} مستويات',
+  'home.advanced': 'المسار المتقدم',
+  'home.collegeTag': 'الجامعة وما بعدها',
+  'home.advanced.blurb': 'في المناوبة لدى \u2066Crumb & Co.\u2069: حوادث حقيقية وميزانيات شهرية ومراجعات أمنية.',
+  'home.ticketsDone': 'أُنجزت {done} من {total} تذاكر',
+  'home.playground': 'ساحة اللعب',
+  'home.playground.blurb': 'ابنِ ما تشاء باستخدام {count} قطعة. لا تتصل إلا الوصلات المنطقية!',
+  'home.styleGuide': 'دليل الأسلوب',
+  'home.credit': 'أيقونات خدمات AWS © Amazon Web Services، مستخدمة لأغراض تعليمية. غير تابع لـ AWS ولا معتمد منها.',
+
+  'band.explorer': 'مستكشف',
+  'band.builder': 'باني',
+  'band.architect': 'مهندس',
+  'band.explorer.grades': 'الروضة حتى الصف الخامس',
+  'band.builder.grades': 'الصفوف ٦–٨',
+  'band.architect.grades': 'الصفوف ٩–١٢',
+  'band.explorer.tagline': 'كلمات بسيطة وصور وتلميحات كثيرة',
+  'band.builder.tagline': 'كلمات يومية وأرقام حقيقية',
+  'band.architect.tagline': 'تفاصيل تقنية وكيف يعمل',
+  'band.sample.explorer': 'صندوق ألعاب ضخم للملفات',
+  'band.sample.builder': 'يحفظ الملفات مثل الصور والصفحات',
+  'band.sample.architect': 'تخزين كائنات بمتانة أحد عشر تسعة',
+
+  'picker.title': 'من سيبني اليوم؟',
+  'picker.hint': 'يمكنك تغيير هذا في أي وقت من الزاوية العلوية.',
+  'picker.college': 'الجامعة',
+  'picker.collegeGrades': 'الجامعة وما بعدها',
+  'picker.collegeTagline': 'يفتح المسار المتقدم: حوادث وميزانيات حقيقية',
+
+  'theme.label': 'المظهر',
+  'theme.current': 'المظهر: {name}',
+  'theme.system': 'مثل جهازي',
+  'theme.light': 'فاتح',
+  'theme.dark': 'داكن',
+
+  'chrome.phoneLayout': 'تخطيط الهاتف',
+  'chrome.laptopLayout': 'استخدم تخطيط الحاسوب المحمول',
+  'chrome.more': 'المزيد',
+  'chrome.close': 'إغلاق {name}',
+  'chrome.turnTip': 'أدر هاتفك أفقيًا لتحصل على خريطة أكبر.',
+  'chrome.gotIt': 'حسنًا',
+};

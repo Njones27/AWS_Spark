@@ -100,6 +100,8 @@ function TermButton({ term, text }: { term: Term; text: string }) {
             id={id}
             role="tooltip"
             className="service-tip"
+            lang="en"
+            dir="ltr"
             style={pos ? { left: pos.left, top: pos.top } : { left: 0, top: 0, visibility: 'hidden' }}
           >
             <strong>{term.title}</strong>

@@ -252,7 +252,7 @@ img {
   color: var(--coral-text);
   text-transform: uppercase;
   letter-spacing: 0.06em;
-  margin-right: 6px;
+  margin-inline-end: 6px;
 }
 .topbar-actions {
   display: flex;
@@ -271,7 +271,7 @@ img {
 }
 .band-menu {
   position: absolute;
-  right: 0;
+  inset-inline-end: 0;
   top: calc(100% + 8px);
   width: 320px;
   background: var(--card);
@@ -286,7 +286,7 @@ img {
   gap: 12px;
   align-items: flex-start;
   width: 100%;
-  text-align: left;
+  text-align: start;
   border: none;
   background: none;
   padding: 10px 12px;
@@ -318,8 +318,53 @@ img {
   min-height: var(--tap);
   font-weight: 500;
 }
+.lang-code {
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+}
+/* Twelve languages: scroll inside the menu rather than run off a short screen. */
+.lang-menu {
+  width: 200px;
+  max-height: min(560px, calc(100dvh - 120px));
+  overflow-y: auto;
+}
+/* Each name is in its own script (and Arabic reads right to left), so line them all up on the menu's start edge. */
+.lang-menu button {
+  justify-content: flex-start;
+  text-align: start;
+}
+.lang-menu button > span {
+  flex: 1;
+}
+/* The first-run card covers the title screen's menus, so it carries its own language menu in its top corner. */
+.band-picker-lang {
+  position: absolute;
+  top: 16px;
+  inset-inline-end: 16px;
+  z-index: 2;
+}
+/* Right to left (Arabic): arrows that mean "back" and "go" point the other way. The maps and the builder canvas stay
+   left to right, because their arrows show how requests flow and the level paths are drawn that way. */
+.ico-back:dir(rtl),
+.ico-chevron:dir(rtl) {
+  transform: scaleX(-1);
+}
+.canvas .ico-chevron:dir(rtl) {
+  transform: none;
+}
+/* Screens that aren't translated yet stay English and left to right (see src/i18n/English.tsx). */
+.i18n-en {
+  display: contents;
+}
+[dir='rtl'] .canvas,
+[dir='rtl'] .town-scene,
+[dir='rtl'] .map-scene,
+[dir='rtl'] .map-board {
+  direction: ltr;
+}
 .theme-menu-check {
-  margin-left: auto;
+  margin-inline-start: auto;
   color: var(--flow-text);
 }
 
@@ -419,7 +464,7 @@ img {
   padding: 8px 12px;
   margin: 6px 0;
   box-shadow: var(--shadow-sm);
-  text-align: left;
+  text-align: start;
 }
 .band-card-sample img {
   width: 34px;
@@ -472,7 +517,8 @@ img {
   position: relative;
   z-index: 2;
   width: min(460px, calc(100% - 32px));
-  margin: 2vh 0 0 clamp(16px, 4vw, 64px);
+  margin-block: 2vh 0;
+  margin-inline: clamp(16px, 4vw, 64px) 0;
   padding: 26px;
   background: var(--card); /* browsers without color-mix (iOS < 16.2, Chrome < 111) get a solid card */
   background: color-mix(in srgb, var(--card) 86%, transparent);
@@ -1708,7 +1754,7 @@ img {
   width: 100%;
   padding: 6px 8px;
   border-radius: 14px;
-  text-align: left;
+  text-align: start;
 }
 .dock-sm img {
   width: 34px;
@@ -1717,7 +1763,7 @@ img {
   pointer-events: none;
 }
 .dock-sm .dock-name {
-  text-align: left;
+  text-align: start;
   font-size: 14px;
 }
 .dock-wrap-sm {
@@ -2184,7 +2230,7 @@ img {
 .mode-tag {
   display: inline-block;
   vertical-align: middle;
-  margin-left: 4px;
+  margin-inline-start: 4px;
   padding: 2px 8px;
   border-radius: 99px;
   background: var(--plum-fill);
@@ -2448,7 +2494,7 @@ img {
   display: grid;
   gap: 6px;
   align-content: start;
-  text-align: left;
+  text-align: start;
   padding: 12px;
   border-radius: var(--r-md);
   border: 3px solid var(--surface-edge);
@@ -2525,7 +2571,7 @@ img {
 .plan-close {
   position: absolute;
   top: 14px;
-  right: 14px;
+  inset-inline-end: 14px;
   z-index: 1;
 }
 .plan-card {
@@ -2542,7 +2588,7 @@ img {
   gap: 0 10px;
   font-size: 26px;
   margin: 0;
-  padding-right: 40px;
+  padding-inline-end: 40px;
 }
 .plan-heading input {
   flex: 1 1 220px;
@@ -2577,7 +2623,7 @@ img {
 }
 .plan-table th,
 .plan-table td {
-  text-align: left;
+  text-align: start;
   vertical-align: top;
   padding: 8px 6px;
   border-bottom: 1px solid var(--paper-2);
@@ -2599,7 +2645,7 @@ img {
   height: 24px;
   border-radius: 6px;
   vertical-align: -7px;
-  margin-right: 8px;
+  margin-inline-end: 8px;
 }
 .plan-table input {
   width: 100%;
@@ -2625,7 +2671,7 @@ img {
 }
 .plan-steps {
   margin: 0;
-  padding-left: 22px;
+  padding-inline-start: 22px;
   display: grid;
   gap: 2px;
   font-size: 14px;
@@ -2647,7 +2693,7 @@ img {
   border-top: 1px solid var(--paper-2);
 }
 .plan-actions p {
-  margin-right: auto;
+  margin-inline-end: auto;
 }
 @media (max-width: 600px) {
   .plan-service {
@@ -2687,7 +2733,7 @@ img {
   margin-top: 16px;
 }
 .share-actions p {
-  margin-right: auto;
+  margin-inline-end: auto;
 }
 
 /* ── builder key ─────────────────────────────────────────── */
@@ -2775,7 +2821,7 @@ img {
 /* One-time "You earned a Builder Key!" card: bottom-left, above the screen but below dialogs. */
 .key-notice {
   position: fixed;
-  left: 16px;
+  inset-inline-start: 16px;
   bottom: 16px;
   z-index: 50;
   display: flex;
@@ -3088,7 +3134,7 @@ img {
 [data-device='phone'] .home-top .topbar-actions {
   position: relative;
   gap: 8px;
-  margin-left: auto;
+  margin-inline-start: auto;
 }
 /* Its Theme and grade menus hang from the right end of the button row, not from their own buttons, so neither runs
    off a side. Anchoring to the row (not the whole header) keeps the usual 8px gap under the buttons. */
@@ -3096,7 +3142,7 @@ img {
   position: static;
 }
 [data-device='phone'] .home-top .band-menu {
-  right: 0;
+  inset-inline-end: 0;
   max-width: calc(100vw - 32px);
 }
 [data-device='phone'] .topbar {
@@ -3120,7 +3166,7 @@ img {
 }
 .phone-menu-list {
   position: absolute;
-  right: 0;
+  inset-inline-end: 0;
   top: calc(100% + 8px);
   width: min(300px, calc(100vw - 20px));
   max-height: calc(100dvh - 90px);
@@ -3205,7 +3251,7 @@ img {
   box-shadow: var(--shadow-md);
   font: inherit;
   color: inherit;
-  text-align: left;
+  text-align: start;
   cursor: pointer;
 }
 .mission-bar .sparky {
@@ -3468,7 +3514,7 @@ html[data-device='phone'] body {
     align-items: center;
     gap: 2px 12px;
     padding: 10px 14px;
-    text-align: left;
+    text-align: start;
   }
   .band-card-icon {
     grid-area: icon;
