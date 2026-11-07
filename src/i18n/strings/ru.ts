@@ -51,4 +51,17 @@ export const ru: Messages = {
   'chrome.close': 'Закрыть: {name}',
   'chrome.turnTip': 'Поверни телефон горизонтально, чтобы карта стала больше.',
   'chrome.gotIt': 'Понятно',
+
+  'whatsNew.label': 'Что нового',
+  'whatsNew.unread': 'Что нового (новых: {count})',
+  'whatsNew.window': 'Последние 7 дней',
+  'whatsNew.empty': 'На этой неделе ничего нового. Загляни позже!',
+  'whatsNew.today': 'Сегодня',
+  'whatsNew.yesterday': 'Вчера',
+  'whatsNew.daysAgo': 'Дней назад: {count}',
+  'whatsNew.kind.new': 'Новое',
+  'whatsNew.kind.better': 'Лучше',
+  'whatsNew.kind.fixed': 'Исправлено',
+  'whatsNew.isNew': 'Новое с прошлого раза',
+  'whatsNew.markRead': 'Отметить всё как прочитанное',
 };

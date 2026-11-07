@@ -61,6 +61,20 @@ export const en = {
   'chrome.close': 'Close {name}',
   'chrome.turnTip': 'Turn your phone sideways for a bigger map.',
   'chrome.gotIt': 'Got it',
+
+  // What's new bell
+  'whatsNew.label': 'What’s new',
+  'whatsNew.unread': 'What’s new ({count} new)',
+  'whatsNew.window': 'Last 7 days',
+  'whatsNew.empty': 'Nothing new this week. Check back soon!',
+  'whatsNew.today': 'Today',
+  'whatsNew.yesterday': 'Yesterday',
+  'whatsNew.daysAgo': '{count} days ago',
+  'whatsNew.kind.new': 'New',
+  'whatsNew.kind.better': 'Better',
+  'whatsNew.kind.fixed': 'Fixed',
+  'whatsNew.isNew': 'New since you last looked',
+  'whatsNew.markRead': 'Mark all as read',
 };
 
 export type MessageKey = keyof typeof en;

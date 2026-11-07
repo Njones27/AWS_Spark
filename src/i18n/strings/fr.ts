@@ -51,4 +51,17 @@ export const fr: Messages = {
   'chrome.close': 'Fermer {name}',
   'chrome.turnTip': 'Tourne ton téléphone sur le côté pour agrandir la carte.',
   'chrome.gotIt': 'Compris',
+
+  'whatsNew.label': 'Quoi de neuf',
+  'whatsNew.unread': 'Quoi de neuf ({count} nouveautés)',
+  'whatsNew.window': '7 derniers jours',
+  'whatsNew.empty': 'Rien de nouveau cette semaine. Reviens bientôt !',
+  'whatsNew.today': 'Aujourd’hui',
+  'whatsNew.yesterday': 'Hier',
+  'whatsNew.daysAgo': 'Il y a {count} jours',
+  'whatsNew.kind.new': 'Nouveau',
+  'whatsNew.kind.better': 'Amélioré',
+  'whatsNew.kind.fixed': 'Corrigé',
+  'whatsNew.isNew': 'Nouveau depuis ta dernière visite',
+  'whatsNew.markRead': 'Tout marquer comme lu',
 };

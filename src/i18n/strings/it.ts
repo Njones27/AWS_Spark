@@ -51,4 +51,17 @@ export const it: Messages = {
   'chrome.close': 'Chiudi {name}',
   'chrome.turnTip': 'Gira il telefono in orizzontale per una mappa più grande.',
   'chrome.gotIt': 'Ho capito',
+
+  'whatsNew.label': 'Novità',
+  'whatsNew.unread': 'Novità ({count} nuove)',
+  'whatsNew.window': 'Ultimi 7 giorni',
+  'whatsNew.empty': 'Niente di nuovo questa settimana. Torna presto!',
+  'whatsNew.today': 'Oggi',
+  'whatsNew.yesterday': 'Ieri',
+  'whatsNew.daysAgo': '{count} giorni fa',
+  'whatsNew.kind.new': 'Nuovo',
+  'whatsNew.kind.better': 'Migliorato',
+  'whatsNew.kind.fixed': 'Sistemato',
+  'whatsNew.isNew': 'Nuovo dalla tua ultima visita',
+  'whatsNew.markRead': 'Segna tutto come letto',
 };
