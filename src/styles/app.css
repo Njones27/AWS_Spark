@@ -1432,20 +1432,6 @@ img {
 .piece.wiggle {
   animation: wiggle 0.6s ease-in-out;
 }
-.piece-remove {
-  position: absolute;
-  top: -12px;
-  right: -12px;
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  border: 3px solid var(--card);
-  background: var(--ink);
-  color: var(--paper);
-  font-size: 14px;
-  cursor: pointer;
-  z-index: 3;
-}
 /* Badges pinned on by IAM, KMS, Fargate…: a row on the icon's top-right corner, growing leftwards. */
 .piece-badges {
   position: absolute;
@@ -1479,35 +1465,15 @@ img {
   opacity: 0.55;
 }
 
-/* handles */
+/* handles: arrows attach here, but they are made with the Connect button, so the handle itself stays out of sight */
 .react-flow__handle.nub {
-  width: 32px;
-  height: 32px;
+  width: 1px;
+  height: 1px;
   min-width: 0;
   min-height: 0;
-  border-radius: 50%;
-  background: var(--flow);
-  border: 3px solid var(--card);
-  box-shadow: var(--shadow-sm);
-  display: grid;
-  place-items: center;
-  cursor: crosshair;
-  transition: transform 0.15s var(--ease-bounce);
-  z-index: 2;
-}
-.react-flow__handle.nub:hover,
-.react-flow__handle.nub.clickconnecting {
-  transform: translate(50%, -50%) scale(1.18);
-}
-.react-flow__handle.nub.clickconnecting {
-  background: var(--coral-fill);
-}
-.nub-plus {
-  color: var(--card);
-  font-family: var(--font-display);
-  font-weight: 700;
-  font-size: 20px;
-  line-height: 1;
+  border: none;
+  background: transparent;
+  opacity: 0;
   pointer-events: none;
 }
 .react-flow__handle.target-cover {
@@ -3861,13 +3827,6 @@ html[data-device='phone'] body {
 [data-device='phone'] .piece-sub {
   display: none;
 }
-[data-device='phone'] .react-flow__handle.nub {
-  width: 46px;
-  height: 46px;
-}
-[data-device='phone'] .nub-plus {
-  font-size: 28px;
-}
 
 .turn-tip {
   position: absolute;
@@ -3992,5 +3951,210 @@ html[data-device='phone'] body {
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
+  }
+}
+
+/* ── Connect toolbar: tapping a piece shows big Connect and Put back buttons above it ── */
+.piece-toolbar {
+  position: absolute;
+  /* Under Sparky's tip bubble (20), so a "those don't fit" tip is never hidden behind it. */
+  z-index: 19;
+  display: flex;
+  gap: 6px;
+  padding: 6px;
+  background: var(--ink);
+  border-radius: 18px;
+  box-shadow: var(--shadow-lg);
+  transform: translate(-50%, calc(-100% - 14px));
+  animation: toolbar-pop 0.2s var(--ease-bounce);
+}
+.piece-toolbar.is-below {
+  transform: translate(-50%, 14px);
+}
+.piece-toolbar::after {
+  content: '';
+  position: absolute;
+  left: calc(50% + var(--tail-x, 0px));
+  bottom: -6px;
+  width: 12px;
+  height: 12px;
+  background: var(--ink);
+  border-radius: 2px;
+  transform: translateX(-50%) rotate(45deg);
+}
+.piece-toolbar.is-below::after {
+  bottom: auto;
+  top: -6px;
+}
+@keyframes toolbar-pop {
+  from {
+    scale: 0.7;
+    opacity: 0;
+  }
+}
+.piece-tool {
+  position: relative;
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 48px;
+  padding: 0 14px;
+  border: none;
+  border-radius: 13px;
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 15px;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.piece-tool .ico {
+  width: 20px;
+  height: 20px;
+}
+.piece-connect {
+  background: var(--flow);
+  color: var(--card);
+  /* The finger drags an arrow out of this button, so the page must not scroll or zoom under it. */
+  touch-action: none;
+  cursor: grab;
+  text-align: left;
+}
+.piece-connect:active {
+  cursor: grabbing;
+}
+.piece-connect span {
+  display: grid;
+  line-height: 1.1;
+}
+.piece-connect small {
+  font-family: var(--font-body);
+  font-weight: 500;
+  font-size: 11.5px;
+  opacity: 0.85;
+}
+.piece-putback {
+  background: transparent;
+  color: var(--paper);
+}
+.piece-putback:hover {
+  background: rgb(255 255 255 / 0.1);
+}
+.piece-tool:focus-visible {
+  outline: 3px solid var(--sun);
+  outline-offset: 2px;
+}
+
+/* While an arrow is being made: the start glows, pieces it can reach breathe, the rest fade back. */
+.canvas.is-linking .piece.is-link-from {
+  border-color: var(--flow);
+  box-shadow: 0 0 0 6px var(--flow-soft), var(--shadow-md);
+}
+.canvas.is-linking .piece.can-link {
+  border-color: var(--flow);
+  animation: link-breathe 1.3s ease-in-out infinite;
+}
+.canvas.is-linking .piece.cannot-link {
+  opacity: 0.45;
+}
+.canvas.is-linking .piece.is-link-over {
+  scale: 1.06;
+}
+.canvas.is-linking .piece.cannot-link.is-link-over {
+  opacity: 0.8;
+  border-color: var(--bad);
+}
+@keyframes link-breathe {
+  50% {
+    box-shadow: 0 0 0 8px var(--flow-soft), var(--shadow-md);
+  }
+}
+.piece-tap-here {
+  position: absolute;
+  left: 50%;
+  bottom: -15px;
+  transform: translateX(-50%);
+  white-space: nowrap;
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 13px;
+  background: var(--flow);
+  color: var(--card);
+  padding: 3px 11px;
+  border-radius: 99px;
+  box-shadow: var(--shadow-sm);
+  pointer-events: none;
+  z-index: 3;
+}
+[data-device='phone'] .piece-tap-here {
+  font-size: 17px;
+  bottom: -18px;
+}
+.link-ghost {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 20;
+  overflow: visible;
+}
+.link-ghost path {
+  fill: none;
+  stroke: var(--flow);
+  stroke-width: 4;
+  stroke-linecap: round;
+  stroke-dasharray: 2 10;
+}
+.link-ghost path.is-bad {
+  stroke: var(--bad);
+}
+.link-ghost circle {
+  fill: var(--flow);
+}
+.link-banner {
+  position: absolute;
+  top: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(440px, calc(100% - 20px));
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 8px 8px 14px;
+  background: var(--card);
+  border: 2px solid var(--flow);
+  border-radius: var(--r-md);
+  box-shadow: var(--shadow-md);
+  font-size: 14px;
+  line-height: 1.3;
+}
+.link-banner > .ico {
+  flex: none;
+  width: 20px;
+  height: 20px;
+  color: var(--flow-text);
+}
+.link-banner > span {
+  flex: 1;
+  min-width: 0;
+}
+.link-cancel {
+  flex: none;
+  min-height: 40px;
+  padding: 0 16px;
+  border: 2px solid var(--paper-3);
+  border-radius: 99px;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-display);
+  font-weight: 600;
+  cursor: pointer;
+}
+@media (prefers-reduced-motion: reduce) {
+  .piece-toolbar,
+  .canvas.is-linking .piece.can-link {
+    animation: none;
   }
 }

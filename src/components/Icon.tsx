@@ -9,6 +9,7 @@ const PATHS = {
       <path d="M12 7.5v5.5M12 16.5v.5" />
     </>
   ),
+  arrow: <path d="M4 12h15m-6-6 6 6-6 6" />,
   back: <path d="M19 12H5m6-6-6 6 6 6" />,
   bell: (
     <>
