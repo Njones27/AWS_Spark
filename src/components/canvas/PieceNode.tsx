@@ -1,9 +1,10 @@
-import { Handle, Position, useReactFlow, type NodeProps } from '@xyflow/react';
+import { Handle, Position, type NodeProps } from '@xyflow/react';
 import { memo } from 'react';
 import { findRule } from '../../data/rules';
 import { iconUrl, SERVICES } from '../../data/services';
 import type { Band } from '../../data/types';
 import type { NodeResult } from '../../engine/simulate';
+import { useDevice } from '../../device';
 import { useBand } from '../../store';
 import { useServiceTip } from '../ServiceTip';
 import { displayName, useSim, useUi, type PieceNode as PieceNodeType } from './model';
@@ -57,8 +58,8 @@ function Meter({ r, band }: { r: NodeResult; band: Band }) {
 function PieceNodeView({ id, data, selected }: NodeProps<PieceNodeType>) {
   const band = useBand();
   const { result } = useSim();
-  const { wiggleId, badges } = useUi();
-  const { deleteElements } = useReactFlow();
+  const { wiggleId, badges, linking } = useUi();
+  const { device } = useDevice();
   const def = SERVICES[data.service];
   const names = displayName(data);
   const { props: tipProps, tip } = useServiceTip(data.service);
@@ -76,6 +77,9 @@ function PieceNodeView({ id, data, selected }: NodeProps<PieceNodeType>) {
         data.locked ? 'is-locked' : '',
         selected ? 'is-selected' : '',
         wiggleId === id ? 'wiggle' : '',
+        linking?.from === id ? 'is-link-from' : '',
+        linking && linking.from !== id ? (linking.targets.has(id) ? 'can-link' : 'cannot-link') : '',
+        linking?.over === id ? 'is-link-over' : '',
       ].join(' ')}
       {...tipProps}
     >
@@ -112,18 +116,10 @@ function PieceNodeView({ id, data, selected }: NodeProps<PieceNodeType>) {
         </div>
       )}
       {r && <Meter r={r} band={band} />}
-      {selected && !data.locked && (
-        <button
-          className="piece-remove nodrag"
-          aria-label="Put back in the tray"
-          title="Put back"
-          onClick={(e) => {
-            e.stopPropagation();
-            deleteElements({ nodes: [{ id }] });
-          }}
-        >
-          <Icon name="close" />
-        </button>
+      {linking && linking.from !== id && linking.targets.has(id) && (
+        <span className="piece-tap-here" aria-hidden="true">
+          {device === 'phone' ? 'Tap here' : 'Click here'}
+        </span>
       )}
       {data.locked && (
         <span className="piece-pin" title="Part of the level">
@@ -131,11 +127,8 @@ function PieceNodeView({ id, data, selected }: NodeProps<PieceNodeType>) {
         </span>
       )}
       {tip}
-      {canSend && (
-        <Handle type="source" position={Position.Right} className="nub" aria-label="Drag to connect">
-          <span className="nub-plus">+</span>
-        </Handle>
-      )}
+      {/* Arrows are made with the Connect button above a selected piece. This hidden handle is only where they attach. */}
+      {canSend && <Handle type="source" position={Position.Right} className="nub" isConnectable={false} />}
     </div>
   );
 }

@@ -23,6 +23,14 @@ export interface Update {
 /** Newest first. */
 export const UPDATES: Update[] = [
   {
+    id: 'connect-button',
+    date: '2026-11-08',
+    kind: 'better',
+    icon: 'arrow',
+    title: 'A big Connect button for arrows',
+    body: 'Tap a piece, then tap Connect and pick where the arrow goes, or drag from Connect onto another piece. Put back sits right next to it.',
+  },
+  {
     id: 'phone-piece-card',
     date: '2026-11-08',
     kind: 'better',

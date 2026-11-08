@@ -95,12 +95,26 @@ export interface SimState {
 export const SimContext = createContext<SimState>({ result: null, running: false });
 export const useSim = () => useContext(SimContext);
 
+/** An arrow being made from the selected piece's Connect button, by tapping a target or by dragging onto one. */
+export interface Linking {
+  from: string;
+  /** Pieces the arrow is allowed to reach. */
+  targets: Set<string>;
+  /** While dragging, the piece under the finger or pointer. */
+  over: string | null;
+}
+
 export interface UiState {
   wiggleId: string | null;
   /** Badge services pinned on each piece, by node id. */
   badges: Record<string, ServiceId[]>;
+  linking: Linking | null;
 }
-export const UiContext = createContext<UiState>({ wiggleId: null, badges: {} });
+export const UiContext = createContext<UiState>({
+  wiggleId: null,
+  badges: {},
+  linking: null,
+});
 export const useUi = () => useContext(UiContext);
 
 // ── floating-edge geometry (from the React Flow "easy connect" example) ──
