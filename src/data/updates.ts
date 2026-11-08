@@ -3,7 +3,8 @@ import type { IconName } from '../components/Icon';
 // The title screen's "What's new" bell. Each entry is one change a student can see, written for students: a one-line
 // title and a sentence or two on what it means for them. Add an entry in the same pull request as the change. Skip
 // changes nobody would notice, like dependency bumps or test fixes. Entries older than a week leave the bell on their
-// own, so there is nothing to clean up.
+// own, so there is nothing to clean up. CI (scripts/check-whats-new.mjs) fails a PR that changes src/, public/ or
+// index.html without a new entry, unless its description ticks "no entry is needed".
 
 export type UpdateKind = 'new' | 'better' | 'fixed';
 

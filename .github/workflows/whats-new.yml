@@ -1,0 +1,36 @@
+# Checks that a pull request which changes what students see also adds an entry to the title screen's "What's new" bell
+# (src/data/updates.ts), unless its description ticks "no entry is needed". Separate from ci.yml so that editing the
+# PR description re-runs only this quick check, not the build and dev deploy. Needs no secrets, so forks are fine.
+name: What's new
+
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened, edited]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: whats-new-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  entry:
+    name: What's new entry
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    # Dependabot only bumps dependencies, which students never see.
+    if: github.event.pull_request.user.login != 'dependabot[bot]'
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+
+      - name: Check for a "What's new" entry
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          PR_BODY: ${{ github.event.pull_request.body }}
+        run: node scripts/check-whats-new.mjs
