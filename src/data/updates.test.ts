@@ -10,16 +10,17 @@ describe("what's new", () => {
     expect(daysAgo('2026-10-31', new Date(2026, 10, 7, 12))).toBe(7);
   });
 
-  it('keeps a week of entries, newest first, and holds back future ones', () => {
+  it('keeps a week of entries, newest first, shows tomorrow\'s, and holds back later ones', () => {
     const now = new Date(2026, 10, 7, 12);
     const list = [
       entry('old', '2026-10-30'),
       entry('edge', '2026-10-31'),
       entry('today', '2026-11-07'),
-      entry('soon', '2026-11-08'),
+      entry('tomorrow', '2026-11-08'),
+      entry('later', '2026-11-09'),
       entry('mid', '2026-11-03'),
     ];
-    expect(recentUpdates(now, list).map((u) => u.id)).toEqual(['today', 'mid', 'edge']);
+    expect(recentUpdates(now, list).map((u) => u.id)).toEqual(['tomorrow', 'today', 'mid', 'edge']);
     expect(WINDOW_DAYS).toBe(7);
   });
 

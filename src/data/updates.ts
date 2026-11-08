@@ -10,7 +10,7 @@ export type UpdateKind = 'new' | 'better' | 'fixed';
 export interface Update {
   /** Stable and unique. Remembered on the device once the student has seen it. */
   id: string;
-  /** The day it shipped, as YYYY-MM-DD. */
+  /** The day it shipped, as YYYY-MM-DD in the time zone of whoever merged it. */
   date: string;
   kind: UpdateKind;
   icon: IconName;
@@ -24,19 +24,30 @@ export interface Update {
 export const UPDATES: Update[] = [
   {
     id: 'connect-button',
-    date: '2026-11-08',
+    date: '2026-11-07',
     kind: 'better',
     icon: 'arrow',
     title: 'A big Connect button for arrows',
-    body: 'Tap a piece, then tap Connect and pick where the arrow goes, or drag from Connect onto another piece. Put back sits right next to it.',
+    body: 'Tap a piece, tap Connect, then tap the piece the arrow should go to. Put back sits right next to it.',
+    pr: 42,
   },
   {
     id: 'phone-piece-card',
-    date: '2026-11-08',
+    date: '2026-11-07',
     kind: 'better',
     icon: 'phone',
     title: 'Edit pieces without losing the map',
     body: 'On a phone, tapping a piece now shows a small card at the bottom. Tap Edit to name it or set its traffic.',
+    pr: 41,
+  },
+  {
+    id: 'sparky-in-search',
+    date: '2026-11-07',
+    kind: 'new',
+    icon: 'star',
+    title: 'Sparky shows up in Google',
+    body: 'Search for Spark and look for Sparky’s face next to the link.',
+    pr: 40,
   },
   {
     id: 'whats-new-bell',
@@ -45,6 +56,7 @@ export const UPDATES: Update[] = [
     icon: 'bell',
     title: 'A bell for what’s new',
     body: 'This list! A dot on the bell means Spark changed since you last looked.',
+    pr: 39,
   },
   {
     id: 'languages',
@@ -140,12 +152,16 @@ export function daysAgo(date: string, now: Date): number {
   return Math.round((today.getTime() - then.getTime()) / 86_400_000);
 }
 
-/** The entries from the last week, newest first. Ones dated in the future wait until their day. */
+/**
+ * The entries from the last week, newest first. An entry dated tomorrow still shows, because a change merged late in
+ * the evening can carry the next day's date somewhere else (or in UTC) while it is still today for the student.
+ * Anything further ahead waits until its day.
+ */
 export function recentUpdates(now: Date, list: Update[] = UPDATES): Update[] {
   return list
     .filter((u) => {
       const ago = daysAgo(u.date, now);
-      return ago >= 0 && ago <= WINDOW_DAYS;
+      return ago >= -1 && ago <= WINDOW_DAYS;
     })
     .sort((a, b) => b.date.localeCompare(a.date));
 }
