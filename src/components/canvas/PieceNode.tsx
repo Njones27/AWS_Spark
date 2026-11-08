@@ -79,7 +79,6 @@ function PieceNodeView({ id, data, selected }: NodeProps<PieceNodeType>) {
         wiggleId === id ? 'wiggle' : '',
         linking?.from === id ? 'is-link-from' : '',
         linking && linking.from !== id ? (linking.targets.has(id) ? 'can-link' : 'cannot-link') : '',
-        linking?.over === id ? 'is-link-over' : '',
       ].join(' ')}
       {...tipProps}
     >
