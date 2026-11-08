@@ -209,6 +209,8 @@ interface Props {
   onSelect?: (id: string | null) => void;
   /** The pieces that can be placed here (the tray plus the map). Rejection tips only suggest these. */
   available?: ServiceId[];
+  /** Hides the Connect and Put back toolbar, for when something else (like the phone's open piece card) is on top. */
+  hideToolbar?: boolean;
   children?: ReactNode;
 }
 
@@ -222,6 +224,7 @@ export function BuilderCanvas({
   onStructureChange,
   onSelect,
   available,
+  hideToolbar,
   children,
 }: Props) {
   const band = useBand();
@@ -528,7 +531,7 @@ export function BuilderCanvas({
             </Controls>
           </ReactFlow>
           {/* Hidden while Sparky's tip is open, so the two never cover each other. */}
-          {tooled && !linking && !bubble && (tooled.data.service !== 'phone' || !tooled.data.locked) && (
+          {tooled && !linking && !bubble && !hideToolbar && (tooled.data.service !== 'phone' || !tooled.data.locked) && (
             <PieceToolbar
               key={tooled.id}
               nodeId={tooled.id}
