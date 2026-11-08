@@ -23,6 +23,14 @@ export interface Update {
 /** Newest first. */
 export const UPDATES: Update[] = [
   {
+    id: 'phone-piece-card',
+    date: '2026-11-08',
+    kind: 'better',
+    icon: 'phone',
+    title: 'Edit pieces without losing the map',
+    body: 'On a phone, tapping a piece now shows a small card at the bottom. Tap Edit to name it or set its traffic.',
+  },
+  {
     id: 'whats-new-bell',
     date: '2026-11-07',
     kind: 'new',
