@@ -14,6 +14,7 @@ import { GoalCard } from '../components/playground/GoalCard';
 import { JudgePanel } from '../components/playground/JudgePanel';
 import { PlanExport } from '../components/playground/PlanExport';
 import { ProjectNotes } from '../components/playground/ProjectNotes';
+import { PiecePeek } from '../components/playground/PiecePeek';
 import { OpenShared, ShareDialog, type SharedState } from '../components/playground/ShareDialog';
 import { StarterPicker } from '../components/playground/StarterPicker';
 import { ServiceCard } from '../components/ServiceCard';
@@ -98,6 +99,11 @@ function PlaygroundInner({ share, shareId }: { share?: string; shareId?: string 
   }, [shareId]);
   const [running, setRunning] = useState(false);
   const [selected, setSelected] = useState<string | null>(null);
+  // On a phone the selected piece's details stay folded into a slim card until the student taps Edit. Pieces whose
+  // details have been opened once lose the notification dot.
+  const [peekOpen, setPeekOpen] = useState(false);
+  const [seen, setSeen] = useState<ReadonlySet<string>>(() => new Set());
+  useEffect(() => setPeekOpen(false), [selected]);
   const [query, setQuery] = useState('');
   const phone = useDevice().device === 'phone';
   const [piecesOpen, setPiecesOpen] = useState(false);
@@ -220,6 +226,40 @@ function PlaygroundInner({ share, shareId }: { share?: string; shareId?: string 
     d.setNodes((ns) => ns.map((n) => (n.selected ? { ...n, selected: false } : n)));
     setShowPlan(true);
   };
+  // The visitor and gremlin sliders, for a piece that makes its own traffic.
+  const source = selectedNode?.data.source;
+  const sourceControls =
+    selectedNode && source ? (
+      <section className="source-controls">
+        <label>
+          <span>
+            <Icon name="users" /> Visitors <strong>{source.demand}</strong>
+          </span>
+          <input
+            type="range"
+            min={0}
+            max={500}
+            step={10}
+            value={source.demand}
+            onChange={(e) => setSource(selectedNode.id, { demand: Number(e.target.value) })}
+          />
+        </label>
+        <label>
+          <span>
+            <Icon name="bot" /> Gremlin bots <strong>{source.bots ?? 0}</strong>
+          </span>
+          <input
+            type="range"
+            min={0}
+            max={500}
+            step={10}
+            value={source.bots ?? 0}
+            onChange={(e) => setSource(selectedNode.id, { bots: Number(e.target.value) })}
+          />
+        </label>
+      </section>
+    ) : null;
+
   const runButton = (
     <button
       className={`btn btn-run ${running ? 'is-stop' : ''}`}
@@ -348,7 +388,7 @@ function PlaygroundInner({ share, shareId }: { share?: string; shareId?: string 
             />
           )}
           <div className="canvas-dock canvas-dock-right">
-            {running && totals && (
+            {running && totals && !(phone && selectedNode) && (
               <div className={`run-summary ${problem ? 'has-problem' : 'is-happy'}`} aria-live="polite">
                 <Sparky mood={problem ? 'worried' : 'cheer'} size={52} bob={false} />
                 <div>
@@ -371,7 +411,22 @@ function PlaygroundInner({ share, shareId }: { share?: string; shareId?: string 
         {showJudge && !selectedNode && (
           <JudgePanel questions={questions} onClose={() => setShowJudge(false)} />
         )}
-        {selectedNode && (
+        {selectedNode && phone && !piecesOpen && (
+          <PiecePeek
+            key={selectedNode.id}
+            piece={selectedNode}
+            available={available}
+            open={peekOpen}
+            dot={!seen.has(selectedNode.id)}
+            onToggle={() => {
+              setPeekOpen((o) => !o);
+              setSeen((s) => (s.has(selectedNode.id) ? s : new Set(s).add(selectedNode.id)));
+            }}
+            onChange={(patch) => setPiece(selectedNode.id, patch)}
+            traffic={sourceControls}
+          />
+        )}
+        {selectedNode && !phone && (
           <aside className="inspector">
             <ServiceCard
               service={selectedNode.data.service}
@@ -381,36 +436,7 @@ function PlaygroundInner({ share, shareId }: { share?: string; shareId?: string 
             >
               <ProjectNotes piece={selectedNode} onChange={(patch) => setPiece(selectedNode.id, patch)} />
             </ServiceCard>
-            {selectedNode.data.source && (
-              <section className="source-controls">
-                <label>
-                  <span>
-                    <Icon name="users" /> Visitors <strong>{selectedNode.data.source.demand}</strong>
-                  </span>
-                  <input
-                    type="range"
-                    min={0}
-                    max={500}
-                    step={10}
-                    value={selectedNode.data.source.demand}
-                    onChange={(e) => setSource(selectedNode.id, { demand: Number(e.target.value) })}
-                  />
-                </label>
-                <label>
-                  <span>
-                    <Icon name="bot" /> Gremlin bots <strong>{selectedNode.data.source.bots ?? 0}</strong>
-                  </span>
-                  <input
-                    type="range"
-                    min={0}
-                    max={500}
-                    step={10}
-                    value={selectedNode.data.source.bots ?? 0}
-                    onChange={(e) => setSource(selectedNode.id, { bots: Number(e.target.value) })}
-                  />
-                </label>
-              </section>
-            )}
+            {sourceControls}
           </aside>
         )}
       </div>

@@ -16,29 +16,20 @@ interface Props {
   children?: ReactNode;
 }
 
-/** Info card for a selected piece: what it is, and what it can connect to. */
-export function ServiceCard({ service, label, available, onClose, children }: Props) {
+/** The pieces a service can send arrows to, limited to the ones on hand, plus how many others there are. */
+export function arrowTargets(service: ServiceId, architect: boolean, available?: ServiceId[]) {
+  const all = targetsOf(service, architect);
+  const to = available ? all.filter((t) => available.includes(t)) : all;
+  return { all, to, more: all.length - to.length };
+}
+
+/** How busy a piece can get, and the chips for what it can send arrows to. */
+export function ServiceLinks({ service, available }: { service: ServiceId; available?: ServiceId[] }) {
   const band = useBand();
   const def = SERVICES[service];
-  const all = targetsOf(service, band === 'architect');
-  const to = available ? all.filter((t) => available.includes(t)) : all;
-  const more = all.length - to.length;
+  const { all, to, more } = arrowTargets(service, band === 'architect', available);
   return (
-    <section className={`service-card cat-${def.category}`} aria-label={`${def.name} info`}>
-      <header>
-        <img src={iconUrl(service)} alt="" />
-        <div>
-          <h3>{label ?? def.name}</h3>
-          {label && <p className="service-card-real">{def.name}</p>}
-        </div>
-        {onClose && (
-          <button className="icon-btn" aria-label="Close" onClick={onClose}>
-            <Icon name="close" />
-          </button>
-        )}
-      </header>
-      <p>{def.blurb[band]}</p>
-      {children}
+    <>
       {band !== 'explorer' && Number.isFinite(def.capacity) && def.category !== 'town' && (
         <p className="service-card-cap">
           Can handle about <strong>{def.capacity}</strong> {band === 'architect' ? 'req/s' : 'visitors at once'} in this game.
@@ -60,6 +51,31 @@ export function ServiceCard({ service, label, available, onClose, children }: Pr
         <p className="service-card-end">
           <Icon name="flag" /> This is an end stop. Arrows go in, but not out.</p>
       )}
+    </>
+  );
+}
+
+/** Info card for a selected piece: what it is, and what it can connect to. */
+export function ServiceCard({ service, label, available, onClose, children }: Props) {
+  const band = useBand();
+  const def = SERVICES[service];
+  return (
+    <section className={`service-card cat-${def.category}`} aria-label={`${def.name} info`}>
+      <header>
+        <img src={iconUrl(service)} alt="" />
+        <div>
+          <h3>{label ?? def.name}</h3>
+          {label && <p className="service-card-real">{def.name}</p>}
+        </div>
+        {onClose && (
+          <button className="icon-btn" aria-label="Close" onClick={onClose}>
+            <Icon name="close" />
+          </button>
+        )}
+      </header>
+      <p>{def.blurb[band]}</p>
+      {children}
+      <ServiceLinks service={service} available={available} />
     </section>
   );
 }
