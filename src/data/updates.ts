@@ -28,7 +28,7 @@ export const UPDATES: Update[] = [
     kind: 'better',
     icon: 'arrow',
     title: 'A big Connect button for arrows',
-    body: 'Tap a piece, then tap Connect and pick where the arrow goes, or drag from Connect onto another piece. Put back sits right next to it.',
+    body: 'Tap a piece, then tap Connect and pick where the arrow goes. Put back sits right next to it.',
   },
   {
     id: 'phone-piece-card',

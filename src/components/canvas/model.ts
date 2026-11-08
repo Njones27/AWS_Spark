@@ -95,13 +95,11 @@ export interface SimState {
 export const SimContext = createContext<SimState>({ result: null, running: false });
 export const useSim = () => useContext(SimContext);
 
-/** An arrow being made from the selected piece's Connect button, by tapping a target or by dragging onto one. */
+/** An arrow being made from the selected piece's Connect button: the next piece tapped is where it goes. */
 export interface Linking {
   from: string;
   /** Pieces the arrow is allowed to reach. */
   targets: Set<string>;
-  /** While dragging, the piece under the finger or pointer. */
-  over: string | null;
 }
 
 export interface UiState {

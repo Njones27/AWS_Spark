@@ -23,7 +23,6 @@ import {
   useRef,
   useState,
   type Dispatch,
-  type PointerEvent as ReactPointerEvent,
   type ReactNode,
   type SetStateAction,
 } from 'react';
@@ -39,7 +38,6 @@ import { Sparky } from '../art/Sparky';
 import { Icon } from '../Icon';
 import { FlowEdge } from './FlowEdge';
 import {
-  displayName,
   isPiece,
   makeEdge,
   SimContext,
@@ -151,16 +149,12 @@ function PieceToolbar({
   nodeId,
   canSend,
   canRemove,
-  verb,
-  onConnectDown,
   onConnectClick,
   onRemove,
 }: {
   nodeId: string;
   canSend: boolean;
   canRemove: boolean;
-  verb: 'Tap' | 'Click';
-  onConnectDown: (e: ReactPointerEvent) => void;
   onConnectClick: () => void;
   onRemove: () => void;
 }) {
@@ -190,16 +184,8 @@ function PieceToolbar({
       style={{ left, top: below ? anchor.bottom : anchor.top, ['--tail-x' as string]: `${tail}px` }}
     >
       {canSend && (
-        <button
-          className="piece-tool piece-connect"
-          onPointerDown={onConnectDown}
-          onClick={onConnectClick}
-        >
-          <Icon name="arrow" />
-          <span>
-            <strong>Connect</strong>
-            <small>{verb} or drag</small>
-          </span>
+        <button className="piece-tool piece-connect" onClick={onConnectClick}>
+          <Icon name="arrow" /> Connect
         </button>
       )}
       {canRemove && (
@@ -410,10 +396,8 @@ export function BuilderCanvas({
     [explainRefusal],
   );
 
-  // ── Connect button: tap it and then tap a target, or drag from it onto a target ──
+  // ── Connect button: tap it, then tap the piece the arrow should go to ──
   const [linking, setLinking] = useState<Linking | null>(null);
-  /** Where the arrow being dragged starts and ends, in pixels from the map's top-left corner. */
-  const [ghost, setGhost] = useState<{ x1: number; y1: number; x2: number; y2: number } | null>(null);
   const linkingRef = useRef(linking);
   linkingRef.current = linking;
 
@@ -435,14 +419,11 @@ export function BuilderCanvas({
   const pickFrom = useCallback(
     (id: string) => {
       setBubble(null);
-      setLinking({ from: id, targets: targetsFrom(id), over: null });
+      setLinking({ from: id, targets: targetsFrom(id) });
     },
     [targetsFrom],
   );
-  const stopLinking = useCallback(() => {
-    setLinking(null);
-    setGhost(null);
-  }, []);
+  const stopLinking = useCallback(() => setLinking(null), []);
 
   /** Draw the arrow if it fits, or explain why it doesn't. */
   const connectTo = useCallback(
@@ -456,61 +437,6 @@ export function BuilderCanvas({
     [isValidConnection, onConnect, explainRefusal],
   );
 
-  const pieceAt = useCallback((x: number, y: number, except: string) => {
-    for (const el of document.elementsFromPoint(x, y)) {
-      const id = el.closest('.react-flow__node')?.getAttribute('data-id');
-      if (id && id !== except && getNode(id) && isPiece(getNode(id)!)) return id;
-    }
-    return null;
-  }, [getNode]);
-
-  const beginConnect = useCallback(
-    (id: string, event: ReactPointerEvent) => {
-      if (event.button !== 0) return;
-      event.stopPropagation();
-      const startX = event.clientX;
-      const startY = event.clientY;
-      const box = () => wrap.current!.getBoundingClientRect();
-      let dragging = false;
-      let targets: Set<string> | null = null;
-      let over: string | null = null;
-      const move = (e: PointerEvent) => {
-        if (!dragging && Math.hypot(e.clientX - startX, e.clientY - startY) < 8) return;
-        e.preventDefault();
-        if (!dragging) {
-          dragging = true;
-          targets = targetsFrom(id);
-          setBubble(null);
-        }
-        over = pieceAt(e.clientX, e.clientY, id);
-        setLinking({ from: id, targets: targets!, over });
-        const from = wrap.current?.querySelector(`.react-flow__node[data-id="${CSS.escape(id)}"]`)?.getBoundingClientRect();
-        const b = box();
-        if (from)
-          setGhost({ x1: from.right - b.left, y1: from.top + from.height / 2 - b.top, x2: e.clientX - b.left, y2: e.clientY - b.top });
-      };
-      const up = () => {
-        window.removeEventListener('pointermove', move);
-        window.removeEventListener('pointerup', up);
-        window.removeEventListener('pointercancel', cancel);
-        // A tap is left to the button's click, which picks the target next.
-        if (!dragging) return;
-        stopLinking();
-        if (over) connectTo(id, over);
-      };
-      const cancel = () => {
-        window.removeEventListener('pointermove', move);
-        window.removeEventListener('pointerup', up);
-        window.removeEventListener('pointercancel', cancel);
-        stopLinking();
-      };
-      window.addEventListener('pointermove', move, { passive: false });
-      window.addEventListener('pointerup', up);
-      window.addEventListener('pointercancel', cancel);
-    },
-    [targetsFrom, pieceAt, stopLinking, connectTo],
-  );
-
   // Escape puts the Connect button down.
   useEffect(() => {
     if (!linking) return;
@@ -522,11 +448,6 @@ export function BuilderCanvas({
   const ui = useMemo(() => ({ wiggleId, badges, linking }), [wiggleId, badges, linking]);
   const chosen = nodes.filter((n) => n.selected);
   const tooled = chosen.length === 1 && isPiece(chosen[0]) ? chosen[0] : null;
-  const fromName = linking ? (() => {
-    const n = getNode(linking.from);
-    return n && isPiece(n) ? displayName(n.data).main : '';
-  })() : '';
-  const picking = !!linking && !ghost;
 
   return (
     <SimContext.Provider value={sim}>
@@ -613,37 +534,12 @@ export function BuilderCanvas({
               nodeId={tooled.id}
               canSend={tooled.data.service !== 'phone'}
               canRemove={!tooled.data.locked}
-              verb={phone ? 'Tap' : 'Click'}
-              onConnectDown={(e) => beginConnect(tooled.id, e)}
               onConnectClick={() => pickFrom(tooled.id)}
               onRemove={() => {
                 setBubble(null);
                 deleteElements({ nodes: [{ id: tooled.id }] });
               }}
             />
-          )}
-          {ghost && (
-            <svg className="link-ghost" aria-hidden="true">
-              <path
-                className={linking?.over && !linking.targets.has(linking.over) ? 'is-bad' : ''}
-                d={`M${ghost.x1},${ghost.y1} C${ghost.x1 + 60},${ghost.y1} ${ghost.x2 - 60},${ghost.y2} ${ghost.x2},${ghost.y2}`}
-              />
-              <circle cx={ghost.x2} cy={ghost.y2} r="7" />
-            </svg>
-          )}
-          {picking && (
-            <div className="link-banner" role="status">
-              <Icon name="arrow" />
-              <span>
-                Where should <strong>{fromName}</strong> send arrows?{' '}
-                {linking.targets.size
-                  ? `${phone ? 'Tap' : 'Click'} a glowing piece.`
-                  : 'Nothing on the map can take its arrows yet.'}
-              </span>
-              <button className="link-cancel" onClick={stopLinking}>
-                Cancel
-              </button>
-            </div>
           )}
           {bubble && <AnchoredBubble bubble={bubble} onClose={closeBubble} />}
           {children}
