@@ -558,6 +558,7 @@ export function BuilderCanvas({
                 if (from !== n.id) connectTo(from, n.id);
                 return;
               }
+              setBubble(null);
               onSelect?.(n.id);
             }}
             onPaneClick={() => {
@@ -605,7 +606,8 @@ export function BuilderCanvas({
               </ControlButton>
             </Controls>
           </ReactFlow>
-          {tooled && !linking && (tooled.data.service !== 'phone' || !tooled.data.locked) && (
+          {/* Hidden while Sparky's tip is open, so the two never cover each other. */}
+          {tooled && !linking && !bubble && (tooled.data.service !== 'phone' || !tooled.data.locked) && (
             <PieceToolbar
               key={tooled.id}
               nodeId={tooled.id}

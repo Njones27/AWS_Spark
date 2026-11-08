@@ -3957,7 +3957,6 @@ html[data-device='phone'] body {
 /* ── Connect toolbar: tapping a piece shows big Connect and Put back buttons above it ── */
 .piece-toolbar {
   position: absolute;
-  /* Under Sparky's tip bubble (20), so a "those don't fit" tip is never hidden behind it. */
   z-index: 19;
   display: flex;
   gap: 6px;
