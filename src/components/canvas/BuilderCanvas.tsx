@@ -38,6 +38,7 @@ import { Sparky } from '../art/Sparky';
 import { Icon } from '../Icon';
 import { FlowEdge } from './FlowEdge';
 import {
+  displayName,
   isPiece,
   makeEdge,
   SimContext,
@@ -142,21 +143,26 @@ const TOOLBAR_EDGE = 8;
 const TOOLBAR_ROOM_ABOVE = 76;
 
 /**
- * Big Connect and Put back buttons above the selected piece. They stay the same size at any zoom, so they are easy to hit
- * with a thumb even when the whole map is zoomed out on a phone.
+ * Big Connect and Trash buttons above the selected piece. They stay the same size at any zoom, so they are easy to hit
+ * with a thumb even when the whole map is zoomed out on a phone. While arrows are being drawn from the piece, a single
+ * Done button takes their place.
  */
 function PieceToolbar({
   nodeId,
   canSend,
   canRemove,
+  linking,
   onConnectClick,
   onRemove,
+  onDone,
 }: {
   nodeId: string;
   canSend: boolean;
   canRemove: boolean;
+  linking: boolean;
   onConnectClick: () => void;
   onRemove: () => void;
+  onDone: () => void;
 }) {
   const anchor = useStore((s): Anchor | null => {
     const n = s.nodeLookup.get(nodeId);
@@ -171,7 +177,7 @@ function PieceToolbar({
   const [half, setHalf] = useState(120);
   useLayoutEffect(() => {
     if (ref.current) setHalf(ref.current.offsetWidth / 2);
-  }, [canSend, canRemove]);
+  }, [canSend, canRemove, linking]);
   if (!anchor) return null;
 
   const below = anchor.top < TOOLBAR_ROOM_ABOVE;
@@ -183,16 +189,49 @@ function PieceToolbar({
       className={`piece-toolbar ${below ? 'is-below' : ''}`}
       style={{ left, top: below ? anchor.bottom : anchor.top, ['--tail-x' as string]: `${tail}px` }}
     >
-      {canSend && (
-        <button className="piece-tool piece-connect" onClick={onConnectClick}>
-          <Icon name="arrow" /> Connect
+      {linking ? (
+        <button className="piece-tool piece-done" onClick={onDone}>
+          <Icon name="check" /> Done
         </button>
+      ) : (
+        <>
+          {canSend && (
+            <button className="piece-tool piece-connect" onClick={onConnectClick}>
+              <Icon name="arrow" /> Connect
+            </button>
+          )}
+          {canRemove && (
+            <button className="piece-tool piece-trash" onClick={onRemove}>
+              <Icon name="trash" /> Trash
+            </button>
+          )}
+        </>
       )}
-      {canRemove && (
-        <button className="piece-tool piece-putback" onClick={onRemove}>
-          <Icon name="close" /> Put back
-        </button>
-      )}
+    </div>
+  );
+}
+
+/** "Are you sure?" before a piece goes in the trash, since its arrows go with it. */
+function TrashConfirm({ name, onCancel, onConfirm }: { name: string; onCancel: () => void; onConfirm: () => void }) {
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && onCancel();
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [onCancel]);
+  return (
+    <div className="modal-backdrop in-canvas" onClick={(e) => e.target === e.currentTarget && onCancel()}>
+      <div className="modal trash-confirm" role="alertdialog" aria-modal="true" aria-labelledby="trash-title" aria-describedby="trash-text">
+        <h2 id="trash-title">Trash {name}?</h2>
+        <p id="trash-text">Are you sure? This will delete it from your map, along with any arrows going in or out of it.</p>
+        <div className="modal-actions">
+          <button className="btn btn-ghost" onClick={onCancel} autoFocus>
+            Keep it
+          </button>
+          <button className="btn btn-primary" onClick={onConfirm}>
+            <Icon name="trash" /> Yes, delete it
+          </button>
+        </div>
+      </div>
     </div>
   );
 }
@@ -209,7 +248,7 @@ interface Props {
   onSelect?: (id: string | null) => void;
   /** The pieces that can be placed here (the tray plus the map). Rejection tips only suggest these. */
   available?: ServiceId[];
-  /** Hides the Connect and Put back toolbar, for when something else (like the phone's open piece card) is on top. */
+  /** Hides the Connect and Trash toolbar, for when something else (like the phone's open piece card) is on top. */
   hideToolbar?: boolean;
   children?: ReactNode;
 }
@@ -440,6 +479,15 @@ export function BuilderCanvas({
     [isValidConnection, onConnect, explainRefusal],
   );
 
+  // Each new arrow changes which pieces can still be reached, so keep the glowing targets up to date. If the starting
+  // piece goes away, stop.
+  useEffect(() => {
+    const from = linkingRef.current?.from;
+    if (!from) return;
+    if (!nodes.some((n) => n.id === from)) setLinking(null);
+    else setLinking({ from, targets: targetsFrom(from) });
+  }, [edges, nodes.length, targetsFrom]);
+
   // Escape puts the Connect button down.
   useEffect(() => {
     if (!linking) return;
@@ -451,6 +499,25 @@ export function BuilderCanvas({
   const ui = useMemo(() => ({ wiggleId, badges, linking }), [wiggleId, badges, linking]);
   const chosen = nodes.filter((n) => n.selected);
   const tooled = chosen.length === 1 && isPiece(chosen[0]) ? chosen[0] : null;
+
+  // Pressing any other button (the tray, Restart, the side panel, the zoom buttons...) puts the toolbar away, the same
+  // as clicking an empty spot on the map. Tapping the piece again brings it back.
+  const [dismissed, setDismissed] = useState<string | null>(null);
+  const [trashing, setTrashing] = useState<string | null>(null);
+  const tooledId = tooled?.id ?? null;
+  useEffect(() => {
+    if (!tooledId) return;
+    const onDown = (e: PointerEvent) => {
+      const t = e.target as Element | null;
+      if (!t?.closest || t.closest('.react-flow__node, .react-flow__pane, .react-flow__edge, .piece-toolbar, .bubble, .modal-backdrop')) return;
+      setDismissed(tooledId);
+      setLinking(null);
+    };
+    window.addEventListener('pointerdown', onDown, true);
+    return () => window.removeEventListener('pointerdown', onDown, true);
+  }, [tooledId]);
+  const closeTrash = useCallback(() => setTrashing(null), []);
+  const trashPiece = trashing ? nodes.find((n) => n.id === trashing) : undefined;
 
   return (
     <SimContext.Provider value={sim}>
@@ -475,13 +542,15 @@ export function BuilderCanvas({
             onClickConnectEnd={onClickConnectEnd}
             onNodeClick={(_, n) => {
               if (!isPiece(n)) return;
-              // While picking a target the starting piece stays selected, so its Connect button comes back for the next arrow.
+              // Connect stays on after each arrow, so tapping more pieces keeps adding arrows from the same piece. Tapping
+              // the starting piece again (or Done, Escape, or an empty spot) stops.
               const from = linkingRef.current?.from;
               if (from) {
-                stopLinking();
-                if (from !== n.id) connectTo(from, n.id);
+                if (from === n.id) stopLinking();
+                else connectTo(from, n.id);
                 return;
               }
+              setDismissed(null);
               setBubble(null);
               onSelect?.(n.id);
             }}
@@ -531,16 +600,28 @@ export function BuilderCanvas({
             </Controls>
           </ReactFlow>
           {/* Hidden while Sparky's tip is open, so the two never cover each other. */}
-          {tooled && !linking && !bubble && !hideToolbar && (tooled.data.service !== 'phone' || !tooled.data.locked) && (
+          {tooled && tooled.id !== dismissed && !bubble && !hideToolbar && !trashing && (tooled.data.service !== 'phone' || !tooled.data.locked) && (
             <PieceToolbar
               key={tooled.id}
               nodeId={tooled.id}
               canSend={tooled.data.service !== 'phone'}
               canRemove={!tooled.data.locked}
+              linking={linking?.from === tooled.id}
               onConnectClick={() => pickFrom(tooled.id)}
               onRemove={() => {
                 setBubble(null);
-                deleteElements({ nodes: [{ id: tooled.id }] });
+                setTrashing(tooled.id);
+              }}
+              onDone={stopLinking}
+            />
+          )}
+          {trashPiece && isPiece(trashPiece) && (
+            <TrashConfirm
+              name={displayName(trashPiece.data).main}
+              onCancel={closeTrash}
+              onConfirm={() => {
+                setTrashing(null);
+                deleteElements({ nodes: [{ id: trashPiece.id }] });
               }}
             />
           )}

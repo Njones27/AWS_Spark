@@ -3954,7 +3954,7 @@ html[data-device='phone'] body {
   }
 }
 
-/* ── Connect toolbar: tapping a piece shows big Connect and Put back buttons above it ── */
+/* ── Connect toolbar: tapping a piece shows big Connect and Trash buttons above it ── */
 .piece-toolbar {
   position: absolute;
   z-index: 19;
@@ -4015,12 +4015,23 @@ html[data-device='phone'] body {
   background: var(--flow);
   color: var(--card);
 }
-.piece-putback {
+.piece-trash {
   background: transparent;
   color: var(--paper);
 }
-.piece-putback:hover {
+.piece-trash:hover {
   background: rgb(255 255 255 / 0.1);
+}
+.piece-done {
+  background: var(--paper);
+  color: var(--ink);
+}
+.trash-confirm {
+  max-width: 420px;
+  text-align: center;
+}
+.trash-confirm h2 {
+  font-size: 26px;
 }
 .piece-tool:focus-visible {
   outline: 3px solid var(--sun);

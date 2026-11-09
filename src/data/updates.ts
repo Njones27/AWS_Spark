@@ -24,6 +24,14 @@ export interface Update {
 /** Newest first. */
 export const UPDATES: Update[] = [
   {
+    id: 'connect-keeps-going',
+    date: '2026-11-09',
+    kind: 'better',
+    icon: 'arrow',
+    title: 'Draw lots of arrows in a row',
+    body: 'After Connect, keep tapping pieces to add more arrows, then tap Done. Put back is now Trash, and it asks before deleting a piece.',
+  },
+  {
     id: 'connect-button',
     date: '2026-11-07',
     kind: 'better',
