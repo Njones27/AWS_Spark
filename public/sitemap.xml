@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Spark is one page (screens are #/hash routes), so the sitemap names only the canonical home URL. -->
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url>
+    <loc>https://letslearncloud.com/</loc>
+  </url>
+</urlset>
