@@ -377,6 +377,7 @@ function PlaygroundInner({ share, shareId }: { share?: string; shareId?: string 
             if (id) setShowJudge(false);
           }}
           available={available}
+          hideToolbar={phone && peekOpen}
         >
           {sources.length > 0 && (
             <GoalCard

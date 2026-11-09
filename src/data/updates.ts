@@ -29,7 +29,7 @@ export const UPDATES: Update[] = [
     kind: 'better',
     icon: 'arrow',
     title: 'A big Connect button for arrows',
-    body: 'Tap a piece, tap Connect, then tap the piece the arrow should go to. Put back sits right next to it.',
+    body: 'Tap a piece, then tap Connect and pick where the arrow goes. Put back sits right next to it.',
     pr: 42,
   },
   {
