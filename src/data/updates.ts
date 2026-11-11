@@ -24,6 +24,14 @@ export interface Update {
 /** Newest first. */
 export const UPDATES: Update[] = [
   {
+    id: 'connect-done-closes',
+    date: '2026-11-11',
+    kind: 'fixed',
+    icon: 'check',
+    title: 'Done really means done',
+    body: 'Tapping Done after drawing arrows now closes the Connect buttons. Tap the piece again if you want them back.',
+  },
+  {
     id: 'connect-keeps-going',
     date: '2026-11-09',
     kind: 'better',
