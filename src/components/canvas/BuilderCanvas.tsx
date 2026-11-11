@@ -488,14 +488,6 @@ export function BuilderCanvas({
     else setLinking({ from, targets: targetsFrom(from) });
   }, [edges, nodes.length, targetsFrom]);
 
-  // Escape puts the Connect button down.
-  useEffect(() => {
-    if (!linking) return;
-    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && stopLinking();
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [linking, stopLinking]);
-
   const ui = useMemo(() => ({ wiggleId, badges, linking }), [wiggleId, badges, linking]);
   const chosen = nodes.filter((n) => n.selected);
   const tooled = chosen.length === 1 && isPiece(chosen[0]) ? chosen[0] : null;
@@ -516,6 +508,19 @@ export function BuilderCanvas({
     window.addEventListener('pointerdown', onDown, true);
     return () => window.removeEventListener('pointerdown', onDown, true);
   }, [tooledId]);
+  // Done (or Escape) finishes connecting and puts the toolbar away too, so it doesn't pop back up asking to Connect or
+  // Trash. Tapping the piece again brings it back.
+  const finishLinking = useCallback(() => {
+    const from = linkingRef.current?.from;
+    setLinking(null);
+    if (from) setDismissed(from);
+  }, []);
+  useEffect(() => {
+    if (!linking) return;
+    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && finishLinking();
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [linking, finishLinking]);
   const closeTrash = useCallback(() => setTrashing(null), []);
   const trashPiece = trashing ? nodes.find((n) => n.id === trashing) : undefined;
 
@@ -612,7 +617,7 @@ export function BuilderCanvas({
                 setBubble(null);
                 setTrashing(tooled.id);
               }}
-              onDone={stopLinking}
+              onDone={finishLinking}
             />
           )}
           {trashPiece && isPiece(trashPiece) && (
